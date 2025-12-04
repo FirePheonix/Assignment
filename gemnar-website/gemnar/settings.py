@@ -75,7 +75,7 @@ ENVIRONMENT = os.environ.get("ENVIRONMENT", "development")
 DEBUG = ENVIRONMENT == "development"
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
     ","
-) + ["gemnar.com", "www.gemnar.com", "localhost", "127.0.0.1", "0.0.0.0"]
+) + ["gemnar.com", "www.gemnar.com", "localhost", "127.0.0.1", "0.0.0.0", "assignment-ov4q.onrender.com"]
 
 # CSRF settings for API endpoints
 CSRF_TRUSTED_ORIGINS = [
