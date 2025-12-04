@@ -4,7 +4,7 @@ services:
     env: python
     plan: starter
     buildCommand: ./build.sh
-    startCommand: gunicorn gemnar.wsgi:application --bind 0.0.0.0:$PORT
+    startCommand: poetry run gunicorn gemnar.wsgi:application --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.10

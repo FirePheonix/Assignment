@@ -3,12 +3,18 @@
 
 set -o errexit  # exit on error
 
-# Install Python dependencies
+# Install Poetry
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install poetry
+
+# Configure Poetry to not create virtual environments (Render manages this)
+poetry config virtualenvs.create false
+
+# Install dependencies using Poetry (production only, no dev dependencies)
+poetry install --no-dev
 
 # Collect static files
-python manage.py collectstatic --no-input
+poetry run python manage.py collectstatic --no-input
 
 # Run database migrations
-python manage.py migrate
+poetry run python manage.py migrate
