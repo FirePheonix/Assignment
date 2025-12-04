@@ -1,0 +1,19 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}
+    {% trans "Delete Organization" %}
+{% endblock %}
+{% block org_content %}
+    <p>
+        {% blocktrans %}Are you sure you want to delete <strong>{{ organization.name }}</strong>?{% endblocktrans %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit"
+                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            {% trans "Confirm Delete" %}
+        </button>
+        <a href="{{ organization.get_absolute_url }}"
+           class="text-gray-600 hover:underline ml-4">{% trans "Cancel" %}</a>
+    </form>
+{% endblock %}

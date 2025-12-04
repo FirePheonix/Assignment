@@ -1,0 +1,115 @@
+{% extends "organizations/base.html" %}
+{% block title %}Invitations - {{ organization.name }}{% endblock %}
+{% block content %}
+    <div class="max-w-6xl mx-auto py-8">
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="border-b px-6 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Invitations</h1>
+                    <p class="text-gray-600 mt-1">Manage invitations for {{ organization.name }}</p>
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'organization_detail' organization_pk=organization.pk %}"
+                       class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Back to Organization
+                    </a>
+                    <a href="{% url 'organization_invitation_send' organization_pk=organization.pk %}"
+                       class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Send Invitation</a>
+                </div>
+            </div>
+            <div class="p-6">
+                {% if invitations %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sent By</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for invitation in invitations %}
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ invitation.email }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if invitation.status == 'pending' %}bg-yellow-100 text-yellow-800 {% elif invitation.status == 'accepted' %}bg-green-100 text-green-800 {% elif invitation.status == 'declined' %}bg-red-100 text-red-800 {% elif invitation.status == 'expired' %}bg-gray-100 text-gray-800 {% endif %}">
+                                                {{ invitation.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="text-sm text-gray-900">
+                                                {% if invitation.is_admin %}
+                                                    Admin
+                                                {% else %}
+                                                    Member
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                {{ invitation.invited_by.get_full_name|default:invitation.invited_by.username }}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">{{ invitation.created_at|date:"M d, Y" }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                {{ invitation.expires_at|date:"M d, Y" }}
+                                                {% if invitation.is_expired %}<span class="text-red-600 font-medium">(Expired)</span>{% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-2">
+                                                {% if invitation.status == 'pending' %}
+                                                    <form method="post"
+                                                          action="{% url 'organization_invitation_resend' organization_pk=organization.pk invitation_pk=invitation.pk %}"
+                                                          class="inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit"
+                                                                class="text-indigo-600 hover:text-indigo-900"
+                                                                title="Resend invitation">Resend</button>
+                                                    </form>
+                                                {% endif %}
+                                                {% if invitation.status == 'accepted' %}
+                                                    <span class="text-green-600">Joined {{ invitation.accepted_at|date:"M d, Y" }}</span>
+                                                {% else %}
+                                                    <a href="{% url 'organization_invitation_cancel' organization_pk=organization.pk invitation_pk=invitation.pk %}"
+                                                       class="text-red-600 hover:text-red-900">Cancel</a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No invitations</h3>
+                        <p class="mt-1 text-sm text-gray-500">Get started by sending an invitation to a new member.</p>
+                        <div class="mt-6">
+                            <a href="{% url 'organization_invitation_send' organization_pk=organization.pk %}"
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">
+                                Send Invitation
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

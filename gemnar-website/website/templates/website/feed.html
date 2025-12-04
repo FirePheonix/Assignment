@@ -1,0 +1,91 @@
+{% extends "website/base.html" %}
+{% block title %}Photo Feed{% endblock %}
+{% block content %}
+    <style>
+    .masonry-grid {
+        column-count: 5;
+        column-gap: 1em;
+        padding: 1em;
+    }
+
+    .masonry-item {
+        background-color: #eee;
+        display: inline-block;
+        margin: 0 0 1em;
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        break-inside: avoid;
+    }
+
+    .masonry-item img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .masonry-item .creator-info {
+        padding: 0.5em;
+        background-color: #f8f8f8;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+        text-align: center;
+    }
+
+    .masonry-item .creator-username {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9em;
+        text-decoration: none;
+        display: block;
+        padding: 0.25em 0;
+        transition: color 0.2s ease;
+    }
+
+    .masonry-item .creator-username:hover {
+        color: #007bff;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .masonry-grid {
+            column-count: 4;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .masonry-grid {
+            column-count: 3;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .masonry-grid {
+            column-count: 2;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .masonry-grid {
+            column-count: 2;
+        }
+    }
+    </style>
+    <div class="container-fluid">
+        <div class="masonry-grid my-[40px]">
+            {% for photo in photos %}
+                <div class="masonry-item">
+                    <a href="{% url 'website:creator_profile' photo.creator_id %}">
+                        <img src="{{ photo.url }}" width="200" height="300" alt="Creator photo">
+                    </a>
+                    <div class="creator-info">
+                        <a href="{% url 'website:creator_profile' photo.creator_id %}"
+                           class="creator-username">@{{ photo.creator_username }}</a>
+                    </div>
+                </div>
+            {% empty %}
+                <p>No photos to display.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

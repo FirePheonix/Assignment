@@ -1,0 +1,1479 @@
+{% load static %}
+{% load website_tags %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>
+            {% block title %}Gemnar - Generation Marketing{% endblock %}
+        </title>
+        <meta name="description"
+              content="{% block description %}Generation Marketing Platform{% endblock %}" />
+        <meta name="keywords"
+              content="{% block keywords %}marketing, generation, business{% endblock %}" />
+        <meta name="author" content="{% block author %}Gemnar{% endblock %}" />
+        <link rel="stylesheet"
+              href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" />
+        <!--Replace with your tailwind.css once created-->
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700"
+              rel="stylesheet" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+              rel="stylesheet" />
+        <!-- Define your gradient here - use online tools to find a gradient matching your branding-->
+        <script src="https://js.sentry-cdn.com/02a65f7dc5ca69de6c7f8d28b92a3959.min.js"
+                crossorigin="anonymous"></script>
+        <script src="https://gemnar.com/analytics/GA-E1EC78610516D5CF/script.js"></script>
+        <style>
+      .gradient {
+        background: linear-gradient(90deg, #d53369 0%, #daae51 100%);
+      }
+        </style>
+        {% block extra_head %}{% endblock %}
+        {% block extra_css %}{% endblock %}
+        <!-- Global Tailwind form styling -->
+        <style>
+      /* Global form input styling using Tailwind classes */
+      input:not([type="checkbox"]):not([type="radio"]), 
+      textarea, 
+      select {
+        @apply text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent;
+      }
+      
+      input::placeholder, 
+      textarea::placeholder {
+        @apply text-gray-400;
+      }
+      
+      /* Form labels */
+      label {
+        @apply text-gray-700 font-medium;
+      }
+      
+      /* Ensure form containers have proper text color */
+      .bg-white, 
+      .bg-gray-50, 
+      .bg-gray-100 {
+        @apply text-gray-800;
+      }
+      
+      /* Override any white text inheritance in forms */
+      form {
+        @apply text-gray-800;
+      }
+      
+      /* Specific input field styling */
+      input[type="text"], 
+      input[type="email"], 
+      input[type="password"], 
+      input[type="tel"], 
+      input[type="url"], 
+      input[type="number"], 
+      textarea {
+        @apply text-gray-800 bg-white placeholder-gray-400;
+      }
+      
+      /* Button styling consistency */
+      button[type="submit"] {
+        @apply text-white font-bold;
+      }
+      
+      /* Checkbox and radio button labels */
+      input[type="checkbox"] + span,
+      input[type="radio"] + span {
+        @apply text-gray-700;
+      }
+        </style>
+        <!-- Favicon -->
+        <link rel="icon" type="image/png" href="{% static 'images/favicon.png' %}">
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- HTMX -->
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <!-- Custom CSS -->
+        <style>
+            /* Gradient Text */
+            .gradient-text {
+                background: linear-gradient(to right, #d53369 0%, #daae51 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            
+            /* Gradient Border */
+            .gradient-border {
+                position: relative;
+                border: double 1px transparent;
+                border-radius: 0.5rem;
+                background-image: linear-gradient(white, white), 
+                                linear-gradient(to right, #d53369, #daae51);
+                background-origin: border-box;
+                background-clip: padding-box, border-box;
+            }
+            
+            /* Fix for input text color */
+            input[type="text"],
+            input[type="number"],
+            input[type="email"],
+            input[type="password"],
+            input[type="search"],
+            input[type="tel"],
+            input[type="url"],
+            textarea,
+            select {
+                color: #000000 !important;
+            }
+
+            /* Placeholder color */
+            input::placeholder,
+            textarea::placeholder {
+                color: #6B7280 !important;
+            }
+
+            /* Fix white text on white background issues */
+            /* Ensure all white/light backgrounds have dark text */
+            .bg-white, 
+            .bg-gray-50, 
+            .bg-gray-100, 
+            .bg-gray-200,
+            .bg-white * {
+                color: #1f2937 !important;
+            }
+
+            /* Ensure form containers have proper text colors */
+            form, 
+            .form-container,
+            .auth-form * {
+                color: #374151 !important;
+            }
+
+            /* Override white text for content areas */
+            .content-area,
+            .main-content,
+            .card,
+            .container * {
+                color: #1f2937 !important;
+            }
+
+            /* Specific overrides for common elements */
+            p, h1, h2, h3, h4, h5, h6, div, span, label {
+                color: inherit;
+            }
+
+            /* Keep navigation colors as intended */
+            nav a, 
+            #nav-content a {
+                color: #000000 !important;
+            }
+
+            /* Ensure dropdown text is visible */
+            .nav-dropdown a,
+            .nav-dropdown div {
+                color: #374151 !important;
+            }
+
+            /* Button text should remain visible */
+            button {
+                color: inherit;
+            }
+
+            /* Make sure any white containers have dark text */
+            [class*="bg-white"] *,
+            [class*="bg-gray-"] * {
+                color: #1f2937 !important;
+            }
+
+            /* Links should maintain their intended colors */
+            a {
+                color: #d53369;
+            }
+
+            a:hover {
+                color: #daae51;
+            }
+
+            /* Ensure error messages are visible */
+            .error,
+            .errorlist,
+            .alert {
+                color: #dc2626 !important;
+            }
+
+            /* Success messages */
+            .success {
+                color: #059669 !important;
+            }
+
+            /* Warning messages */
+            .warning {
+                color: #d97706 !important;
+            }
+
+            /* Info messages */
+            .info {
+                color: #2563eb !important;
+            }
+
+            /* Navigation Dropdown Styles */
+            .nav-dropdown {
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+            }
+            
+            .group:hover .nav-dropdown {
+                transform: translateY(0);
+            }
+            
+            /* Mobile navigation improvements */
+            @media (max-width: 1024px) {
+                /* Mobile nav container */
+                #nav-content {
+                    max-height: calc(100vh - 80px);
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
+                    position: fixed !important;
+                    top: 64px;
+                    left: 0;
+                    right: 0;
+                    z-index: 40;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                
+                /* Mobile dropdown improvements */
+                .group .nav-dropdown {
+                    position: static !important;
+                    opacity: 1 !important;
+                    visibility: visible !important;
+                    transform: none !important;
+                    box-shadow: none !important;
+                    margin-top: 0 !important;
+                    background: #f9fafb !important;
+                    border-radius: 0 !important;
+                    width: 100% !important;
+                    max-height: none !important;
+                    display: none; /* Hidden by default, will be shown via JS */
+                }
+                
+                /* Show dropdown when active */
+                .group.mobile-dropdown-active .nav-dropdown {
+                    display: block !important;
+                }
+                
+                .group .nav-dropdown .py-1 {
+                    padding: 0;
+                }
+                
+                .group .nav-dropdown a {
+                    padding: 12px 24px !important;
+                    display: block;
+                    border-bottom: 1px solid #e5e7eb;
+                    font-size: 14px;
+                    transition: background-color 0.2s ease;
+                }
+                
+                .group .nav-dropdown a:hover {
+                    background-color: #e5e7eb !important;
+                }
+                
+                /* Mobile nav items */
+                #nav-content > ul > li {
+                    width: 100%;
+                    border-bottom: 1px solid #e5e7eb;
+                }
+                
+                #nav-content > ul > li:last-child {
+                    border-bottom: none;
+                }
+                
+                #nav-content > ul > li > a {
+                    display: flex !important;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                    padding: 16px 20px !important;
+                    font-size: 16px;
+                    font-weight: 500;
+                }
+                
+                /* Mobile dropdown toggle arrow */
+                .mobile-dropdown-toggle {
+                    transition: transform 0.3s ease;
+                }
+                
+                .group.mobile-dropdown-active .mobile-dropdown-toggle {
+                    transform: rotate(180deg);
+                }
+                
+                /* Smooth scroll for mobile nav */
+                #nav-content {
+                    scroll-behavior: smooth;
+                }
+                
+                /* Mobile nav header */
+                .mobile-nav-header {
+                    position: sticky;
+                    top: 0;
+                    background: inherit;
+                    z-index: 41;
+                }
+                
+                /* Dashboard button mobile styling */
+                #nav-content .bg-gradient-to-r {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                    margin: 16px 20px !important;
+                    text-align: center;
+                    border-radius: 8px;
+                }
+                
+                /* Get started button mobile styling */
+                #navAction {
+                    margin: 16px 20px !important;
+                    text-align: center;
+                    border-radius: 8px;
+                }
+            }
+
+            .logo-pop {
+                background: white;
+                padding: 0.25rem 1.25rem;
+                border-radius: 2rem;
+                box-shadow: 0 4px 16px 0 rgba(0,0,0,0.10), 0 1.5px 4px 0 rgba(0,0,0,0.08);
+                transition: box-shadow 0.2s;
+            }
+            .logo-pop:hover {
+                box-shadow: 0 8px 24px 0 rgba(0,0,0,0.18), 0 2px 8px 0 rgba(0,0,0,0.12);
+            }
+
+            /* Tooltip styles */
+            .tooltip {
+                position: relative;
+                display: inline-block;
+                cursor: pointer;
+                border-bottom: 1px dotted #666;
+            }
+
+            .tooltip .tooltiptext {
+                visibility: hidden;
+                width: 180px;
+                background-color: #fff;
+                color: #000;
+                text-align: center;
+                border-radius: 6px;
+                padding: 8px 12px;
+                position: absolute;
+                z-index: 1;
+                bottom: 150%;
+                left: 50%;
+                margin-left: -90px;
+                opacity: 0;
+                transition: opacity 0.3s;
+                font-size: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                border: 1px solid #e5e7eb;
+            }
+
+            .tooltip .tooltiptext::after {
+                content: "";
+                position: absolute;
+                top: 100%;
+                left: 50%;
+                margin-left: -5px;
+                border-width: 5px;
+                border-style: solid;
+                border-color: #fff transparent transparent transparent;
+            }
+
+            .tooltip:hover .tooltiptext {
+                visibility: visible;
+                opacity: 1;
+            }
+
+            .logoo {
+                transform: scale(2);
+            }
+        </style>
+    </head>
+    <body class="leading-normal tracking-normal gradient text-white font-sans min-h-screen flex flex-col">
+        <!--Nav-->
+        <nav id="header" class="fixed w-full z-30 top-0 text-white">
+            <div class="w-full container mx-auto flex flex-wrap items-center justify-between mt-0 py-2 relative">
+                <div class="pl-4 flex items-center relative z-10">
+                    <a class="toggleColour text-white no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
+                       href="{% url 'website:index' %}">
+                        <img src="{% static 'images/logo_white.png' %}?v=1234567890"
+                             alt="Gemnar Logo"
+                             width="auto"
+                             height="auto"
+                             class="h-16 lg:h-20 inline mr-2 relative z-10 logoo" />
+                    </a>
+                </div>
+                <div class="block lg:hidden pr-4">
+                    <button id="nav-toggle"
+                            class="flex items-center p-1 text-pink-800 hover:text-gray-900 focus:outline-none focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
+                        <svg class="fill-current h-6 w-6"
+                             viewBox="0 0 20 20"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <title>Menu</title>
+                            <path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden mt-2 lg:mt-0 bg-white lg:bg-transparent text-black p-4 lg:p-0 z-20"
+                     id="nav-content">
+                    <ul class="list-reset lg:flex justify-end flex-1 items-center">
+                        <!-- Check if we're in organization/brand context -->
+                        {% if 'organizations' in request.path or '/brands/' in request.path or organization and brand %}
+                            <!-- Brand/Organization Navigation -->
+                            <li class="mr-3">
+                                <a class="inline-block py-2 px-4 text-black font-bold no-underline"
+                                   href="{% url 'website:index' %}">Home</a>
+                            </li>
+                            <!-- Twitter Management -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="twitter">
+                                    <i class="fab fa-twitter mr-1"></i>Twitter
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        {% if organization and brand %}
+                                            <a href="{% url 'brand_tweet_queue' organization.pk brand.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📅 Tweet Queue
+                                            </a>
+                                            <a href="{% url 'organization_brand_connect_twitter' organization.pk brand.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🔗 Connect Twitter
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'website:tweet_dashboard' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            📊 Dashboard
+                                        </a>
+                                        <a href="{% url 'website:tweet_analytics' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            📈 Analytics
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Instagram Management -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="instagram">
+                                    <i class="fab fa-instagram mr-1"></i>Instagram
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        {% if organization and brand %}
+                                            <a href="{% url 'brand_instagram_queue' organization.pk brand.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📅 Instagram Queue
+                                            </a>
+                                            <a href="{% url 'organization_brand_connect_instagram' organization.pk brand.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🔗 Connect Instagram
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'website:text_to_image' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            🎨 AI Image Generator
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- CRM -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="crm">
+                                    <i class="fas fa-users mr-1"></i>CRM
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        {% if organization %}
+                                            <a href="{% url 'crm_dashboard' organization.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📊 Dashboard
+                                            </a>
+                                            <a href="{% url 'crm_contact_list' organization.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                👥 Contacts
+                                            </a>
+                                            <a href="{% url 'crm_company_list' organization.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🏢 Companies
+                                            </a>
+                                            <a href="{% url 'crm_deal_list' organization.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                💼 Deals
+                                            </a>
+                                            <a href="{% url 'crm_activity_list' organization.pk %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📋 Activities
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% else %}
+                            <!-- Regular Navigation -->
+                            <li class="mr-3">
+                                <a class="inline-block py-2 px-4 text-black font-bold no-underline"
+                                   href="{% url 'website:index' %}">Home</a>
+                            </li>
+                            <li class="mr-3">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
+                                   href="{% url 'website:services' %}">Services</a>
+                            </li>
+                            <li class="mr-3">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
+                                   href="{% url 'website:feed' %}">Feed</a>
+                            </li>
+                            <!-- Referrals Dropdown -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="referrals">
+                                    Referrals
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        {% if user.is_authenticated %}
+                                            <a href="{% url 'website:referral_dashboard' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📊 My Dashboard
+                                            </a>
+                                            <a href="{% url 'website:company_invitation' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🤝 Invite Companies
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'website:leaderboard' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            🏆 Leaderboard
+                                        </a>
+                                        {% if not user.is_authenticated %}
+                                            <div class="px-4 py-2 text-xs text-gray-500 border-t">
+                                                <a href="{% url 'account_login' %}"
+                                                   class="text-pink-600 hover:text-pink-700">Sign in</a> to access your referral tools
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Tools Dropdown -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="tools">
+                                    Tools
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-64 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        {% if user.is_authenticated %}
+                                            <div class="px-4 py-2 text-xs text-gray-500 font-semibold border-b">AI TOOLS</div>
+                                            <a href="{% url 'website:text_to_image' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🎨 AI Image Generator
+                                            </a>
+                                            <div class="border-t my-1"></div>
+                                            <div class="px-4 py-2 text-xs text-gray-500 font-semibold">SOCIAL MEDIA</div>
+                                            <a href="{% url 'website:tweet_dashboard' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="fab fa-twitter mr-1"></i>Tweet Dashboard
+                                            </a>
+                                            <a href="{% url 'website:tweet_history' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="fab fa-twitter mr-1"></i>Tweet History
+                                            </a>
+                                            <a href="{% url 'website:tweet_analytics' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="fab fa-twitter mr-1"></i>Tweet Analytics
+                                            </a>
+                                            <div class="border-t my-1"></div>
+                                            <div class="px-4 py-2 text-xs text-gray-500 font-semibold">ANALYTICS</div>
+                                            <a href="{% url 'website:referral_dashboard' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🤝 Referral Dashboard
+                                            </a>
+                                        {% else %}
+                                            <div class="px-4 py-2 text-sm text-gray-500">
+                                                <a href="{% url 'account_login' %}"
+                                                   class="text-pink-600 hover:text-pink-700">Sign in</a> to access tools
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                            <!-- Content Dropdown -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="content">
+                                    Content
+                                    <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </a>
+                                <div class="nav-dropdown absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        <a href="{% url 'website:blog' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">📝 Blog</a>
+                                        {% if user.is_authenticated %}
+                                            <a href="{% url 'website:blog_create' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                ✍️ Create Post
+                                            </a>
+                                            <a href="{% url 'website:blog_my_posts' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📄 My Posts
+                                            </a>
+                                            <div class="border-t my-1"></div>
+                                            <a href="{% url 'chat:chat_list' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">💬 Chat</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            {# AI Credits badge #}
+                            {% if current_brand %}
+                                <li class="mr-3">
+                                    <a href="{% url 'organization_brand_credits' current_brand.organization.id current_brand.id %}"
+                                       class="inline-flex items-center gap-2 no-underline py-2 px-3 rounded-lg bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition-colors"
+                                       title="AI Credits balance for {{ current_brand.name }}">
+                                        <span class="text-xs uppercase tracking-wide">AI Credits</span>
+                                        <span class="text-sm font-semibold">{{ current_brand_credits }}</span>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            <!-- Dashboard Button -->
+                            <li class="mr-3">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+                                   href="{% url 'website:landing' %}">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                </a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <!-- Messages Icon with Count -->
+                            <li class="mr-3">
+                                <a href="{% url 'chat:chat_list' %}"
+                                   class="inline-block text-black no-underline hover:text-gray-800 py-2 px-2 relative"
+                                   title="Messages">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                    </svg>
+                                    {% if unread_messages_count > 0 %}
+                                        <span class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full min-w-[20px] h-5">
+                                            {% if unread_messages_count > 99 %}
+                                                99+
+                                            {% else %}
+                                                {{ unread_messages_count }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <!-- User Menu Dropdown -->
+                            <li class="mr-3 relative group">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4 cursor-pointer mobile-dropdown-trigger"
+                                   href="#"
+                                   data-dropdown="user">
+                                    <div class="flex items-center">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-2">
+                                            {{ user.username|first|upper }}
+                                        </div>
+                                        <span>{{ user.username|truncatechars:10 }}</span>
+                                        <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </a>
+                                <div class="nav-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                    <div class="py-1">
+                                        <div class="px-4 py-2 text-sm text-gray-500 border-b">
+                                            Signed in as <strong>{{ user.username }}</strong>
+                                        </div>
+                                        <a href="{% url 'organization_list' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            🏢 My Organizations
+                                        </a>
+                                        <a href="/landing/"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            📊 Dashboard
+                                        </a>
+                                        {% if user.is_superuser %}
+                                            <div class="border-t my-1"></div>
+                                            <a href="{% url 'admin_dashboard' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                📊 Admin Dashboard
+                                            </a>
+                                            <a href="{% url 'admin:index' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                ⚙️ Admin Panel
+                                            </a>
+                                            <div class="border-t my-1"></div>
+                                        {% endif %}
+                                        <a href="{% url 'account_logout' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">🚪 Logout</a>
+                                    </div>
+                                </div>
+                            </li>
+                        {% else %}
+                            <li class="mr-3">
+                                <a class="inline-block text-black no-underline hover:text-gray-800 hover:text-underline py-2 px-4"
+                                   href="{% url 'account_login' %}">Login</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                    {% if not user.is_authenticated %}
+                        <!-- Get Started Dropdown -->
+                        <div class="relative group">
+                            <a href="{% url 'website:signup' %}"
+                               id="navAction"
+                               class="mx-auto lg:mx-0 hover:underline bg-white text-gray-800 font-bold rounded-full mt-4 lg:mt-0 py-4 px-8 shadow opacity-75 focus:outline-none focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out mobile-dropdown-trigger"
+                               data-dropdown="getstarted">
+                                Get Started
+                                <svg class="w-4 h-4 inline ml-1 mobile-dropdown-toggle lg:hidden"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </a>
+                            <div class="nav-dropdown absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50">
+                                <div class="py-1">
+                                    <a href="{% url 'website:signup' %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        👤 General Signup
+                                    </a>
+                                    <a href="{% url 'website:creator_step1' %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        🎨 Join as Creator
+                                    </a>
+                                    <a href="{% url 'website:brand_signup' %}"
+                                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        🏢 Join as Business
+                                    </a>
+                                    <div class="border-t my-1"></div>
+                                    <a href="{% url 'website:landing' %}"
+                                       class="block px-4 py-2 text-sm text-gray-500 hover:bg-gray-100">
+                                        🚀 Landing Page
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <hr class="border-b border-gray-100 opacity-25 my-0 py-0" />
+        </nav>
+        <!-- Main Content -->
+        <div class="pt-20 lg:pt-24 flex-grow">
+            <!-- Django Messages -->
+            {% if messages %}
+                <div class="container mx-auto px-4 py-4">
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg shadow-md border-l-4 {% if message.tags == 'error' %}bg-red-50 border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-50 border-green-400 text-green-700{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-400 text-yellow-700{% elif message.tags == 'info' %}bg-blue-50 border-blue-400 text-blue-700{% else %}bg-gray-50 border-gray-400 text-gray-700{% endif %}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    {% if message.tags == 'error' %}
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% elif message.tags == 'success' %}
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% elif message.tags == 'warning' %}
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% elif message.tags == 'info' %}
+                                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
+                                            </path>
+                                        </svg>
+                                    {% endif %}
+                                    <span class="font-medium">{{ message }}</span>
+                                </div>
+                                <button type="button"
+                                        class="text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                                        onclick="this.parentElement.parentElement.style.display='none'">
+                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% block extra_body %}
+                {% block content %}
+                {% endblock content %}
+            {% endblock extra_body %}
+        </div>
+        <!--Footer-->
+        <footer class="bg-white">
+            <div class="container mx-auto px-8">
+                <div class="w-full flex flex-col md:flex-row py-6">
+                    <div class="flex-1 mb-6 text-black">
+                        <a class="text-pink-600 no-underline hover:no-underline font-bold text-2xl lg:text-4xl"
+                           href="{% url 'website:index' %}">
+                            <img src="{% static 'images/logo.png' %}?v=1234567890"
+                                 alt="Gemnar Logo"
+                                 width="auto"
+                                 height="auto"
+                                 class="h-8 inline mr-2" />
+                        </a>
+                    </div>
+                    <div class="flex-1">
+                        <p class="uppercase text-gray-500 md:mb-6">Company</p>
+                        <ul class="list-reset mb-6">
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:about' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-info-circle mr-2 text-sm"></i>About Us
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:blog' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-blog mr-2 text-sm"></i>Blog
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:contact' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-envelope mr-2 text-sm"></i>Contact
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1">
+                        <p class="uppercase text-gray-500 md:mb-6">Support</p>
+                        <ul class="list-reset mb-6">
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:help' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-question-circle mr-2 text-sm"></i>Help Center
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:contact' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-headset mr-2 text-sm"></i>Contact Support
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:status' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-heartbeat mr-2 text-sm"></i>System Status
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1">
+                        <p class="uppercase text-gray-500 md:mb-6">Legal</p>
+                        <ul class="list-reset mb-6">
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:privacy' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-shield-alt mr-2 text-sm"></i>Privacy Policy
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="{% url 'website:terms' %}"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-file-contract mr-2 text-sm"></i>Terms of Service
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="#"
+                                   id="report-issue-link"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <i class="fas fa-bug mr-2 text-sm"></i>Report an Issue
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="flex-1">
+                        <p class="uppercase text-gray-500 md:mb-6">Follow Us</p>
+                        <ul class="list-reset mb-6">
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="https://www.instagram.com/gemnar_/"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                    </svg>
+                                    Instagram
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="https://twitter.com/Gemnar_"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                    </svg>
+                                    Twitter
+                                </a>
+                            </li>
+                            <li class="mt-2 inline-block mr-2 md:block md:mr-0">
+                                <a href="https://reddit.com/user/Gemnar_ai"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="no-underline hover:underline text-gray-800 hover:text-pink-500 flex items-center">
+                                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z" />
+                                    </svg>
+                                    Reddit
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-100">
+                <div class="container mx-auto px-8">
+                    <div class="w-full text-center py-4">
+                        {% get_git_commit_info as git_info %}
+                        <p class="text-gray-600 text-sm">
+                            © {{ current_year }} Gemnar. All rights reserved. Last modified: <span class="tooltip">{{ git_info.date }}<span class="tooltiptext">Git commit: {{ git_info.hash }}</span></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- Report an Issue Modal -->
+        <div id="report-issue-modal"
+             class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Report an Issue</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <form id="report-issue-form">
+                            {% csrf_token %}
+                            <div class="mb-4">
+                                <input type="text"
+                                       id="issue-title"
+                                       name="title"
+                                       placeholder="Issue Title"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                       required>
+                            </div>
+                            <div class="mb-4">
+                                <textarea id="issue-body"
+                                          name="body"
+                                          placeholder="Describe the issue in detail..."
+                                          rows="4"
+                                          class="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                          required></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label for="current-url" class="block text-sm font-medium text-gray-700">Current Page URL</label>
+                                <input type="url"
+                                       id="current-url"
+                                       name="current_url"
+                                       readonly
+                                       class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 text-sm">
+                            </div>
+                            <div class="mb-4">
+                                <button type="button"
+                                        id="take-screenshot-btn"
+                                        class="w-full px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 text-sm">
+                                    📸 Take Screenshot Now
+                                </button>
+                                <div id="screenshot-preview" class="mt-2 hidden">
+                                    <img id="screenshot-image"
+                                         width="400"
+                                         height="128"
+                                         class="w-full max-h-32 object-contain border rounded"
+                                         alt="Screenshot preview">
+                                    <p class="text-xs text-gray-500 mt-1">Screenshot captured and will be attached</p>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="issue-image" class="block text-sm font-medium text-gray-700">Or upload an image manually</label>
+                                <input type="file"
+                                       id="issue-image"
+                                       name="image"
+                                       accept="image/*"
+                                       class="mt-1 w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                        </form>
+                    </div>
+                    <div id="form-feedback" class="text-sm mb-4"></div>
+                    <div class="items-center px-4 py-3">
+                        <button id="submit-issue-btn"
+                                class="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Submit Issue
+                        </button>
+                        <button id="close-modal-btn"
+                                class="mt-2 px-4 py-2 bg-gray-200 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- JavaScript -->
+        <script>
+      var scrollpos = window.scrollY;
+      var header = document.getElementById("header");
+      var navcontent = document.getElementById("nav-content");
+      var navaction = document.getElementById("navAction");
+      var brandname = document.getElementById("brandname");
+      var toToggle = document.querySelectorAll(".toggleColour");
+
+      document.addEventListener("scroll", function () {
+        /*Apply classes for slide in bar*/
+        scrollpos = window.scrollY;
+
+        if (scrollpos > 10) {
+          header.classList.add("bg-white");
+          navaction.classList.remove("bg-white");
+          navaction.classList.add("gradient");
+          navaction.classList.remove("text-gray-800");
+          navaction.classList.add("text-white");
+          //Use to switch toggleColour colours
+          for (var i = 0; i < toToggle.length; i++) {
+            toToggle[i].classList.add("text-gray-800");
+            toToggle[i].classList.remove("text-white");
+          }
+          header.classList.add("shadow");
+          navcontent.classList.remove("bg-gray-100");
+          navcontent.classList.add("bg-white");
+        } else {
+          header.classList.remove("bg-white");
+          navaction.classList.remove("gradient");
+          navaction.classList.add("bg-white");
+          navaction.classList.remove("text-white");
+          navaction.classList.add("text-gray-800");
+          //Use to switch toggleColour colours
+          for (var i = 0; i < toToggle.length; i++) {
+            toToggle[i].classList.add("text-white");
+            toToggle[i].classList.remove("text-gray-800");
+          }
+
+          header.classList.remove("shadow");
+          navcontent.classList.remove("bg-white");
+          navcontent.classList.add("bg-gray-100");
+        }
+      });
+        </script>
+        <script>
+      /*Toggle dropdown list*/
+      /*https://gist.github.com/slavapas/593e8e50cf4cc16ac972afcbad4f70c8*/
+
+      var navMenuDiv = document.getElementById("nav-content");
+      var navMenu = document.getElementById("nav-toggle");
+
+      // Mobile dropdown handling
+      function isMobile() {
+        return window.innerWidth <= 1024;
+      }
+
+      // Handle mobile dropdown toggles
+      document.addEventListener('DOMContentLoaded', function() {
+        const mobileDropdownTriggers = document.querySelectorAll('.mobile-dropdown-trigger');
+        
+        mobileDropdownTriggers.forEach(function(trigger) {
+          trigger.addEventListener('click', function(e) {
+            if (isMobile()) {
+              // Special handling for Get Started button
+              if (this.id === 'navAction') {
+                const parentGroup = this.closest('.group');
+                const dropdown = parentGroup.querySelector('.nav-dropdown');
+                
+                // If dropdown is currently hidden, show it instead of navigating
+                if (!parentGroup.classList.contains('mobile-dropdown-active')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  
+                  // Close all other dropdowns
+                  document.querySelectorAll('.group').forEach(function(group) {
+                    if (group !== parentGroup) {
+                      group.classList.remove('mobile-dropdown-active');
+                    }
+                  });
+                  
+                  // Show current dropdown
+                  parentGroup.classList.add('mobile-dropdown-active');
+                  return;
+                }
+                // If dropdown is already shown, allow normal navigation
+              } else {
+                // Regular dropdown behavior
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const parentGroup = this.closest('.group');
+                const dropdown = parentGroup.querySelector('.nav-dropdown');
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.group').forEach(function(group) {
+                  if (group !== parentGroup) {
+                    group.classList.remove('mobile-dropdown-active');
+                  }
+                });
+                
+                // Toggle current dropdown
+                parentGroup.classList.toggle('mobile-dropdown-active');
+              }
+            }
+          });
+        });
+      });
+
+      document.onclick = check;
+      function check(e) {
+        var target = (e && e.target) || (event && event.srcElement);
+
+        //Nav Menu
+        if (!checkParent(target, navMenuDiv)) {
+          // click NOT on the menu
+          if (checkParent(target, navMenu)) {
+            // click on the link
+            if (navMenuDiv.classList.contains("hidden")) {
+              navMenuDiv.classList.remove("hidden");
+            } else {
+              navMenuDiv.classList.add("hidden");
+              // Close all mobile dropdowns when main nav is closed
+              if (isMobile()) {
+                document.querySelectorAll('.group').forEach(function(group) {
+                  group.classList.remove('mobile-dropdown-active');
+                });
+              }
+            }
+          } else {
+            // click both outside link and outside menu, hide menu
+            navMenuDiv.classList.add("hidden");
+            // Close all mobile dropdowns
+            if (isMobile()) {
+              document.querySelectorAll('.group').forEach(function(group) {
+                group.classList.remove('mobile-dropdown-active');
+              });
+            }
+          }
+        }
+      }
+      
+      function checkParent(t, elm) {
+        while (t.parentNode) {
+          if (t == elm) {
+            return true;
+          }
+          t = t.parentNode;
+        }
+        return false;
+      }
+
+      // Handle window resize to reset dropdowns
+      window.addEventListener('resize', function() {
+        if (!isMobile()) {
+          document.querySelectorAll('.group').forEach(function(group) {
+            group.classList.remove('mobile-dropdown-active');
+          });
+        }
+      });
+        </script>
+        {% block extra_js %}
+        {% endblock %}
+        <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('report-issue-modal');
+            const openModalLink = document.getElementById('report-issue-link');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const submitIssueBtn = document.getElementById('submit-issue-btn');
+            const form = document.getElementById('report-issue-form');
+            const feedbackDiv = document.getElementById('form-feedback');
+            const currentUrlInput = document.getElementById('current-url');
+            const takeScreenshotBtn = document.getElementById('take-screenshot-btn');
+            const screenshotPreview = document.getElementById('screenshot-preview');
+            const screenshotImage = document.getElementById('screenshot-image');
+            
+            // Exit early if modal elements are not found (e.g., on pages that don't include the modal)
+            if (!modal || !openModalLink) {
+                return;
+            }
+            
+            let capturedScreenshotBlob = null;
+
+            // Function to capture screenshot using html2canvas
+            async function captureScreenshot() {
+                try {
+                    // Load html2canvas if not already loaded
+                    if (typeof html2canvas === 'undefined') {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                        document.head.appendChild(script);
+                        await new Promise(resolve => script.onload = resolve);
+                    }
+
+                    // Ensure modal is hidden for clean screenshot (with null check)
+                    if (modal) {
+                        const modalWasVisible = !modal.classList.contains('hidden');
+                        if (modalWasVisible) {
+                            modal.classList.add('hidden');
+                        }
+                    }
+
+                    // Wait a moment for any animations/transitions to complete
+                    await new Promise(resolve => setTimeout(resolve, 100));
+
+                    // Capture the screenshot of the current page state
+                    const canvas = await html2canvas(document.body, {
+                        height: window.innerHeight,
+                        width: window.innerWidth,
+                        scrollX: window.scrollX,
+                        scrollY: window.scrollY,
+                        useCORS: true,
+                        allowTaint: true,
+                        scale: 0.6, // Good balance between quality and file size
+                        backgroundColor: '#ffffff'
+                    });
+
+                    // Convert canvas to blob
+                    return new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/png', 0.8);
+                    });
+                } catch (error) {
+                    console.error('Screenshot capture failed:', error);
+                    return null;
+                }
+            }
+
+            // Function to get browser and system info
+            function getBrowserInfo() {
+                const userAgent = navigator.userAgent;
+                const platform = navigator.platform;
+                const language = navigator.language;
+                const viewport = `${window.innerWidth}x${window.innerHeight}`;
+                const screen = `${screen.width}x${screen.height}`;
+                
+                return `
+**Technical Information:**
+- URL: ${window.location.href}
+- User Agent: ${userAgent}
+- Platform: ${platform}
+- Language: ${language}
+- Viewport: ${viewport}
+- Screen Resolution: ${screen}
+- Timestamp: ${new Date().toISOString()}
+                `.trim();
+            }
+
+            if (openModalLink) {
+                openModalLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    // Auto-populate the current URL
+                    if (currentUrlInput) {
+                        currentUrlInput.value = window.location.href;
+                    }
+                    
+                    // Immediately capture screenshot BEFORE showing modal
+                    if (takeScreenshotBtn) {
+                        takeScreenshotBtn.textContent = 'Capturing page...';
+                        takeScreenshotBtn.disabled = true;
+                    }
+                    
+                    captureScreenshot().then(screenshotBlob => {
+                        if (screenshotBlob && screenshotImage && screenshotPreview) {
+                            capturedScreenshotBlob = screenshotBlob;
+                            // Show preview
+                            const imageUrl = URL.createObjectURL(screenshotBlob);
+                            screenshotImage.src = imageUrl;
+                            screenshotPreview.classList.remove('hidden');
+                            
+                            // Update button text to indicate success
+                            if (takeScreenshotBtn) {
+                                takeScreenshotBtn.textContent = '✅ Screenshot Captured';
+                            }
+                        } else {
+                            if (takeScreenshotBtn) {
+                                takeScreenshotBtn.textContent = '❌ Screenshot Failed';
+                            }
+                        }
+                        
+                        // Now show the modal with the screenshot already captured
+                        if (modal) {
+                            modal.classList.remove('hidden');
+                        }
+                        if (takeScreenshotBtn) {
+                            takeScreenshotBtn.disabled = false;
+                        }
+                    }).catch(error => {
+                        console.error('Screenshot failed:', error);
+                        if (takeScreenshotBtn) {
+                            takeScreenshotBtn.textContent = '❌ Screenshot Failed';
+                            takeScreenshotBtn.disabled = false;
+                        }
+                        
+                        // Show modal anyway even if screenshot failed
+                        if (modal) {
+                            modal.classList.remove('hidden');
+                        }
+                    });
+                });
+            }
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', function () {
+                    if (modal) {
+                        modal.classList.add('hidden');
+                    }
+                    if (form) {
+                        form.reset();
+                    }
+                    if (feedbackDiv) {
+                        feedbackDiv.innerHTML = '';
+                    }
+                    if (screenshotPreview) {
+                        screenshotPreview.classList.add('hidden');
+                    }
+                    capturedScreenshotBlob = null;
+                });
+            }
+
+            if (takeScreenshotBtn) {
+                takeScreenshotBtn.addEventListener('click', async function() {
+                    capturedScreenshotBlob = await captureScreenshot();
+                    
+                    if (capturedScreenshotBlob && screenshotImage && screenshotPreview) {
+                        // Show preview
+                        const imageUrl = URL.createObjectURL(capturedScreenshotBlob);
+                        screenshotImage.src = imageUrl;
+                        screenshotPreview.classList.remove('hidden');
+                    }
+                });
+            }
+
+            if (submitIssueBtn) {
+                submitIssueBtn.addEventListener('click', function () {
+                    submitIssueBtn.disabled = true;
+                    submitIssueBtn.textContent = 'Submitting...';
+                    if (feedbackDiv) {
+                        feedbackDiv.textContent = '';
+                    }
+
+                    if (!form) {
+                        console.error('Form not found');
+                        return;
+                    }
+
+                    const formData = new FormData(form);
+                    
+                    // Add browser and system information to the issue body
+                    const originalBody = formData.get('body');
+                    const enhancedBody = originalBody + '\n\n' + getBrowserInfo();
+                    formData.set('body', enhancedBody);
+                    
+                    // Add current URL
+                    formData.set('current_url', window.location.href);
+                    
+                    // Add screenshot if captured
+                    if (capturedScreenshotBlob) {
+                        formData.set('screenshot', capturedScreenshotBlob, 'screenshot.png');
+                    }
+
+                    fetch("{% url 'website:report_issue' %}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (feedbackDiv) {
+                                feedbackDiv.innerHTML = `<p class="text-green-600">Successfully created issue. <a href="${data.issue_url}" target="_blank" class="underline">View on GitHub</a></p>`;
+                            }
+                            if (form) {
+                                form.reset();
+                            }
+                            if (screenshotPreview) {
+                                screenshotPreview.classList.add('hidden');
+                            }
+                            capturedScreenshotBlob = null;
+                            setTimeout(() => {
+                                if (modal) {
+                                    modal.classList.add('hidden');
+                                }
+                                if (feedbackDiv) {
+                                    feedbackDiv.innerHTML = '';
+                                }
+                            }, 5000);
+                        } else {
+                            if (feedbackDiv) {
+                                feedbackDiv.innerHTML = `<p class="text-red-600">Error: ${data.error}</p>`;
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        if (feedbackDiv) {
+                            feedbackDiv.innerHTML = `<p class="text-red-600">An unexpected error occurred. Please try again.</p>`;
+                        }
+                    })
+                    .finally(() => {
+                        submitIssueBtn.disabled = false;
+                        submitIssueBtn.textContent = 'Submit Issue';
+                    });
+                });
+            }
+        });
+        </script>
+    </body>
+</html>

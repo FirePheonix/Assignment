@@ -1,0 +1,363 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}All Tasks Overview - Gemnar Admin{% endblock %}
+{% block extra_css %}
+    <style>
+    .overview-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .overview-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .user-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .user-item {
+        display: flex;
+        justify-content: between;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .user-item:last-child {
+        border-bottom: none;
+    }
+    
+    .task-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .task-item:hover {
+        border-color: #d1d5db;
+        background-color: #f9fafb;
+    }
+    
+    .admin-header {
+        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .category-chart {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Admin Header -->
+        <div class="admin-header">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">Task Management System Overview</h1>
+                    <p class="text-gray-300">Complete analytics and management dashboard</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-300">Last Updated</div>
+                    <div class="text-lg font-medium">{{ "now"|date:"M d, Y H:i" }}</div>
+                </div>
+            </div>
+        </div>
+        <!-- Key Statistics -->
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-value">{{ total_tasks }}</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ active_tasks }}</div>
+                <div class="stat-label">Active Tasks</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ total_applications }}</div>
+                <div class="stat-label">Total Applications</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{{ top_brands.count }}</div>
+                <div class="stat-label">Active Brands</div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Tasks by Category -->
+            <div class="overview-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Tasks by Category</h2>
+                <div class="category-chart">
+                    <canvas id="categoryChart" width="400" height="300"></canvas>
+                </div>
+                <div class="mt-4 space-y-2">
+                    {% for category, count in tasks_by_category.items %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">{{ category }}</span>
+                            <span class="text-sm font-medium text-gray-900">{{ count }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Tasks by Genre -->
+            <div class="overview-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Tasks by Genre</h2>
+                <div class="category-chart">
+                    <canvas id="genreChart" width="400" height="300"></canvas>
+                </div>
+                <div class="mt-4 space-y-2">
+                    {% for genre, count in tasks_by_genre.items %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">{{ genre }}</span>
+                            <span class="text-sm font-medium text-gray-900">{{ count }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <!-- Incentive Distribution -->
+        <div class="overview-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Incentive Type Distribution</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {% for incentive, count in tasks_by_incentive.items %}
+                    <div class="text-center p-4 border border-gray-200 rounded-lg">
+                        <div class="text-2xl font-bold text-gray-900 mb-1">{{ count }}</div>
+                        <div class="text-sm text-gray-600">{{ incentive }}</div>
+                        {% if total_tasks > 0 %}
+                            <div class="text-xs text-gray-500 mt-1">{% widthratio count total_tasks 100 %}%</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Top Brands -->
+            <div class="overview-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Brands by Task Creation</h2>
+                {% if top_brands %}
+                    <div class="user-list">
+                        {% for brand in top_brands %}
+                            <div class="user-item">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                                        {{ brand.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">{{ brand.username }}</div>
+                                        <div class="text-sm text-gray-500">
+                                            {% if brand.first_name %}{{ brand.first_name }} {{ brand.last_name }}{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold text-blue-600">{{ brand.task_count }}</div>
+                                    <div class="text-xs text-gray-500">tasks</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-center py-4">No brands with tasks yet</p>
+                {% endif %}
+            </div>
+            <!-- Top Creators -->
+            <div class="overview-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Top Creators by Applications</h2>
+                {% if top_creators %}
+                    <div class="user-list">
+                        {% for creator in top_creators %}
+                            <div class="user-item">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                                        {{ creator.username|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="font-medium text-gray-900">{{ creator.username }}</div>
+                                        <div class="text-sm text-gray-500">
+                                            {% if creator.first_name %}{{ creator.first_name }} {{ creator.last_name }}{% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold text-green-600">{{ creator.application_count }}</div>
+                                    <div class="text-xs text-gray-500">applications</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 text-center py-4">No creator applications yet</p>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Recent Tasks -->
+        <div class="overview-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Recent Tasks</h2>
+            {% if recent_tasks %}
+                <div class="space-y-4">
+                    {% for task in recent_tasks %}
+                        <div class="task-item">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <h3 class="font-medium text-gray-900 mb-1">{{ task.title }}</h3>
+                                    <p class="text-sm text-gray-600 mb-2">{{ task.description|truncatewords:15 }}</p>
+                                    <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                        <span>{{ task.get_category_display }}</span>
+                                        <span>{{ task.get_genre_display }}</span>
+                                        <span>{{ task.get_incentive_type_display }}</span>
+                                        <span>by {{ task.brand.username }}</span>
+                                        <span>{{ task.created_at|date:"M d, Y" }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end space-y-2">
+                                    <div class="flex items-center space-x-2">
+                                        {% if task.is_active %}
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                                        {% else %}
+                                            <span class="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="text-right text-xs text-gray-500">
+                                        <div>{{ task.application_count }} application{{ task.application_count|pluralize }}</div>
+                                        {% if task.pay_amount %}<div class="font-medium text-green-600">${{ task.pay_amount }}</div>{% endif %}
+                                    </div>
+                                    <a href="{% url 'website:task_detail_management' task.pk %}"
+                                       class="text-blue-600 hover:text-blue-700 text-xs">Manage →</a>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 text-center py-8">No tasks created yet</p>
+            {% endif %}
+        </div>
+        <!-- Quick Actions -->
+        <div class="overview-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{% url 'website:active_tasks_dashboard' %}"
+                   class="block p-6 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-center">
+                    <i class="fas fa-tasks text-3xl text-blue-600 mb-3"></i>
+                    <div class="font-medium text-gray-900">Manage Active Tasks</div>
+                    <div class="text-sm text-gray-500">Review and manage all active tasks</div>
+                </a>
+                <a href="{% url 'website:api_tasks_list' %}"
+                   class="block p-6 border border-gray-200 rounded-lg hover:border-green-300 hover:bg-green-50 transition-colors text-center">
+                    <i class="fas fa-list text-3xl text-green-600 mb-3"></i>
+                    <div class="font-medium text-gray-900">Browse All Tasks</div>
+                    <div class="text-sm text-gray-500">View all tasks in the system</div>
+                </a>
+                <a href="{% url 'admin:website_task_changelist' %}"
+                   class="block p-6 border border-gray-200 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-colors text-center">
+                    <i class="fas fa-cog text-3xl text-purple-600 mb-3"></i>
+                    <div class="font-medium text-gray-900">Admin Panel</div>
+                    <div class="text-sm text-gray-500">Advanced task management</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+// Category Distribution Chart
+const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+const categoryData = {
+    labels: [{% for category, count in tasks_by_category.items %}'{{ category }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for category, count in tasks_by_category.items %}{{ count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: [
+            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'
+        ],
+        borderWidth: 0
+    }]
+};
+
+new Chart(categoryCtx, {
+    type: 'doughnut',
+    data: categoryData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Genre Distribution Chart
+const genreCtx = document.getElementById('genreChart').getContext('2d');
+const genreData = {
+    labels: [{% for genre, count in tasks_by_genre.items %}'{{ genre }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for genre, count in tasks_by_genre.items %}{{ count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: [
+            '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
+        ],
+        borderWidth: 0
+    }]
+};
+
+new Chart(genreCtx, {
+    type: 'doughnut',
+    data: genreData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+    </script>
+{% endblock %}

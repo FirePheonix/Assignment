@@ -1,0 +1,23 @@
+title = "Gemnar Secret Scan Rules"
+
+[extend]
+# You can extend from the default gitleaks config if desired by uncommenting:
+# path = ".gitleaks.default.toml"
+
+[rules]
+# (Leave empty to use built-in rules.)
+
+# Allowlist for false positives (filenames or regex patterns)
+[allowlist]
+  description = "General allow list"
+  files = [
+    "poetry.lock",
+    "package.lock",
+    "static/",
+    "node_modules/",
+  ]
+  # Add regex patterns for hashes that are not secrets
+  regexes = [
+    "sha256:[0-9a-f]{64}",
+    "[A-Fa-f0-9]{64}",
+  ]

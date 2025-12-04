@@ -1,0 +1,21 @@
+.footstep {
+  position: absolute;
+  width: 20px;
+  height: 28px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 50% 40% 35% 35% / 60% 60% 40% 40%;
+  pointer-events: none;
+  animation: fade-out-footstep 1.5s linear forwards;
+  z-index: 9998;
+}
+
+@keyframes fade-out-footstep {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}

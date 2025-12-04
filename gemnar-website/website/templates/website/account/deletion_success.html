@@ -1,0 +1,99 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Account Deleted{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div class="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white rounded-lg shadow-lg border border-gray-200 text-center p-8">
+                <!-- Success Icon -->
+                <div class="w-16 h-16 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-check text-green-600 text-2xl"></i>
+                </div>
+                <!-- Title and Message -->
+                <h1 class="text-2xl font-bold text-gray-900 mb-4">Account Deleted Successfully</h1>
+                <p class="text-gray-600 mb-6">Your account and all associated data have been permanently removed from our servers.</p>
+                <!-- Confirmation Details -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-2">Deletion Summary</h3>
+                    <div class="text-xs text-gray-600 space-y-1">
+                        <p>
+                            <strong>Account:</strong> {{ summary.username }} ({{ summary.email }})
+                        </p>
+                        <p>
+                            <strong>Deleted at:</strong> {{ summary.deleted_at|slice:":19" }} UTC
+                        </p>
+                        {% if summary.notification_sent %}
+                            <p>
+                                <strong>Confirmation email:</strong> Sent to {{ summary.email }}
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- What happens next -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
+                    <h3 class="text-sm font-semibold text-blue-900 mb-2">What happens next?</h3>
+                    <ul class="text-xs text-blue-800 space-y-1">
+                        <li>• All your data has been permanently deleted</li>
+                        <li>• You will receive a confirmation email shortly</li>
+                        <li>• Your username will be available for registration in 30 days</li>
+                        <li>• Any active subscriptions have been cancelled</li>
+                    </ul>
+                </div>
+                <!-- Feedback Thank You -->
+                {% if summary.reason or summary.feedback %}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                        <p class="text-sm text-yellow-800">
+                            <i class="fas fa-heart text-yellow-600 mr-2"></i>
+                            Thank you for your feedback. It helps us improve our service.
+                        </p>
+                    </div>
+                {% endif %}
+                <!-- Action Buttons -->
+                <div class="space-y-3">
+                    <a href="/"
+                       class="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                        <i class="fas fa-home mr-2"></i>
+                        Return to Homepage
+                    </a>
+                    <div class="text-center">
+                        <p class="text-xs text-gray-500">Changed your mind? You can create a new account anytime.</p>
+                        <a href="{% url 'account_signup' %}"
+                           class="text-xs text-blue-600 hover:text-blue-500 font-medium">Sign up again</a>
+                    </div>
+                </div>
+                <!-- Support Contact -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <p class="text-xs text-gray-500">If you have any questions or concerns, please contact our support team.</p>
+                    <a href="mailto:support@gemnar.com"
+                       class="text-xs text-blue-600 hover:text-blue-500 font-medium">support@gemnar.com</a>
+                </div>
+            </div>
+            <!-- Security Note -->
+            <div class="mt-6 text-center">
+                <p class="text-xs text-gray-500">
+                    <i class="fas fa-shield-alt text-green-500 mr-1"></i>
+                    Your data has been securely deleted and cannot be recovered.
+                </p>
+            </div>
+        </div>
+    </div>
+    <script>
+// Clear any remaining session storage/local storage
+document.addEventListener('DOMContentLoaded', function() {
+    // Clear browser storage
+    if (typeof Storage !== "undefined") {
+        localStorage.clear();
+        sessionStorage.clear();
+    }
+    
+    // Clear any cached data
+    if ('caches' in window) {
+        caches.keys().then(function(names) {
+            for (let name of names) {
+                caches.delete(name);
+            }
+        });
+    }
+});
+    </script>
+{% endblock %}

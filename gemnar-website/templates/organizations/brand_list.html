@@ -1,0 +1,169 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Brands - {{ organization.name }}{% endblock %}
+{% block org_content %}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <a href="{% url 'organization_detail' organization.pk %}"
+                   class="text-blue-600 hover:underline mb-2 inline-block">← Back to {{ organization.name }}</a>
+                <h1 class="text-3xl font-bold text-gray-900">Brand Management</h1>
+                <p class="text-gray-600">Manage all brands under {{ organization.name }}</p>
+            </div>
+            <div>
+                <a href="{% url 'organization_brand_create' organization.pk %}"
+                   class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg">
+                    Add New Brand
+                </a>
+            </div>
+        </div>
+    </div>
+    {% if brands %}
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {% for brand in brands %}
+                <div class="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow">
+                    <!-- Brand Header -->
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold text-gray-900 mb-1">{{ brand.name }}</h3>
+                            {% if brand.twitter_username %}
+                                <a href="https://twitter.com/{{ brand.twitter_username }}"
+                                   target="_blank"
+                                   class="text-blue-500 hover:underline text-sm">@{{ brand.twitter_username }}</a>
+                            {% endif %}
+                        </div>
+                        {% if brand.logo %}
+                            <img src="{{ brand.logo.url }}"
+                                 alt="{{ brand.name }}"
+                                 width="48"
+                                 height="48"
+                                 class="w-12 h-12 rounded-lg object-cover">
+                        {% else %}
+                            <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <span class="text-gray-500 font-bold text-lg">{{ brand.name|first|upper }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- Brand Description -->
+                    {% if brand.description %}<p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ brand.description }}</p>{% endif %}
+                    <!-- Brand Stats -->
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Website:</span>
+                            <a href="{{ brand.url }}"
+                               target="_blank"
+                               class="text-blue-600 hover:underline truncate ml-2">
+                                {{ brand.url|slice:":30" }}
+                                {% if brand.url|length > 30 %}...{% endif %}
+                            </a>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Created:</span>
+                            <span class="text-gray-900">{{ brand.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Gemnar URL:</span>
+                            {% if brand.slug %}
+                                <a href="{% url 'website:brand_profile' brand.slug %}"
+                                   target="_blank"
+                                   class="text-blue-600 hover:underline">/{{ brand.slug }}</a>
+                            {% else %}
+                                <span class="text-gray-400">/no-slug</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Connection Status -->
+                    <div class="flex items-center space-x-2 mb-4 flex-wrap">
+                        {% if brand.has_twitter_config %}
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">✓ Twitter</span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">✗ Twitter</span>
+                        {% endif %}
+                        {% if brand.has_instagram_config %}
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">✓ Instagram</span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">✗ Instagram</span>
+                        {% endif %}
+                        {% if brand.stripe_customer_id %}
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">Stripe</span>
+                        {% endif %}
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-2">
+                        <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+                           class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg text-sm font-medium transition">
+                            Dashboard
+                        </a>
+                        {% if not brand.has_twitter_config %}
+                            <a href="{% url 'organization_brand_connect_twitter' organization.pk brand.pk %}"
+                               class="bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition">
+                                Connect Twitter
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <!-- Summary Stats -->
+        <div class="mt-8 bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Organization Summary</h3>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ brands|length }}</div>
+                    <div class="text-sm text-gray-600">Total Brands</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">
+                        {% for brand in brands %}
+                            {% if brand.has_twitter_config %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% empty %}0
+                        {% endfor %}
+                    </div>
+                    <div class="text-sm text-gray-600">Twitter Connected</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600">
+                        {% for brand in brands %}
+                            {% if brand.has_instagram_config %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% empty %}0
+                        {% endfor %}
+                    </div>
+                    <div class="text-sm text-gray-600">Instagram Connected</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">
+                        {% for brand in brands %}
+                            {% if brand.stripe_customer_id %}{{ forloop.counter0|add:1 }}{% endif %}
+                        {% empty %}0
+                        {% endfor %}
+                    </div>
+                    <div class="text-sm text-gray-600">Stripe Connected</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-indigo-600">{{ organization.users.count }}</div>
+                    <div class="text-sm text-gray-600">Team Members</div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-12">
+            <div class="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-12 h-12 text-gray-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">No brands yet</h3>
+            <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                Get started by creating your first brand. You'll be able to connect Twitter accounts and manage social media posting.
+            </p>
+            <a href="{% url 'organization_brand_create' organization.pk %}"
+               class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg inline-block">
+                Create Your First Brand
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

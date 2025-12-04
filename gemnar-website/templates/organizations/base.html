@@ -1,0 +1,11 @@
+{% extends "website/base.html" %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-4">
+            {% block org_title %}{% endblock %}
+        </h1>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            {% block org_content %}{% endblock %}
+        </div>
+    </div>
+{% endblock %}

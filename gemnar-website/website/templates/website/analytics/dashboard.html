@@ -1,0 +1,448 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Analytics Dashboard - {{ brand.name }}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <!-- Breadcrumb Navigation -->
+        {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ brand.name }} Analytics</h1>
+                        <p class="text-gray-600">{{ project.website_url }}</p>
+                    </div>
+                    <div>
+                        {% if brand.slug %}
+                            <a href="{% url 'website:brand_profile' brand.slug %}"
+                               class="text-blue-600 hover:text-blue-700">View Brand Profile</a>
+                        {% else %}
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-700">{{ brand.name }}</span>
+                                <span class="text-gray-400">•</span>
+                                {% if brand.organization %}
+                                    <a href="{% url 'organizations:organization_brand_detail' brand.organization.pk brand.pk %}"
+                                       class="text-blue-600 hover:text-blue-700 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>Add Profile URL
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-500 text-sm">
+                                        <i class="fas fa-edit mr-1"></i>Add Profile URL
+                                    </span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <!-- Total Sessions -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Total Sessions</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ total_sessions|floatformat:0 }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Last 30 days</p>
+                </div>
+                <!-- Total Page Views -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Page Views</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ total_pageviews|floatformat:0 }}</p>
+                        </div>
+                        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-eye text-green-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Last 30 days</p>
+                </div>
+                <!-- Average Session Duration -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Avg. Duration</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ avg_session_duration }}s</p>
+                        </div>
+                        <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-purple-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Time on site</p>
+                </div>
+                <!-- Average Page Load Time -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Avg. Load Time</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ avg_page_load_time|floatformat:0 }}ms</p>
+                        </div>
+                        <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-tachometer-alt text-yellow-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Page performance</p>
+                </div>
+                <!-- Bounce Rate -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Bounce Rate</p>
+                            <p class="text-3xl font-bold text-gray-900">{{ bounce_rate }}%</p>
+                        </div>
+                        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-sign-out-alt text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Single page visits</p>
+                </div>
+            </div>
+            <!-- Charts and Data -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Traffic Chart -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Traffic Overview</h3>
+                        <div class="flex space-x-2">
+                            <button class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-lg font-medium">Sessions</button>
+                            <button class="text-sm px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-lg">Page Views</button>
+                        </div>
+                    </div>
+                    <div class="h-64">
+                        <canvas id="trafficChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                <!-- Device Breakdown -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Device Types</h3>
+                    <div class="space-y-4">
+                        {% for device in device_breakdown %}
+                            <a href="{% url 'website:analytics_sessions' brand.id %}?device={{ device.device_type }}"
+                               class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer group">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-3 {% if device.device_type == 'desktop' %}bg-blue-500 {% elif device.device_type == 'mobile' %}bg-green-500 {% elif device.device_type == 'tablet' %}bg-purple-500 {% else %}bg-gray-500{% endif %}">
+                                    </div>
+                                    <span class="text-sm font-medium text-gray-900 capitalize group-hover:text-blue-600 transition-colors">{{ device.device_type }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <span class="text-sm text-gray-600 mr-3 group-hover:text-blue-600 transition-colors">{{ device.count }}</span>
+                                    <div class="w-20 bg-gray-200 rounded-full h-2">
+                                        <div class="h-2 rounded-full {% if device.device_type == 'desktop' %}bg-blue-500 {% elif device.device_type == 'mobile' %}bg-green-500 {% elif device.device_type == 'tablet' %}bg-purple-500 {% else %}bg-gray-500{% endif %}"
+                                             style="width: {{ device.count|floatformat:0|default:0 }}%"></div>
+                                    </div>
+                                    <svg class="w-4 h-4 ml-2 text-gray-400 group-hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- Conversion Funnel -->
+            {% if funnel_data %}
+                <div class="mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900">Conversion Funnel</h3>
+                            <div class="text-sm text-gray-600">
+                                Overall Conversion Rate: <span class="font-semibold text-green-600">{{ conversion_metrics.overall_conversion_rate|floatformat:1 }}%</span>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            {% for step in funnel_data %}
+                                <div class="relative">
+                                    <div class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                                                {{ forloop.counter }}
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-gray-900">{{ step.step_name }}</div>
+                                                <div class="text-sm text-gray-600">{{ step.path }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-2xl font-bold text-blue-600">{{ step.users }}</div>
+                                            <div class="text-sm text-gray-600">
+                                                {% if step.conversion_rate %}
+                                                    {{ step.conversion_rate|floatformat:1 }}% conversion
+                                                {% endif %}
+                                                {% if step.drop_off_rate %}
+                                                    <span class="text-red-600">{{ step.drop_off_rate|floatformat:1 }}% drop-off</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Conversion funnel visual -->
+                                    {% if not forloop.last %}
+                                        <div class="flex justify-center my-2">
+                                            <div class="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[15px] border-l-transparent border-r-transparent border-t-blue-400">
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <!-- Conversion metrics summary -->
+                        {% if conversion_metrics %}
+                            <div class="mt-6 pt-6 border-t border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-green-600">{{ conversion_metrics.total_visitors }}</div>
+                                        <div class="text-sm text-gray-600">Total Visitors</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-blue-600">{{ conversion_metrics.engaged_visitors }}</div>
+                                        <div class="text-sm text-gray-600">Engaged Users</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-purple-600">{{ conversion_metrics.converted_visitors }}</div>
+                                        <div class="text-sm text-gray-600">Conversions</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-2xl font-bold text-orange-600">{{ conversion_metrics.avg_time_to_convert|floatformat:1 }}s</div>
+                                        <div class="text-sm text-gray-600">Avg. Time to Convert</div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+            <!-- Bottom Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Top Pages -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-semibold text-gray-900">Top Pages</h3>
+                        <a href="{% url 'website:analytics_all_pages' brand.id %}"
+                           class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            <i class="fas fa-list mr-1"></i>View All Pages
+                        </a>
+                    </div>
+                    <div class="overflow-hidden">
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200">
+                                    <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Page</th>
+                                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Views</th>
+                                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Avg. Duration</th>
+                                    <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-3">Load Time</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                {% for page in top_pages %}
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="py-3">
+                                            <a href="{% url 'website:page_detail_analytics' brand.id page.path %}"
+                                               class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
+                                                {{ page.path|truncatechars:50 }}
+                                            </a>
+                                        </td>
+                                        <td class="py-3 text-right text-sm text-gray-600">{{ page.views }}</td>
+                                        <td class="py-3 text-right text-sm text-gray-600">{{ page.avg_duration|floatformat:1 }}s</td>
+                                        <td class="py-3 text-right text-sm text-gray-600">
+                                            {% if page.avg_load_time %}
+                                                {{ page.avg_load_time|floatformat:0 }}ms
+                                            {% else %}
+                                                <span class="text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="py-8 text-center text-gray-500">No data available yet</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Recent Sessions</h3>
+                    <div class="space-y-4">
+                        {% for session in recent_sessions %}
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span class="text-sm font-medium text-gray-900">{{ session.ip_address }}</span>
+                                    </div>
+                                    <div class="flex items-center space-x-2 mt-1">
+                                        <span class="text-xs text-gray-500">{{ session.device_type|title }}</span>
+                                        <span class="text-xs text-gray-400">•</span>
+                                        <span class="text-xs text-gray-500">{{ session.browser }}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-sm font-medium text-gray-900">{{ session.page_views }} pages</div>
+                                    <div class="text-xs text-gray-500">{{ session.started_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="text-center text-gray-500 py-8">No recent sessions</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mt-4">
+                        <a href="{% url 'website:analytics_sessions' brand.id %}"
+                           class="block text-center text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            View All Sessions →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Installation Guide -->
+            <div class="mt-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Installation Code</h3>
+                        <p class="text-gray-600 mb-4">Add this script to your website's &lt;head&gt; section to start tracking:</p>
+                        <div class="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto border border-gray-700">
+                            <code id="tracking-code-display" class="text-white">&lt;script src="https://{{ request.get_host }}/analytics/{{ tracking_code }}/script.js"&gt;&lt;/script&gt;</code>
+                        </div>
+                    </div>
+                    <div class="ml-6">
+                        <button onclick="copyTrackingCode()"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copy Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+// Traffic Chart
+const ctx = document.getElementById('trafficChart').getContext('2d');
+const trafficData = {{ daily_traffic|safe }};
+
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: trafficData.map(d => new Date(d.date).toLocaleDateString()),
+        datasets: [{
+            label: 'Sessions',
+            data: trafficData.map(d => d.sessions),
+            borderColor: 'rgb(59, 130, 246)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Copy tracking code function
+function copyTrackingCode() {
+    const codeElement = document.getElementById('tracking-code-display');
+    const code = codeElement.textContent;
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+            // Show success message
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-blue-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-blue-600');
+            }, 2000);
+        }).catch(err => {
+            // Fallback for clipboard API failure
+            fallbackCopyTextToClipboard(code, button, originalText);
+        });
+    } else {
+        // Fallback for browsers that don't support clipboard API
+        fallbackCopyTextToClipboard(code, button, originalText);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, button, originalText) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-blue-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-blue-600');
+            }, 2000);
+        } else {
+            button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Copy Failed';
+            button.classList.add('bg-red-600');
+            button.classList.remove('bg-blue-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-red-600');
+                button.classList.add('bg-blue-600');
+            }, 2000);
+        }
+    } catch (err) {
+        button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Copy Failed';
+        button.classList.add('bg-red-600');
+        button.classList.remove('bg-blue-600');
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-red-600');
+            button.classList.add('bg-blue-600');
+        }, 2000);
+    }
+    
+    document.body.removeChild(textArea);
+}
+    </script>
+{% endblock %}

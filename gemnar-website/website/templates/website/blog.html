@@ -1,0 +1,178 @@
+{% extends 'website/base.html' %}
+{% block title %}Blog - Gemnar{% endblock %}
+{% block description %}
+    Stay updated with the latest insights, tips, and trends in generation marketing from the Gemnar team.
+{% endblock %}
+{% block keywords %}blog, marketing insights, generation marketing, digital marketing, tips{% endblock %}
+{% block content %}
+    <div class="pb-12">
+        <div class="container mx-auto px-6">
+            <div class="text-center text-white">
+                <h1 class="text-4xl lg:text-6xl font-bold text-white mb-6">Gemnar Blog</h1>
+                <p class="text-xl text-white opacity-90 max-w-3xl mx-auto">
+                    Insights, tips, and strategies to help you master generation marketing and grow your business.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Wave Section -->
+    <div class="relative -mt-12 lg:-mt-24">
+        <svg viewBox="0 0 1428 174"
+             version="1.1"
+             xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+            <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496" opacity="0.100000001">
+            </path>
+            </g>
+            </g>
+        </svg>
+    </div>
+    <section class="bg-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-6xl mx-auto">
+                <!-- Featured Article -->
+                <div class="mb-16">
+                    <div class="bg-gradient-to-r from-pink-500 to-orange-400 rounded-lg overflow-hidden">
+                        <div class="p-8 text-white">
+                            <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-medium">Featured</span>
+                            <h2 class="text-3xl font-bold mt-4 mb-4">The Future of AI in Generation Marketing: 2024 Trends You Can't Ignore</h2>
+                            <p class="text-lg opacity-90 mb-6">
+                                Discover how artificial intelligence is revolutionizing generation marketing and learn the
+                                key strategies that will define success in 2024 and beyond.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full"></div>
+                                    <div>
+                                        <p class="font-semibold">Sarah Johnson</p>
+                                        <p class="text-sm opacity-75">Marketing Director</p>
+                                    </div>
+                                </div>
+                                <button class="bg-white text-pink-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition">
+                                    Read More
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Blog Categories -->
+                <div class="mb-12">
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <button class="bg-pink-500 text-white px-6 py-2 rounded-full font-medium">All Posts</button>
+                        <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-medium hover:bg-gray-300">AI & Analytics</button>
+                        <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-medium hover:bg-gray-300">Lead Generation</button>
+                        <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-medium hover:bg-gray-300">Automation</button>
+                        <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-medium hover:bg-gray-300">Case Studies</button>
+                    </div>
+                </div>
+                <!-- Blog Posts Grid -->
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+                    <!-- Blog Post 1 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-blue-400 to-blue-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-blue-600 font-medium">AI & Analytics</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">How to Use Predictive Analytics for Better Lead Scoring</h3>
+                            <p class="text-gray-600 mb-4">
+                                Learn how to implement predictive analytics to improve your lead scoring process and increase conversion rates by up to 40%.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Jan 15, 2024</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Blog Post 2 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-green-400 to-green-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-green-600 font-medium">Lead Generation</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">5 Proven Strategies to Double Your Lead Generation Results</h3>
+                            <p class="text-gray-600 mb-4">
+                                Discover the exact strategies our clients use to consistently double their lead generation results within 90 days.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Jan 12, 2024</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Blog Post 3 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-purple-400 to-purple-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-purple-600 font-medium">Automation</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">Marketing Automation Workflows That Actually Convert</h3>
+                            <p class="text-gray-600 mb-4">
+                                Stop wasting time on automation that doesn't work. Here are 7 proven workflow templates that drive real results.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Jan 8, 2024</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Blog Post 4 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-orange-400 to-orange-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-orange-600 font-medium">Case Studies</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">How TechStart Increased Revenue by 300% with Gemnar</h3>
+                            <p class="text-gray-600 mb-4">
+                                A detailed case study showing how a B2B SaaS company tripled their revenue using our generation marketing platform.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Jan 5, 2024</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Blog Post 5 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-red-400 to-red-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-red-600 font-medium">AI & Analytics</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">The Complete Guide to Customer Journey Mapping in 2024</h3>
+                            <p class="text-gray-600 mb-4">
+                                Master the art of customer journey mapping with AI-powered insights and drive better conversion rates across all touchpoints.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Jan 1, 2024</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Blog Post 6 -->
+                    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+                        <div class="h-48 bg-gradient-to-br from-indigo-400 to-indigo-600"></div>
+                        <div class="p-6">
+                            <span class="text-sm text-indigo-600 font-medium">Lead Generation</span>
+                            <h3 class="text-xl font-bold text-gray-800 mt-2 mb-3">Multi-Channel Attribution: Measuring What Really Matters</h3>
+                            <p class="text-gray-600 mb-4">
+                                Stop guessing which channels drive results. Learn how to implement proper attribution modeling for better ROI decisions.
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-500">Dec 28, 2023</span>
+                                <button class="text-pink-600 font-medium hover:text-pink-700">Read More →</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                <!-- Newsletter Signup -->
+                <div class="bg-gray-50 p-8 rounded-lg text-center">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">Stay Updated</h2>
+                    <p class="text-gray-600 mb-6">Get the latest marketing insights and strategies delivered to your inbox weekly.</p>
+                    <div class="max-w-md mx-auto flex gap-4">
+                        <input type="email"
+                               placeholder="Enter your email"
+                               class="flex-1 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                        <button class="bg-pink-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-pink-600 transition">
+                            Subscribe
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,1733 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Instagram Queue - {{ brand.name }}{% endblock %}
+{% block org_content %}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+                   class="text-purple-600 hover:underline mb-2 inline-block">← Back to {{ brand.name }} Dashboard</a>
+                <h1 class="text-3xl font-bold text-gray-900">Instagram Queue</h1>
+                <p class="text-gray-600">Manage scheduled Instagram posts for {{ brand.name }} ({{ date_range }})</p>
+                <div class="text-sm text-gray-500 mt-1 space-y-1">
+                    <p>
+                        Server time: <span id="server-local-time" class="font-mono">{{ current_time|date:"M d, Y H:i:s T" }}</span>
+                    </p>
+                    <p>
+                        UTC time: <span id="server-utc-time" class="font-mono">{{ current_time|date:"M d, Y H:i:s" }} UTC</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Instagram Queue Summary -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-orange-100 rounded-lg">
+                    <svg class="w-6 h-6 text-orange-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ posts|length }}</div>
+                    <div class="text-sm text-gray-600">Total Posts</div>
+                    <div class="text-xs text-gray-500 mt-1">🎥 {{ video_count }} videos, 🖼️ {{ image_count }} images</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-blue-600">{{ ready_count }}</div>
+                    <div class="text-sm text-gray-600">Ready to Post</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-green-600">{{ posted_count }}</div>
+                    <div class="text-sm text-gray-600">Posted</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white border rounded-lg p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <svg class="w-6 h-6 text-red-600"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-red-600">{{ failed_count }}</div>
+                    <div class="text-sm text-gray-600">Failed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Next Scheduled Post & Subscription Info -->
+    <div class="bg-white border rounded-lg p-4 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Next Scheduled Post -->
+            <div class="bg-purple-50 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-purple-900 mb-2">📅 Next Scheduled Post</h4>
+                {% if next_scheduled_post %}
+                    <div class="text-sm text-purple-800">
+                        <div class="font-mono mb-1" id="next-post-time">{{ next_scheduled_post.scheduled_for|date:"M d, Y H:i:s T" }}</div>
+                        <div class="text-xs text-purple-600">UTC: {{ next_scheduled_post.scheduled_for|date:"M d, Y H:i:s" }} UTC</div>
+                        <div class="mt-2 p-2 bg-purple-100 rounded text-xs">
+                            <strong>Countdown:</strong> <span id="post-countdown" class="font-mono font-bold text-purple-900"></span>
+                        </div>
+                        {% if next_scheduled_post.is_video_post %}
+                            <div class="mt-1 text-xs text-purple-600">🎥 Video Post</div>
+                        {% else %}
+                            <div class="mt-1 text-xs text-purple-600">🖼️ Image Post</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-sm text-gray-500">No scheduled posts</div>
+                {% endif %}
+            </div>
+            <!-- Subscription Plan -->
+            <div class="bg-indigo-50 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-indigo-900 mb-2">💎 Subscription Plan</h4>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-lg font-bold text-indigo-800">{{ subscription_plan }}</div>
+                        <div class="text-xs text-indigo-600">Current plan</div>
+                    </div>
+                    {% if subscription_plan == "Free" or subscription_plan == "Canceled" %}
+                        <a href="{{ upgrade_url }}"
+                           class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded-full transition-colors">
+                            Upgrade
+                        </a>
+                    {% else %}
+                        <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">✅ Active</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Create New Instagram Post Form -->
+    {% if is_admin %}
+        <div class="bg-white border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6"
+             id="createInstagramForm">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Instagram Post</h3>
+            <form id="instagramForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Content Section -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Post Caption</label>
+                        <textarea name="content"
+                                  id="instagram-content"
+                                  rows="4"
+                                  maxlength="2200"
+                                  class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  placeholder="Write a caption for your Instagram post..."></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="character-count text-sm text-gray-500">
+                                <span id="instagram-char-count">0</span>/2200
+                            </div>
+                            <button type="button"
+                                    onclick="generateAIContentInline()"
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-1 px-3 rounded">
+                                AI Generate
+                            </button>
+                        </div>
+                        <!-- Media Type Selection -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+                            <div class="flex space-x-4 mb-4">
+                                <label class="flex items-center">
+                                    <input type="radio"
+                                           name="media_type"
+                                           value="image"
+                                           id="media-type-image"
+                                           checked
+                                           class="mr-2 text-purple-600 focus:ring-purple-500">
+                                    <span class="text-sm">📷 Image Post</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio"
+                                           name="media_type"
+                                           value="video"
+                                           id="media-type-video"
+                                           class="mr-2 text-purple-600 focus:ring-purple-500">
+                                    <span class="text-sm">🎥 Video Post</span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Image Upload (shown by default) -->
+                        <div class="mt-4" id="image-upload-section">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Image *</label>
+                            <input type="file"
+                                   name="image"
+                                   id="instagram-image"
+                                   accept="image/*"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <p class="text-xs text-gray-500 mt-1">Supported formats: JPG, PNG, GIF</p>
+                        </div>
+                        <!-- Video Upload/Generation (hidden by default) -->
+                        <div class="mt-4 hidden" id="video-upload-section">
+                            <div class="space-y-4">
+                                <!-- Video Generation Option -->
+                                <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                                    <h5 class="text-sm font-semibold text-purple-900 mb-2">🎬 AI Video Generation</h5>
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Video Prompt</label>
+                                            <textarea name="video_prompt"
+                                                      id="video-prompt"
+                                                      rows="2"
+                                                      placeholder="Describe the video you want to generate..."
+                                                      class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"></textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Quality</label>
+                                                <select name="video_quality"
+                                                        class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                                    <option value="low">Low (faster)</option>
+                                                    <option value="high">High (better quality)</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                                                <select name="video_duration"
+                                                        class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                                    <option value="3">3 seconds</option>
+                                                    <option value="5" selected>5 seconds</option>
+                                                    <option value="10">10 seconds</option>
+                                                    <option value="15">15 seconds</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <button type="button"
+                                                id="generate-video-btn"
+                                                class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-lg">
+                                            ✨ Generate Video
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- OR divider -->
+                                <div class="relative">
+                                    <div class="absolute inset-0 flex items-center">
+                                        <div class="w-full border-t border-gray-300"></div>
+                                    </div>
+                                    <div class="relative flex justify-center text-sm">
+                                        <span class="px-2 bg-white text-gray-500">OR</span>
+                                    </div>
+                                </div>
+                                <!-- Manual Video Upload -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload Video</label>
+                                    <input type="file"
+                                           name="video"
+                                           id="instagram-video"
+                                           accept="video/*"
+                                           class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <p class="text-xs text-gray-500 mt-1">Supported formats: MP4, MOV. Max 60 seconds.</p>
+                                </div>
+                                <!-- Video Preview -->
+                                <div id="video-preview" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Preview</label>
+                                    <video controls class="w-full max-w-md mx-auto rounded-lg shadow-md">
+                                        <source id="video-preview-source" src="" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scheduling Section -->
+                    <div>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="text-sm font-semibold text-gray-900 mb-3">Schedule Options</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Schedule For</label>
+                                    <input type="datetime-local"
+                                           name="scheduled_for"
+                                           id="scheduled-for"
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                                    <select name="status"
+                                            class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                        <option value="draft">Draft</option>
+                                        <option value="approved">Approved (Ready to Post)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg">
+                            Create Instagram Post
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+    <!-- Edit Instagram Post Modal -->
+    <div id="editInstagramModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Edit Instagram Post</h3>
+                            <form id="editInstagramForm">
+                                {% csrf_token %}
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Caption</label>
+                                    <textarea id="edit-content"
+                                              name="content"
+                                              rows="4"
+                                              maxlength="2200"
+                                              class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                              placeholder="Edit your Instagram post caption..."></textarea>
+                                    <div class="flex justify-between items-center mt-2">
+                                        <div class="text-sm text-gray-500">
+                                            <span id="edit-char-count">0</span>/2200
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Schedule For</label>
+                                    <input type="datetime-local"
+                                           id="edit-scheduled-for"
+                                           name="scheduled_for"
+                                           class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                    <select id="edit-status"
+                                            name="status"
+                                            class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                        <option value="draft">Draft</option>
+                                        <option value="approved">Approved (Ready to Post)</option>
+                                    </select>
+                                </div>
+                                <!-- Video fields (shown only for video posts) -->
+                                <div id="edit-video-fields" class="hidden">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Video Prompt</label>
+                                        <textarea id="edit-video-prompt"
+                                                  name="video_prompt"
+                                                  rows="2"
+                                                  class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                                                  placeholder="Video generation prompt..."></textarea>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3 mb-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Quality</label>
+                                            <select id="edit-video-quality"
+                                                    name="video_quality"
+                                                    class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                                <option value="low">Low (faster)</option>
+                                                <option value="high">High (better quality)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                                            <select id="edit-video-duration"
+                                                    name="video_duration"
+                                                    class="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm">
+                                                <option value="3">3 seconds</option>
+                                                <option value="5">5 seconds</option>
+                                                <option value="10">10 seconds</option>
+                                                <option value="15">15 seconds</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button id="saveEditButton"
+                            type="button"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Save Changes
+                    </button>
+                    <button id="cancelEditButton"
+                            type="button"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Sorting Controls -->
+    {% if posts %}
+        <div class="flex items-center justify-between mb-6 bg-white rounded-lg p-4 border">
+            <div class="flex items-center space-x-4">
+                <h3 class="text-lg font-semibold text-gray-900">Instagram Posts</h3>
+                <span class="text-sm text-gray-500">({{ posts|length }} total)</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <label for="sort-select" class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select id="sort-select"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <option value="created_at"
+                            {% if current_sort == 'created_at' %}selected{% endif %}>Most Recent</option>
+                    <option value="posted_at"
+                            {% if current_sort == 'posted_at' %}selected{% endif %}>Posted Date</option>
+                    <option value="scheduled_for"
+                            {% if current_sort == 'scheduled_for' %}selected{% endif %}>Scheduled Date</option>
+                    <option value="like_count"
+                            {% if current_sort == 'like_count' %}selected{% endif %}>Likes</option>
+                    <option value="comment_count"
+                            {% if current_sort == 'comment_count' %}selected{% endif %}>Comments</option>
+                    <option value="share_count"
+                            {% if current_sort == 'share_count' %}selected{% endif %}>Shares</option>
+                    <option value="reach" {% if current_sort == 'reach' %}selected{% endif %}>Reach</option>
+                    <option value="impressions"
+                            {% if current_sort == 'impressions' %}selected{% endif %}>Impressions</option>
+                    <option value="saved_count"
+                            {% if current_sort == 'saved_count' %}selected{% endif %}>Saves</option>
+                    <option value="video_views"
+                            {% if current_sort == 'video_views' %}selected{% endif %}>Video Views</option>
+                    <option value="status" {% if current_sort == 'status' %}selected{% endif %}>Status</option>
+                </select>
+                <select id="order-select"
+                        class="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <option value="desc" {% if current_order == 'desc' %}selected{% endif %}>High to Low</option>
+                    <option value="asc" {% if current_order == 'asc' %}selected{% endif %}>Low to High</option>
+                </select>
+            </div>
+        </div>
+        <div class="space-y-4">
+            <!-- All Instagram posts -->
+            {% for post in posts %}
+                {% if post.status == 'posted' %}
+                    <!-- Royal Posted Instagram Post Container -->
+                    <div class="relative overflow-hidden bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900 border-4 border-yellow-400 rounded-xl p-1 hover:shadow-2xl transition-all duration-300 post-card royal-posted royal-post-border"
+                         data-post-id="{{ post.id }}">
+                        <div class="bg-white rounded-lg p-6 relative">
+                            <!-- Royal Badge -->
+                            <div class="absolute -top-2 -right-2 bg-yellow-400 text-black px-3 py-1 rounded-full text-xs font-bold rotate-12 shadow-lg">
+                                👑 POSTED
+                            </div>
+                            <!-- Post Header -->
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex-1">
+                                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                                        <span class="text-green-700 font-semibold text-sm">LIVE ON INSTAGRAM</span>
+                                        {% if post.is_video_post %}
+                                            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium">🎥 Video</span>
+                                        {% else %}
+                                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">🖼️ Image</span>
+                                        {% endif %}
+                                        {% if post.posted_at %}<span class="text-gray-500 text-xs">{{ post.posted_at|date:"M d, H:i" }}</span>{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Media Preview -->
+                            {% if post.is_video_post and post.video %}
+                                <div class="mb-4">
+                                    <video controls class="w-full max-w-md mx-auto rounded-lg shadow-md">
+                                        <source src="{{ post.video.url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                    {% if post.video_duration %}
+                                        <p class="text-xs text-gray-500 text-center mt-1">Duration: {{ post.video_duration }}s</p>
+                                    {% endif %}
+                                </div>
+                            {% elif post.image %}
+                                <div class="mb-4">
+                                    <img src="{{ post.image.url }}"
+                                         alt="Instagram post image"
+                                         width="400"
+                                         height="400"
+                                         class="w-full max-w-md mx-auto rounded-lg shadow-md">
+                                </div>
+                            {% endif %}
+                            <!-- Post Content -->
+                            <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                                <p class="text-gray-800 whitespace-pre-wrap">{{ post.content }}</p>
+                            </div>
+                            <!-- Posted Post Details -->
+                            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 mb-4">
+                                <h4 class="text-sm font-semibold text-purple-900 mb-3">👑 Royal Post Details</h4>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="text-purple-700">Type:</span>
+                                        <span class="font-medium">{{ post.is_video_post|yesno:"Video,Image" }}</span>
+                                    </div>
+                                    {% if post.is_video_post %}
+                                        <div>
+                                            <span class="text-purple-700">Duration:</span>
+                                            <span class="font-medium">{{ post.video_duration|default:"N/A" }}
+                                                {% if post.video_duration %}s{% endif %}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="text-purple-700">Quality:</span>
+                                            <span class="font-medium">{{ post.video_quality|capfirst }}</span>
+                                        </div>
+                                        {% if post.video_prompt %}
+                                            <div class="col-span-2">
+                                                <span class="text-purple-700">Video Prompt:</span>
+                                                <div class="bg-white/50 rounded p-2 mt-1 text-xs">"{{ post.video_prompt }}"</div>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if post.ai_prompt %}
+                                        <div class="col-span-2">
+                                            <span class="text-purple-700">AI Prompt:</span>
+                                            <div class="bg-white/50 rounded p-2 mt-1 text-xs">"{{ post.ai_prompt }}"</div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Instagram Metrics Section -->
+                            {% if post.status == 'posted' %}
+                                <div class="bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 rounded-lg p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h4 class="text-sm font-semibold text-pink-900">📊 Instagram Metrics</h4>
+                                        {% if is_admin %}
+                                            <button onclick="refreshInstagramMetrics({{ post.id }})"
+                                                    class="bg-pink-500 hover:bg-pink-600 text-white text-xs py-1 px-2 rounded refresh-metrics-btn"
+                                                    id="instagram-refresh-btn-{{ post.id }}"
+                                                    title="Refresh metrics from Instagram">🔄</button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                            </svg>
+                                            <span class="text-gray-600">Likes:</span>
+                                            <span id="instagram-like-count-{{ post.id }}" class="font-semibold">{{ post.like_count }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
+                                                <path d="M21.99 4c0-1.1-.89-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4-.01-18zM18 14H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z" />
+                                            </svg>
+                                            <span class="text-gray-600">Comments:</span>
+                                            <span id="instagram-comment-count-{{ post.id }}" class="font-semibold">{{ post.comment_count }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-green-500"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" />
+                                            </svg>
+                                            <span class="text-gray-600">Shares:</span>
+                                            <span id="instagram-share-count-{{ post.id }}" class="font-semibold">{{ post.share_count }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-purple-500"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM12 19c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
+                                            </svg>
+                                            <span class="text-gray-600">Saved:</span>
+                                            <span id="instagram-saved-count-{{ post.id }}" class="font-semibold">{{ post.saved_count }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-orange-500"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                                            </svg>
+                                            <span class="text-gray-600">Reach:</span>
+                                            <span id="instagram-reach-{{ post.id }}" class="font-semibold">{{ post.reach }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <svg class="w-3 h-3 text-indigo-500"
+                                                 fill="currentColor"
+                                                 viewBox="0 0 24 24">
+                                                <path d="M9 11H7v3h2v-3zm4 0h-2v3h2v-3zm4 0h-2v3h2v-3zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z" />
+                                            </svg>
+                                            <span class="text-gray-600">Impressions:</span>
+                                            <span id="instagram-impressions-{{ post.id }}" class="font-semibold">{{ post.impressions }}</span>
+                                        </div>
+                                        {% if post.is_video_post %}
+                                            <div class="flex items-center gap-1">
+                                                <svg class="w-3 h-3 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M8 5v14l11-7z" />
+                                                </svg>
+                                                <span class="text-gray-600">Video Views:</span>
+                                                <span id="instagram-video-views-{{ post.id }}" class="font-semibold">{{ post.video_views }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    {% if post.metrics_last_updated %}
+                                        <div class="text-xs text-gray-500 mt-2">Metrics updated: {{ post.metrics_last_updated|date:"M d, H:i" }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            <!-- Royal Actions -->
+                            <div class="flex flex-wrap gap-2">
+                                {% if post.status == 'posted' and post.instagram_url %}
+                                    <a href="{{ post.instagram_url }}"
+                                       target="_blank"
+                                       class="text-purple-600 hover:text-purple-800 text-sm flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                                        </svg>
+                                        View on Instagram
+                                    </a>
+                                {% endif %}
+                                {% if is_superuser %}
+                                    <a href="/{{ admin_url }}/website/brandinstagrampost/{{ post.id }}/change/"
+                                       target="_blank"
+                                       class="bg-gray-600 hover:bg-gray-700 text-white text-sm px-3 py-1 rounded inline-block"
+                                       title="Edit in Django Admin">✏️ Admin</a>
+                                {% endif %}
+                                <button onclick="deleteInstagramPost({{ post.id }})"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                                        title="Delete this post from database (will not remove from Instagram)">
+                                    🗑️ Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Regular Instagram Post Card -->
+                    <div class="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow post-card"
+                         data-post-id="{{ post.id }}">
+                        <!-- Post Header -->
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    {% if post.status == 'draft' %}
+                                        <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">📝 Draft</span>
+                                    {% elif post.status == 'approved' %}
+                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">✅ Approved</span>
+                                    {% elif post.status == 'failed' %}
+                                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">❌ Failed</span>
+                                    {% endif %}
+                                    {% if post.is_video_post %}
+                                        <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">🎥 Video</span>
+                                        <!-- Video Generation Status Badge -->
+                                        {% if post.video_generation_status != 'none' %}
+                                            {% if post.video_generation_status == 'pending' %}
+                                                <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">⏳ Gen: Pending</span>
+                                            {% elif post.video_generation_status == 'processing' %}
+                                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium animate-pulse">⚙️ Gen: Processing</span>
+                                            {% elif post.video_generation_status == 'completed' %}
+                                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">✅ Gen: Complete</span>
+                                            {% elif post.video_generation_status == 'failed' %}
+                                                <span class="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium animate-pulse">❌ Gen: Failed</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">🖼️ Image</span>
+                                    {% endif %}
+                                    {% if post.scheduled_for %}
+                                        <span class="text-gray-500 text-sm">{{ post.scheduled_for|date:"M d, H:i" }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if is_admin %}
+                                <div class="flex space-x-2">
+                                    {% if post.status == 'approved' %}
+                                        {% if post.is_video_post and post.video_generation_status != 'completed' and post.video_generation_status != 'none' %}
+                                            <!-- Video post but video not ready yet -->
+                                            <button disabled
+                                                    class="bg-gray-400 text-white px-3 py-1 rounded text-sm cursor-not-allowed"
+                                                    title="Waiting for video generation to complete">
+                                                ⏳ Video Not Ready
+                                            </button>
+                                        {% else %}
+                                            <!-- Ready to post -->
+                                            <button onclick="postInstagramNow({{ post.id }})"
+                                                    class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-sm">
+                                                📱 Post to Instagram
+                                            </button>
+                                        {% endif %}
+                                    {% endif %}
+                                    {% if post.is_video_post and post.video_generation_status == 'processing' %}
+                                        <button onclick="refreshVideoStatus({{ post.id }})"
+                                                class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                            🔄 Refresh Status
+                                        </button>
+                                    {% elif post.is_video_post and post.video_generation_status == 'failed' %}
+                                        <button onclick="retryVideoGeneration({{ post.id }})"
+                                                class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-sm">
+                                            🔄 Retry Video
+                                        </button>
+                                    {% endif %}
+                                    <button onclick="editInstagramPost({{ post.id }})"
+                                            class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-sm">
+                                        Edit
+                                    </button>
+                                    {% if is_superuser %}
+                                        <a href="/{{ admin_url }}/website/brandinstagrampost/{{ post.id }}/change/"
+                                           target="_blank"
+                                           class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm inline-block"
+                                           title="Edit in Django Admin">✏️ Admin</a>
+                                    {% endif %}
+                                    <button onclick="deleteInstagramPost({{ post.id }})"
+                                            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                        Delete
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <!-- Media Preview -->
+                        {% if post.is_video_post and post.video %}
+                            <div class="mb-4">
+                                <video controls class="w-full max-w-md mx-auto rounded-lg shadow-md">
+                                    <source src="{{ post.video.url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                                {% if post.video_duration %}
+                                    <p class="text-xs text-gray-500 text-center mt-1">Duration: {{ post.video_duration }}s</p>
+                                {% endif %}
+                            </div>
+                        {% elif post.image %}
+                            <div class="mb-4">
+                                <img src="{{ post.image.url }}"
+                                     alt="Instagram post image"
+                                     width="400"
+                                     height="400"
+                                     class="w-full max-w-md mx-auto rounded-lg shadow-md">
+                            </div>
+                        {% endif %}
+                        <!-- Post Content -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <p class="text-gray-800 whitespace-pre-wrap">{{ post.content }}</p>
+                        </div>
+                        <!-- Additional Post Details -->
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                            <h4 class="text-sm font-semibold text-gray-900 mb-3">📊 Post Details</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-600">Type:</span>
+                                    <span class="font-medium">{{ post.is_video_post|yesno:"Video,Image" }}</span>
+                                </div>
+                                {% if post.is_video_post %}
+                                    <div>
+                                        <span class="text-gray-600">Duration:</span>
+                                        <span class="font-medium">{{ post.video_duration|default:"N/A" }}
+                                            {% if post.video_duration %}s{% endif %}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Quality:</span>
+                                        <span class="font-medium">{{ post.video_quality|capfirst }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-gray-600">Gen Status:</span>
+                                        <span class="font-medium">{{ post.video_generation_status|capfirst }}</span>
+                                        {% if post.video_generation_status == 'failed' %}
+                                            <span class="text-red-600 text-xs ml-2">⚠️ Click "Retry Video" to try again</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if post.video_prompt %}
+                                        <div class="col-span-2">
+                                            <span class="text-gray-600">Video Prompt:</span>
+                                            <div class="bg-gray-50 rounded p-2 mt-1 text-xs">"{{ post.video_prompt }}"</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if post.video_generation_task_uuid %}
+                                        <div class="col-span-2">
+                                            <span class="text-gray-600">Task ID:</span>
+                                            <span class="font-mono text-xs text-gray-500">{{ post.video_generation_task_uuid }}</span>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                                {% if post.ai_prompt %}
+                                    <div class="col-span-2">
+                                        <span class="text-gray-600">AI Prompt:</span>
+                                        <div class="bg-gray-50 rounded p-2 mt-1 text-xs">"{{ post.ai_prompt }}"</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Post Actions -->
+                        {% if post.error_message %}
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                                <p class="text-red-700 text-sm">
+                                    <strong>Error:</strong> {{ post.error_message }}
+                                </p>
+                            </div>
+                        {% endif %}
+                        <div class="flex flex-wrap gap-2 text-sm text-gray-500">
+                            <span>Created: {{ post.created_at|date:"M d, H:i" }}</span>
+                            {% if post.posted_at %}<span>Posted: {{ post.posted_at|date:"M d, H:i" }}</span>{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-12">
+            <svg class="w-16 h-16 text-gray-400 mx-auto mb-4"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z">
+                </path>
+            </svg>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">No Instagram posts yet</h3>
+            <p class="text-gray-500 mb-4">Start by creating your first Instagram post above.</p>
+        </div>
+    {% endif %}
+    <script>
+        // Character counter for Instagram content
+        const instagramContent = document.getElementById('instagram-content');
+        if (instagramContent) {
+            instagramContent.addEventListener('input', function(e) {
+                const remaining = 2200 - e.target.value.length;
+                const charCount = document.getElementById('instagram-char-count');
+                if (charCount) {
+                    charCount.textContent = e.target.value.length;
+                }
+            });
+        }
+
+        // Countdown timer for next scheduled post
+        function updatePostCountdown() {
+            const countdownElement = document.getElementById('post-countdown');
+            if (!countdownElement) return;
+            
+            {% if next_scheduled_post %}
+            const targetTime = new Date('{{ next_scheduled_post.scheduled_for|date:"c" }}');
+            const now = new Date();
+            const timeDiff = targetTime - now;
+            
+            if (timeDiff <= 0) {
+                countdownElement.textContent = 'Posting soon...';
+                countdownElement.className = 'font-mono font-bold text-green-600';
+                return;
+            }
+            
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+            
+            let countdownText = '';
+            if (days > 0) {
+                countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            } else if (hours > 0) {
+                countdownText = `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                countdownText = `${minutes}m ${seconds}s`;
+            } else {
+                countdownText = `${seconds}s`;
+            }
+            
+            countdownElement.textContent = countdownText;
+            
+            // Color coding based on time remaining
+            if (timeDiff < 60000) { // Less than 1 minute
+                countdownElement.className = 'font-mono font-bold text-red-600';
+            } else if (timeDiff < 300000) { // Less than 5 minutes
+                countdownElement.className = 'font-mono font-bold text-orange-600';
+            } else if (timeDiff < 3600000) { // Less than 1 hour
+                countdownElement.className = 'font-mono font-bold text-yellow-600';
+            } else {
+                countdownElement.className = 'font-mono font-bold text-purple-900';
+            }
+            {% endif %}
+        }
+
+        // Media type toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize countdown timer
+            setInterval(updatePostCountdown, 1000);
+            updatePostCountdown(); // Initial call
+            
+            const imageRadio = document.getElementById('media-type-image');
+            const videoRadio = document.getElementById('media-type-video');
+            const imageSection = document.getElementById('image-upload-section');
+            const videoSection = document.getElementById('video-upload-section');
+            const imageInput = document.getElementById('instagram-image');
+            const videoInput = document.getElementById('instagram-video');
+
+            // Only proceed if all required elements exist
+            if (!imageRadio || !videoRadio || !imageSection || !videoSection || !imageInput) {
+                return;
+            }
+
+            function toggleMediaSections() {
+                if (videoRadio.checked) {
+                    if (imageSection) imageSection.classList.add('hidden');
+                    if (videoSection) videoSection.classList.remove('hidden');
+                    if (imageInput) imageInput.removeAttribute('required');
+                } else {
+                    if (imageSection) imageSection.classList.remove('hidden');
+                    if (videoSection) videoSection.classList.add('hidden');
+                    if (imageInput) imageInput.setAttribute('required', 'required');
+                }
+            }
+
+            imageRadio.addEventListener('change', toggleMediaSections);
+            videoRadio.addEventListener('change', toggleMediaSections);
+
+            // Video file preview
+            if (videoInput) {
+                videoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const url = URL.createObjectURL(file);
+                        const preview = document.getElementById('video-preview');
+                        const source = document.getElementById('video-preview-source');
+                        
+                        if (source) {
+                            source.src = url;
+                        }
+                        if (preview && preview.classList) {
+                            preview.classList.remove('hidden');
+                        }
+                    }
+                });
+            }
+
+            // Video generation functionality
+            const generateVideoBtn = document.getElementById('generate-video-btn');
+            if (generateVideoBtn) {
+                generateVideoBtn.addEventListener('click', function() {
+                    try {
+                    const promptElement = document.getElementById('video-prompt');
+                    const qualityElement = document.querySelector('select[name="video_quality"]');
+                    const durationElement = document.querySelector('select[name="video_duration"]');
+                    
+                    if (!promptElement || !qualityElement || !durationElement) {
+                        alert('Video generation form elements are missing.');
+                        return;
+                    }
+                    
+                    const prompt = promptElement.value.trim();
+                    const quality = qualityElement.value;
+                    const duration = durationElement.value;
+                    
+                    if (!prompt) {
+                        alert('Please enter a video prompt first.');
+                        return;
+                    }
+
+                    const button = this;
+                    const originalText = button.textContent;
+                    button.textContent = '🎬 Generating...';
+                    button.disabled = true;
+
+                    // Get content from the main form
+                    const contentElement = document.getElementById('instagram-content');
+                    const content = contentElement ? contentElement.value.trim() : '';
+                    
+                    // Call async video generation API directly
+                    const formData = new FormData();
+                    formData.append('prompt', prompt);
+                    formData.append('quality', quality);
+                    formData.append('duration', duration);
+                    formData.append('aspect_ratio', '9:16');
+                    if (content) {
+                        formData.append('content', content);
+                    }
+
+                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (!csrfToken) {
+                        alert('CSRF token not found.');
+                        button.textContent = originalText;
+                        button.disabled = false;
+                        return;
+                    }
+
+                    fetch('{% url "generate_instagram_video" organization.pk brand.pk %}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': csrfToken.value,
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            button.textContent = '⏳ Video Generation Started...';
+                            if (button.classList) {
+                                button.classList.remove('from-purple-600', 'to-pink-600');
+                                button.classList.add('from-yellow-500', 'to-orange-600');
+                            }
+                            
+                            // Show success message
+                            alert(`Video generation started! Post created with ID: ${data.post_id}`);
+                            
+                            // Start polling for status updates
+                            pollVideoGenerationStatus(data.post_id, button, originalText);
+                            
+                            // Optionally clear the form
+                            if (contentElement) {
+                                contentElement.value = '';
+                            }
+                            const promptElement = document.getElementById('video-prompt');
+                            if (promptElement) {
+                                promptElement.value = '';
+                            }
+                        } else {
+                            alert('Error starting video generation: ' + data.error);
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        alert('Error: ' + error);
+                        button.textContent = originalText;
+                        button.disabled = false;
+                    });
+                    } catch (error) {
+                        console.error('Error in video generation:', error);
+                        const button = this;
+                        if (button) {
+                            button.textContent = 'Generate Video';
+                            button.disabled = false;
+                        }
+                        alert('An error occurred during video generation. Please try again.');
+                    }
+                });
+            }
+        });
+        
+        // Add global error handler to catch any remaining classList errors
+        window.addEventListener('error', function(event) {
+            if (event.error && event.error.message && event.error.message.includes('classList')) {
+                console.error('Caught classList error:', event.error);
+                event.preventDefault(); // Prevent the error from breaking the page
+                return true;
+            }
+        });
+
+        // Function to poll video generation status
+        function pollVideoGenerationStatus(postId, button, originalText) {
+            const maxAttempts = 120; // 10 minutes max (5 second intervals)
+            let attempts = 0;
+            
+            function checkStatus() {
+                attempts++;
+                
+                // Add safety check for button
+                if (!button) {
+                    console.error('Button is null in checkStatus');
+                    return;
+                }
+                
+                fetch(`/api/instagram/posts/${postId}/video-status/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    try {
+                    const status = data.video_generation_status;
+                    
+                    if (status === 'completed') {
+                        // Video generation completed successfully
+                        button.textContent = '✅ Video Generated!';
+                        if (button.classList) {
+                            button.classList.remove('from-yellow-500', 'to-orange-600');
+                            button.classList.add('from-green-600', 'to-green-700');
+                        }
+                        button.disabled = false;
+                        
+                        // Create a hidden input to store the generated video URL
+                        if (data.video_url) {
+                            let videoUrlInput = document.getElementById('generated-video-url');
+                            const instagramForm = document.getElementById('instagramForm');
+                            if (!videoUrlInput && instagramForm) {
+                                videoUrlInput = document.createElement('input');
+                                videoUrlInput.type = 'hidden';
+                                videoUrlInput.name = 'generated_video_url';
+                                videoUrlInput.id = 'generated-video-url';
+                                instagramForm.appendChild(videoUrlInput);
+                            }
+                            if (videoUrlInput) {
+                                videoUrlInput.value = data.video_url;
+                            }
+
+                            // Show preview
+                            const preview = document.getElementById('video-preview');
+                            const source = document.getElementById('video-preview-source');
+                            if (source) {
+                                source.src = data.video_url;
+                            }
+                            if (preview && preview.classList) {
+                                preview.classList.remove('hidden');
+                            }
+
+                            // Clear file input to avoid conflicts
+                            const videoInput = document.getElementById('instagram-video');
+                            if (videoInput) {
+                                videoInput.value = '';
+                            }
+                        }
+                        
+                    } else if (status === 'failed') {
+                        // Video generation failed
+                        button.textContent = '❌ Video Generation Failed';
+                        if (button.classList) {
+                            button.classList.remove('from-yellow-500', 'to-orange-600');
+                            button.classList.add('from-red-600', 'to-red-700');
+                        }
+                        button.disabled = false;
+                        
+                        if (data.error_message) {
+                            alert('Video generation failed: ' + data.error_message);
+                        }
+                        
+                    } else if (status === 'processing') {
+                        // Update button text to show processing
+                        button.textContent = '⚙️ Processing Video...';
+                        // Continue polling
+                        if (attempts < maxAttempts) {
+                            setTimeout(checkStatus, 5000); // Check again in 5 seconds
+                        } else {
+                            // Timeout
+                            button.textContent = '⏱️ Video Generation Timed Out';
+                            button.disabled = false;
+                        }
+                        
+                    } else if (status === 'pending') {
+                        // Still waiting to start
+                        button.textContent = '⏳ Waiting to Start...';
+                        // Continue polling
+                        if (attempts < maxAttempts) {
+                            setTimeout(checkStatus, 5000); // Check again in 5 seconds
+                        } else {
+                            // Timeout
+                            button.textContent = '⏱️ Video Generation Timed Out';
+                            button.disabled = false;
+                        }
+                    }
+                    } catch (error) {
+                        console.error('Error processing video status:', error);
+                        if (button) {
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking video status:', error);
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkStatus, 5000); // Try again in 5 seconds
+                    } else {
+                        if (button) {
+                            button.textContent = originalText;
+                            button.disabled = false;
+                        }
+                        alert('Error checking video generation status. Please try again.');
+                    }
+                });
+            }
+            
+            // Start checking status
+            setTimeout(checkStatus, 2000); // Wait 2 seconds before first check
+        }
+        
+        // Instagram form submission
+        const instagramForm = document.getElementById('instagramForm');
+        if (instagramForm) {
+            instagramForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(e.target);
+                const button = e.target.querySelector('button[type="submit"]');
+                const originalText = button ? button.textContent : 'Submit';
+                
+                // Check if it's a video post and validate accordingly
+                const videoRadioElement = document.getElementById('media-type-video');
+                const videoInputElement = document.getElementById('instagram-video');
+                const generatedVideoElement = document.getElementById('generated-video-url');
+                
+                if (!videoRadioElement || !videoInputElement) {
+                    alert('Form elements are missing.');
+                    return;
+                }
+                
+                const isVideoPost = videoRadioElement.checked;
+                const hasVideoFile = videoInputElement.files.length > 0;
+                const hasGeneratedVideo = generatedVideoElement && generatedVideoElement.value;
+                
+                if (isVideoPost && !hasVideoFile && !hasGeneratedVideo) {
+                    alert('Please either upload a video file or generate one using AI.');
+                    return;
+                }
+                
+                // Add media type to form data
+                formData.append('is_video_post', isVideoPost);
+                
+                if (button) {
+                    button.textContent = 'Creating...';
+                    button.disabled = true;
+                }
+                
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (!csrfToken) {
+                    alert('CSRF token not found.');
+                    if (button) {
+                        button.textContent = originalText;
+                        button.disabled = false;
+                    }
+                    return;
+                }
+            
+                fetch('{% url "brand_instagram_queue" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': csrfToken.value,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload(); // Refresh to show new post
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error);
+                })
+                .finally(() => {
+                    if (button) {
+                        button.textContent = originalText;
+                        button.disabled = false;
+                    }
+                });
+            });
+        }
+        
+        // Post Instagram now function
+        function postInstagramNow(postId) {
+            if (!confirm('Are you sure you want to post this to Instagram now?')) {
+                return;
+            }
+            
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Posting...';
+            button.disabled = true;
+            
+            fetch(`/api/instagram/brand-posts/${postId}/post-now/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('Instagram post posted successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error occurred'));
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Instagram posting error:', error);
+                alert('Error: ' + (error.message || error.toString() || 'Network error occurred'));
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+        
+        // Delete Instagram post function
+        function deleteInstagramPost(postId) {
+            // Find the post element to check if it's posted
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            const isPosted = postElement && postElement.classList.contains('royal-posted');
+            
+            const confirmMessage = isPosted 
+                ? 'Are you sure you want to delete this Instagram post?\n\nNote: This will only remove the post from your dashboard. The post will remain on Instagram.'
+                : 'Are you sure you want to delete this Instagram post?';
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            fetch(`/organizations/{{ organization.pk }}/brands/{{ brand.pk }}/instagram/${postId}/delete/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+        
+        // AI content generation for Instagram
+        function generateAIContentInline() {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Generating...';
+            button.disabled = true;
+            
+            fetch(`{% url 'brand_instagram_generate_ai_from_website' organization.pk brand.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('content').value = data.content;
+                    // Update character count if there's a counter
+                    const charCounter = document.querySelector('.char-count');
+                    if (charCounter) {
+                        charCounter.textContent = data.content.length;
+                    }
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error generating AI content for Instagram', 'error');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+        
+        // Edit Instagram post function
+        function editInstagramPost(postId) {
+            // First, fetch the current post data
+            fetch(`/api/instagram/brand-posts/${postId}/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Populate the edit form with current data
+                document.getElementById('edit-content').value = data.content || '';
+                document.getElementById('edit-scheduled-for').value = data.scheduled_for ? 
+                    new Date(data.scheduled_for).toISOString().slice(0, 16) : '';
+                document.getElementById('edit-status').value = data.status || 'draft';
+                
+                // Handle video fields
+                if (data.is_video_post) {
+                    document.getElementById('edit-video-fields').classList.remove('hidden');
+                    document.getElementById('edit-video-prompt').value = data.video_prompt || '';
+                    document.getElementById('edit-video-quality').value = data.video_quality || 'low';
+                    document.getElementById('edit-video-duration').value = data.video_duration || '5';
+                } else {
+                    document.getElementById('edit-video-fields').classList.add('hidden');
+                }
+                
+                // Update character counter
+                updateEditCharCounter();
+                
+                // Store the post ID for saving
+                document.getElementById('editInstagramModal').dataset.postId = postId;
+                
+                // Show the modal
+                document.getElementById('editInstagramModal').classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error fetching post data:', error);
+                alert('Error loading post data: ' + error);
+            });
+        }
+        
+        // Refresh video generation status
+        function refreshVideoStatus(postId) {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '🔄 Checking...';
+            button.disabled = true;
+            
+            fetch(`/api/instagram/posts/${postId}/video-status/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const status = data.video_generation_status;
+                
+                if (status === 'completed' || status === 'failed') {
+                    // Reload page to show updated status
+                    location.reload();
+                } else {
+                    // Show current status and re-enable button
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    
+                    // Update the status badge if possible
+                    const postCard = button.closest('.post-card');
+                    if (postCard) {
+                        const statusBadge = postCard.querySelector('.animate-pulse');
+                        if (statusBadge && status === 'processing') {
+                            statusBadge.textContent = '⚙️ Gen: Processing';
+                        }
+                    }
+                    
+                    alert(`Video generation status: ${status}`);
+                }
+            })
+            .catch(error => {
+                button.textContent = originalText;
+                button.disabled = false;
+                alert('Error checking video status: ' + error);
+            });
+        }
+        
+        // Retry video generation for failed posts
+        function retryVideoGeneration(postId) {
+            if (!confirm('Are you sure you want to retry video generation for this post?')) {
+                return;
+            }
+            
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '🔄 Starting Retry...';
+            button.disabled = true;
+            
+            // First, get the post data to retrieve the video prompt and settings
+            fetch(`/api/instagram/brand-posts/${postId}/`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(postData => {
+                if (!postData.video_prompt) {
+                    alert('Error: No video prompt found for this post. Please edit the post to add a video prompt first.');
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    return;
+                }
+                
+                // Prepare retry request data
+                const retryData = {
+                    post_id: postId,
+                    prompt: postData.video_prompt,
+                    quality: postData.video_quality || 'low',
+                    duration: postData.video_duration || 5.0,
+                    aspect_ratio: '9:16'
+                };
+                
+                // Submit retry request to the video generation API
+                const formData = new FormData();
+                Object.keys(retryData).forEach(key => {
+                    formData.append(key, retryData[key]);
+                });
+                
+                return fetch('{% url "generate_instagram_video" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    }
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success || data.post_id) {
+                    button.textContent = '⏳ Retry Started...';
+                    button.classList.remove('bg-orange-500', 'hover:bg-orange-600');
+                    button.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+                    
+                    // Start polling for status updates
+                    pollVideoGenerationStatus(postId, button, originalText);
+                    
+                    alert('Video generation retry started successfully!');
+                } else {
+                    alert('Error retrying video generation: ' + (data.error || 'Unknown error'));
+                    button.textContent = originalText;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error retrying video generation:', error);
+                alert('Error retrying video generation: ' + error);
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        }
+        
+        // Update character counter for edit form
+        function updateEditCharCounter() {
+            const content = document.getElementById('edit-content');
+            const counter = document.getElementById('edit-char-count');
+            if (content && counter) {
+                counter.textContent = content.value.length;
+            }
+        }
+        
+        // Modal event handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            // Character counter for edit form
+            const editContent = document.getElementById('edit-content');
+            if (editContent) {
+                editContent.addEventListener('input', updateEditCharCounter);
+            }
+            
+            // Save button handler
+            const saveButton = document.getElementById('saveEditButton');
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    const modal = document.getElementById('editInstagramModal');
+                    const postId = modal.dataset.postId;
+                    
+                    if (!postId) {
+                        alert('Error: No post ID found');
+                        return;
+                    }
+                    
+                    // Collect form data
+                    const formData = {
+                        content: document.getElementById('edit-content').value,
+                        scheduled_for: document.getElementById('edit-scheduled-for').value || null,
+                        status: document.getElementById('edit-status').value,
+                    };
+                    
+                    // Add video fields if they're visible
+                    const videoFields = document.getElementById('edit-video-fields');
+                    if (videoFields && !videoFields.classList.contains('hidden')) {
+                        formData.video_prompt = document.getElementById('edit-video-prompt').value;
+                        formData.video_quality = document.getElementById('edit-video-quality').value;
+                        formData.video_duration = parseFloat(document.getElementById('edit-video-duration').value);
+                    }
+                    
+                    // Disable save button and show loading
+                    saveButton.textContent = 'Saving...';
+                    saveButton.disabled = true;
+                    
+                    // Send update request using FormData
+                    const form = new FormData();
+                    Object.keys(formData).forEach(key => {
+                        if (formData[key] !== null) {
+                            form.append(key, formData[key]);
+                        }
+                    });
+                    
+                    fetch(`/api/instagram/brand-posts/${postId}/`, {
+                        method: 'PUT',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        },
+                        body: form
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert('Error updating post: ' + data.error);
+                        } else {
+                            // Success - close modal and refresh page
+                            modal.classList.add('hidden');
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error updating post:', error);
+                        alert('Error updating post: ' + error);
+                    })
+                    .finally(() => {
+                        // Re-enable save button
+                        saveButton.textContent = 'Save Changes';
+                        saveButton.disabled = false;
+                    });
+                });
+            }
+            
+            // Cancel button handler
+            const cancelButton = document.getElementById('cancelEditButton');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', function() {
+                    document.getElementById('editInstagramModal').classList.add('hidden');
+                });
+            }
+            
+            // Close modal when clicking outside
+            const modal = document.getElementById('editInstagramModal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.classList.add('hidden');
+                    }
+                });
+            }
+        });
+        
+        // Instagram metrics refresh function
+        function refreshInstagramMetrics(postId) {
+            const button = document.getElementById(`instagram-refresh-btn-${postId}`);
+            if (button) {
+                // Show loading state
+                const originalText = button.textContent;
+                button.textContent = '⟳';
+                button.disabled = true;
+                button.classList.add('animate-spin');
+                
+                fetch(`{% url 'brand_instagram_post_refresh_metrics' organization.pk brand.pk 0 %}`.replace('0', postId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Reset button
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.classList.remove('animate-spin');
+                    
+                    if (data.success) {
+                        // Update the metrics display
+                        const metrics = data.metrics;
+                        const likeElement = document.getElementById(`instagram-like-count-${postId}`);
+                        const commentElement = document.getElementById(`instagram-comment-count-${postId}`);
+                        const shareElement = document.getElementById(`instagram-share-count-${postId}`);
+                        const savedElement = document.getElementById(`instagram-saved-count-${postId}`);
+                        const reachElement = document.getElementById(`instagram-reach-${postId}`);
+                        const impressionsElement = document.getElementById(`instagram-impressions-${postId}`);
+                        const videoViewsElement = document.getElementById(`instagram-video-views-${postId}`);
+                        
+                        if (likeElement) likeElement.textContent = metrics.like_count;
+                        if (commentElement) commentElement.textContent = metrics.comment_count;
+                        if (shareElement) shareElement.textContent = metrics.share_count;
+                        if (savedElement) savedElement.textContent = metrics.saved_count;
+                        if (reachElement) reachElement.textContent = metrics.reach;
+                        if (impressionsElement) impressionsElement.textContent = metrics.impressions;
+                        if (videoViewsElement) videoViewsElement.textContent = metrics.video_views;
+                        
+                        // Update timestamp if element exists
+                        const timestampElement = document.querySelector(`[data-post-id="${postId}"] .metrics-timestamp`);
+                        if (timestampElement && metrics.metrics_last_updated) {
+                            const updateTime = new Date(metrics.metrics_last_updated);
+                            timestampElement.textContent = `Metrics updated: ${updateTime.toLocaleString()}`;
+                        }
+                        
+                        showNotification('Instagram metrics updated successfully!', 'success');
+                    } else {
+                        showNotification('Error: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    // Reset button on error
+                    button.textContent = originalText;
+                    button.disabled = false;
+                    button.classList.remove('animate-spin');
+                    
+                    showNotification('Error refreshing Instagram metrics: ' + error.message, 'error');
+                });
+            }
+        }
+        
+        // Helper function for notifications (if not already defined)
+        function showNotification(message, type) {
+            // Simple notification system
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 max-w-sm ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+        
+        // Helper function to get CSRF token (if not already defined)
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Sorting functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sortSelect = document.getElementById('sort-select');
+            const orderSelect = document.getElementById('order-select');
+            
+            if (sortSelect && orderSelect) {
+                function updateSorting() {
+                    const currentUrl = new URL(window.location);
+                    currentUrl.searchParams.set('sort', sortSelect.value);
+                    currentUrl.searchParams.set('order', orderSelect.value);
+                    window.location.href = currentUrl.toString();
+                }
+                
+                sortSelect.addEventListener('change', updateSorting);
+                orderSelect.addEventListener('change', updateSorting);
+            }
+        });
+    </script>
+{% endblock %}

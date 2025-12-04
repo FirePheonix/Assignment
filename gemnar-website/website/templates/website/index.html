@@ -1,0 +1,1705 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Gemnar - AI Marketing Automation Platform{% endblock %}
+{% block description %}
+    Automate your marketing with AI. Connect creators with brands, generate content automatically, and manage multiple channels from one platform.
+{% endblock %}
+{% block keywords %}
+    AI marketing, content automation, creator marketplace, social media management, marketing platform
+{% endblock %}
+{% block content %}
+    <!--Hero-->
+    <div class="min-h-screen flex items-center py-8 lg:py-16 relative">
+        <div class="container px-4 mx-auto">
+            <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
+                <!--Left Col-->
+                <div class="flex flex-col w-full lg:w-1/2 text-center lg:text-left text-white order-2 lg:order-1">
+                    <h1 class="text-4xl lg:text-6xl font-bold leading-tight text-white mb-6">
+                        AI Marketing
+                        <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-200">Automation</span>
+                    </h1>
+                    <p class="text-lg lg:text-xl mb-8 text-white/90 max-w-lg mx-auto lg:mx-0">
+                        Generate content, connect with creators, manage all channels. Everything automated with AI.
+                    </p>
+                    <!-- CTA Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <a href="{% url 'website:brand_signup' %}"
+                           class="bg-white text-gray-900 font-semibold rounded-full py-4 px-8 shadow-lg hover:shadow-xl transform transition hover:scale-105 duration-300 text-center">
+                            Get Started Now
+                        </a>
+                        <a href="{% url 'website:user_signup' %}"
+                           class="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold rounded-full py-4 px-8 transition-colors duration-300 text-center">
+                            Join as Creator
+                        </a>
+                    </div>
+                </div>
+                <!--Right Col-->
+                <div class="w-full lg:w-1/2 order-1 lg:order-2">
+                    <div class="relative max-w-sm mx-auto lg:max-w-full">
+                        <img class="w-full h-auto"
+                             src="{% static 'images/hero.png' %}"
+                             width="960"
+                             height="720"
+                             alt="Gemnar AI Marketing Platform" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- AI Tweet Demo Overlay -->
+        <div id="ai-demo-overlay"
+             class="fixed top-1/2 left-1/2 z-50 pointer-events-none hidden transition-all duration-500 ease-in-out"
+             data-demo-instance="gemnar-main">
+            <div class="bg-white rounded-2xl shadow-2xl w-96 sm:w-80 md:w-96 lg:w-[420px] overflow-hidden pointer-events-auto mobile-chat-widget">
+                <!-- Chat Header -->
+                <div class="bg-gradient-to-r from-pink-500 to-orange-400 p-4 text-white relative">
+                    <div class="flex items-center space-x-3 pr-12">
+                        <div class="flex items-center justify-center w-12 h-12">
+                            <svg class="w-10 h-10 robot-svg"
+                                 viewBox="0 0 64 64"
+                                 xmlns="http://www.w3.org/2000/svg">
+                                <!-- Robot Head -->
+                                <rect x="16" y="16" width="32" height="24" rx="4" fill="#60a5fa" stroke="#3b82f6" stroke-width="2" class="robot-head" />
+                                <!-- Antenna -->
+                                <line x1="32" y1="16" x2="32" y2="8" stroke="#3b82f6" stroke-width="2" class="robot-antenna" />
+                                <circle cx="32" cy="8" r="2" fill="#34d399" class="robot-antenna-tip" />
+                                <!-- Eyes -->
+                                <circle cx="24" cy="26" r="3" fill="#ffffff" class="robot-eye-left" />
+                                <circle cx="40" cy="26" r="3" fill="#ffffff" class="robot-eye-right" />
+                                <circle cx="24" cy="26" r="1.5" fill="#1f2937" class="robot-pupil-left" />
+                                <circle cx="40" cy="26" r="1.5" fill="#1f2937" class="robot-pupil-right" />
+                                <!-- Mouth -->
+                                <rect x="28" y="32" width="8" height="4" rx="2" fill="#1f2937" class="robot-mouth" />
+                                <!-- Body -->
+                                <rect x="20" y="40" width="24" height="16" rx="2" fill="#60a5fa" stroke="#3b82f6" stroke-width="2" class="robot-body" />
+                                <!-- Body Details -->
+                                <circle cx="26" cy="46" r="2" fill="#34d399" class="robot-button1" />
+                                <circle cx="32" cy="48" r="1.5" fill="#fbbf24" class="robot-button2" />
+                                <circle cx="38" cy="46" r="2" fill="#f87171" class="robot-button3" />
+                                <!-- Arms -->
+                                <rect x="10" y="42" width="8" height="4" rx="2" fill="#60a5fa" stroke="#3b82f6" stroke-width="1" class="robot-arm-left" />
+                                <rect x="46" y="42" width="8" height="4" rx="2" fill="#60a5fa" stroke="#3b82f6" stroke-width="1" class="robot-arm-right" />
+                                <!-- Legs -->
+                                <rect x="22" y="56" width="6" height="6" rx="1" fill="#60a5fa" stroke="#3b82f6" stroke-width="1" class="robot-leg-left" />
+                                <rect x="36" y="56" width="6" height="6" rx="1" fill="#60a5fa" stroke="#3b82f6" stroke-width="1" class="robot-leg-right" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="font-semibold">Gemnar AI</div>
+                            <div class="text-xs text-white/80">
+                                <span id="ai-status-text">Generating content</span><span class="dots-animation">
+                                    <span class="dot">.</span>
+                                    <span class="dot">.</span>
+                                    <span class="dot">.</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="close-demo"
+                            class="absolute top-4 right-4 p-3 text-white hover:text-white bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 flex items-center justify-center w-10 h-10 shadow-lg">
+                        <i class="fas fa-times text-base font-bold"></i>
+                    </button>
+                </div>
+                <!-- Chat Content -->
+                <div class="p-5 space-y-4 max-h-96 overflow-y-auto">
+                    <!-- AI Typing Indicator -->
+                    <div id="typing-indicator" class="flex justify-center">
+                        <div class="bg-gray-100 rounded-lg px-4 py-2">
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce bounce-delay-1"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce bounce-delay-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- AI Response -->
+                    <div id="ai-response" class="hidden">
+                        <!-- Tweet Response -->
+                        <div id="tweet-response" class="hidden">
+                            <!-- Combined Tweet Display -->
+                            <div class="border rounded-xl p-4 bg-white shadow-sm">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <div class="w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-blue-500">
+                                        <svg class="w-3 h-3 fill-blue-500" viewBox="0 0 24 24">
+                                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold text-sm">YourBrand</span>
+                                    <span class="text-gray-500 text-sm">@yourbrand</span>
+                                </div>
+                                <div id="tweet-content"
+                                     class="text-gray-900 mb-3 min-h-[80px] leading-relaxed"></div>
+                                <div class="flex items-center justify-between pt-2 border-t text-gray-500">
+                                    <div class="flex space-x-4 text-sm">
+                                        <i class="far fa-comment tweet-comment-icon hover:text-blue-500 cursor-pointer transition-colors"></i>
+                                        <i class="fas fa-retweet tweet-retweet-icon hover:text-green-500 cursor-pointer transition-colors"></i>
+                                        <i class="far fa-heart tweet-heart-icon hover:text-red-500 cursor-pointer transition-colors"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Image Response -->
+                        <div id="image-response" class="hidden">
+                            <div class="border rounded-xl p-4 bg-white shadow-sm">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <div class="w-6 h-6 bg-white rounded-full flex items-center justify-center border-2 border-purple-500">
+                                        <svg class="w-3 h-3 fill-purple-500" viewBox="0 0 24 24">
+                                            <path d="m14,2c2.206,0 4,1.794 4,4v1h1c1.103,0 2,.897 2,2v9c0,2.757-2.243,5-5,5H8c-2.757,0-5-2.243-5-5V9c0-1.103.897-2 2-2h1v-1c0-2.206 1.794-4 4-4h4ZM8,9H5v9c0,1.654 1.346,3 3,3h8c1.654,0 3-1.346 3-3V9h-3-8ZM16,6c0-1.103-.897-2-2-2h-4c-1.103,0-2,.897-2,2v1h8v-1Z" />
+                                        </svg>
+                                    </div>
+                                    <span class="font-semibold text-sm">AI Image Generator</span>
+                                    <span class="text-gray-500 text-sm">·</span>
+                                    <span class="text-gray-500 text-sm">Just now</span>
+                                </div>
+                                <div id="image-content" class="mb-3">
+                                    <!-- Image will be loaded here -->
+                                </div>
+                                <div class="text-sm text-gray-600 mb-3">
+                                    <span id="image-prompt-text"></span>
+                                </div>
+                                <div class="flex items-center justify-between pt-2 border-t text-gray-500">
+                                    <div class="flex space-x-4 text-sm">
+                                        <i class="far fa-heart image-heart-icon hover:text-red-500 cursor-pointer transition-colors"></i>
+                                        <i class="fas fa-share image-share-icon hover:text-blue-500 cursor-pointer transition-colors"></i>
+                                        <i class="fas fa-download image-download-icon hover:text-green-500 cursor-pointer transition-colors"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Feedback Buttons -->
+                        <div class="flex items-center justify-center space-x-4 mt-4">
+                            <button id="thumbs-up"
+                                    class="flex items-center space-x-2 bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-full transition-colors">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="text-sm font-medium">Great!</span>
+                            </button>
+                            <button id="thumbs-down"
+                                    class="flex items-center space-x-2 bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-full transition-colors">
+                                <i class="fas fa-thumbs-down"></i>
+                                <span class="text-sm font-medium">Regenerate</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            // Define static image URLs
+            const GENERATED_IMAGES = {
+                team: "{% static 'images/generated-team.png' %}",
+                logo: "{% static 'images/generated-logo.png' %}",
+                content: "{% static 'images/generated-content.png' %}"
+            };
+            
+            // Debug: Log the image URLs
+            console.log('Generated image URLs:', GENERATED_IMAGES);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                // Prevent multiple instances
+                if (window.gemnarDemoInitialized) return;
+                window.gemnarDemoInitialized = true;
+
+                // Check if chat widget has been shown in this session
+                if (sessionStorage.getItem('gemnar_chat_widget_shown') === 'true') {
+                    return; // Don't show the widget if it's already been shown this session
+                }
+
+                // Cookie utility functions
+                function setCookie(name, value, days) {
+                    const expires = new Date();
+                    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+                    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+                }
+
+                function getCookie(name) {
+                    const nameEQ = name + "=";
+                    const ca = document.cookie.split(';');
+                    for(let i = 0; i < ca.length; i++) {
+                        let c = ca[i];
+                        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+                    }
+                    return null;
+                }
+
+                // Check if user has already seen the "Generating marketing posts" message
+                let hasSeenGeneratingMessage = getCookie('gemnar_seen_generating_posts') === 'true';
+
+                const overlay = document.getElementById('ai-demo-overlay');
+                if (!overlay) return; // Safety check
+
+                const typingIndicator = document.getElementById('typing-indicator');
+                const aiResponse = document.getElementById('ai-response');
+                const tweetResponse = document.getElementById('tweet-response');
+                const imageResponse = document.getElementById('image-response');
+                const tweetContent = document.getElementById('tweet-content');
+                const imageContentDiv = document.getElementById('image-content');
+                const imagePromptText = document.getElementById('image-prompt-text');
+                const aiStatusText = document.getElementById('ai-status-text');
+                const closeBtn = document.getElementById('close-demo');
+                const thumbsUp = document.getElementById('thumbs-up');
+                const thumbsDown = document.getElementById('thumbs-down');
+
+                const tweets = [
+                    "🚀 Revolutionize your marketing strategy with AI! Our new features help you create, schedule, and optimize content automatically. Say goodbye to manual work and hello to growth! #AIMarketing #Automation #MarketingTech",
+                    "✨ Just launched: AI-powered content generation that understands your brand voice perfectly. Create weeks of social media content in minutes, not hours! Who else loves efficiency? #ContentCreation #AI #Productivity",
+                    "🎯 Game-changer alert! Our AI now analyzes your audience engagement patterns and suggests the perfect posting times. Marketing just got smarter! #DataDriven #SocialMedia #MarketingAutomation"
+                ];
+
+                const imageContent = [
+                    {
+                        prompt: "Professional marketing team collaborating in modern office",
+                        image: GENERATED_IMAGES.team,
+                        status: "Generating marketing visuals"
+                    },
+                    {
+                        prompt: "Modern brand logo design with gradient colors",
+                        image: GENERATED_IMAGES.logo,
+                        status: "Creating brand graphics"
+                    },
+                    {
+                        prompt: "Social media content template with vibrant colors",
+                        image: GENERATED_IMAGES.content,
+                        status: "Designing social posts"
+                    }
+                ];
+
+                const contentTypes = ['tweet', 'image']; // Alternate between tweets and images
+                let currentContentIndex = 0;
+                let currentTypeIndex = 0;
+                let isVisible = false;
+                let lastScrollY = window.scrollY;
+                let scrollTimeout;
+                let isTyping = false;
+
+                function showDemo() {
+                    if (isVisible) return;
+                    isVisible = true;
+                    
+                    // Mark as shown in session storage
+                    sessionStorage.setItem('gemnar_chat_widget_shown', 'true');
+                    
+                    overlay.classList.remove('hidden');
+                    overlay.style.transform = 'translate(-50%, -50%) scale(1)';
+                    overlay.style.opacity = '1';
+                    
+                    // Reset state completely
+                    typingIndicator.classList.remove('hidden');
+                    aiResponse.classList.add('hidden');
+                    tweetResponse.classList.add('hidden');
+                    imageResponse.classList.add('hidden');
+                    tweetContent.innerHTML = ''; // Clear any existing content
+                    imageContentDiv.innerHTML = '';
+                    imagePromptText.innerHTML = '';
+                    
+                    // Determine content type and update status
+                    const currentType = contentTypes[currentTypeIndex];
+                    
+                    // If user has seen "Generating marketing posts" before, skip to image content
+                    if (currentType === 'tweet' && hasSeenGeneratingMessage) {
+                        currentTypeIndex = 1; // Switch to image
+                        const statusText = imageContent[currentContentIndex % imageContent.length].status;
+                        aiStatusText.textContent = statusText;
+                    } else {
+                        const statusText = currentType === 'tweet' ? 'Generating marketing posts' : imageContent[currentContentIndex % imageContent.length].status;
+                        aiStatusText.textContent = statusText;
+                        
+                        // If showing "Generating marketing posts" for the first time, set the cookie
+                        if (currentType === 'tweet' && !hasSeenGeneratingMessage) {
+                            setCookie('gemnar_seen_generating_posts', 'true', 3650); // 10 years
+                            hasSeenGeneratingMessage = true;
+                        }
+                    }
+                    
+                    // Show typing for 1 second, then show response
+                    setTimeout(() => {
+                        typingIndicator.classList.add('hidden');
+                        aiResponse.classList.remove('hidden');
+                        
+                        if (contentTypes[currentTypeIndex] === 'tweet') {
+                            showTweetContent();
+                        } else {
+                            showImageContent();
+                        }
+                    }, 1000);
+                }
+
+                function hideDemo() {
+                    if (!isVisible) return;
+                    isVisible = false;
+                    isTyping = false; // Stop any ongoing animation
+                    overlay.style.transform = 'translate(-50%, -50%) translateY(100px) scale(0.8)';
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.classList.add('hidden');
+                    }, 500);
+                }
+
+                function handleScroll() {
+                    const currentScrollY = window.scrollY;
+                    
+                    // Clear existing timeout
+                    clearTimeout(scrollTimeout);
+                    
+                    // Only show when at the very top of the page
+                    if (currentScrollY <= 50) { // Allow small tolerance for smooth scrolling
+                        showDemo();
+                    } else {
+                        hideDemo();
+                    }
+                    
+                    lastScrollY = currentScrollY;
+                }
+
+                function showTweetContent() {
+                    tweetResponse.classList.remove('hidden');
+                    imageResponse.classList.add('hidden');
+                    typeWriter(tweets[currentContentIndex % tweets.length]);
+                }
+
+                function showImageContent() {
+                    tweetResponse.classList.add('hidden');
+                    imageResponse.classList.remove('hidden');
+                    const currentImage = imageContent[currentContentIndex % imageContent.length];
+                    
+                    // Show loading placeholder first
+                    imageContentDiv.innerHTML = `
+                        <div class="w-full mobile-demo-image bg-gray-100 rounded-lg flex items-center justify-center">
+                            <div class="text-center">
+                                <div class="w-8 h-8 border-2 border-gray-300 border-t-purple-500 rounded-full animate-spin mx-auto mb-2"></div>
+                                <p class="text-sm text-gray-500">Generating image...</p>
+                            </div>
+                        </div>
+                    `;
+                    imagePromptText.textContent = '';
+                    
+                    // After 2 seconds, show the actual image
+                    setTimeout(() => {
+                        console.log('Loading image:', currentImage.image);
+                        
+                        // Create image element with error handling
+                        const img = new Image();
+                        img.onload = function() {
+                            console.log('Image loaded successfully:', currentImage.image);
+                            imageContentDiv.innerHTML = `
+                                <img src="${currentImage.image}" alt="${currentImage.prompt}" class="w-full mobile-demo-image object-cover rounded-lg">
+                            `;
+                        };
+                        img.onerror = function() {
+                            console.error('Failed to load image:', currentImage.image);
+                            imageContentDiv.innerHTML = `
+                                <div class="w-full mobile-demo-image bg-red-100 rounded-lg flex items-center justify-center">
+                                    <div class="text-center">
+                                        <div class="text-red-500 mb-2">
+                                            <i class="fas fa-exclamation-triangle text-2xl"></i>
+                                        </div>
+                                        <p class="text-sm text-red-600">Image failed to load</p>
+                                        <p class="text-xs text-red-500 mt-1 break-all">${currentImage.image}</p>
+                                    </div>
+                                </div>
+                            `;
+                        };
+                        img.src = currentImage.image;
+                        
+                        imagePromptText.textContent = `✨ "${currentImage.prompt}"`;
+                    }, 2000);
+                }
+
+                function typeWriter(text) {
+                    if (isTyping) return; // Prevent multiple animations
+                    isTyping = true;
+                    
+                    let i = 0;
+                    tweetContent.innerHTML = ''; // Always clear first
+                    
+                    function type() {
+                        if (i < text.length && isTyping) {
+                            const char = text.charAt(i);
+                            tweetContent.innerHTML += char;
+                            i++;
+                            setTimeout(type, 30);
+                        } else {
+                            isTyping = false; // Animation complete
+                        }
+                    }
+                    type();
+                }
+
+                function nextContent() {
+                    isTyping = false; // Reset typing flag
+                    
+                    // Cycle to next content type
+                    currentTypeIndex = (currentTypeIndex + 1) % contentTypes.length;
+                    currentContentIndex = (currentContentIndex + 1);
+                    
+                    // Hide current content and show typing indicator
+                    typingIndicator.classList.remove('hidden');
+                    aiResponse.classList.add('hidden');
+                    tweetResponse.classList.add('hidden');
+                    imageResponse.classList.add('hidden');
+                    tweetContent.innerHTML = '';
+                    imageContentDiv.innerHTML = '';
+                    imagePromptText.innerHTML = '';
+                    
+                    // Update status text based on next content type
+                    const nextType = contentTypes[currentTypeIndex];
+                    
+                    // If user has seen "Generating marketing posts" before, skip tweet content
+                    if (nextType === 'tweet' && hasSeenGeneratingMessage) {
+                        // Skip to next content type (image)
+                        currentTypeIndex = (currentTypeIndex + 1) % contentTypes.length;
+                        const statusText = imageContent[currentContentIndex % imageContent.length].status;
+                        aiStatusText.textContent = statusText;
+                    } else {
+                        const statusText = nextType === 'tweet' ? 'Generating marketing posts' : imageContent[currentContentIndex % imageContent.length].status;
+                        aiStatusText.textContent = statusText;
+                        
+                        // If showing "Generating marketing posts" for the first time, set the cookie
+                        if (nextType === 'tweet' && !hasSeenGeneratingMessage) {
+                            setCookie('gemnar_seen_generating_posts', 'true', 3650); // 10 years
+                            hasSeenGeneratingMessage = true;
+                        }
+                    }
+                    
+                    setTimeout(() => {
+                        typingIndicator.classList.add('hidden');
+                        aiResponse.classList.remove('hidden');
+                        
+                        if (contentTypes[currentTypeIndex] === 'tweet') {
+                            showTweetContent();
+                        } else {
+                            showImageContent();
+                        }
+                    }, 1500);
+                }
+
+                // Remove any existing demos first
+                const existingDemos = document.querySelectorAll('[data-demo-instance]');
+                existingDemos.forEach((demo, index) => {
+                    if (index > 0) { // Keep only the first one
+                        demo.remove();
+                    }
+                });
+
+                // Only show demo if we're at the top of the page initially
+                if (window.scrollY <= 50) {
+                    showDemo();
+                }
+
+                // Add scroll event listener
+                window.addEventListener('scroll', handleScroll, { passive: true });
+
+                // Auto-cycle content every 15 seconds when visible
+                setInterval(() => {
+                    if (isVisible && !aiResponse.classList.contains('hidden')) {
+                        nextContent();
+                    }
+                }, 15000);
+
+                // Event listeners
+                closeBtn.addEventListener('click', hideDemo);
+                
+                thumbsUp.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.classList.add('bg-green-200');
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                        this.classList.remove('bg-green-200');
+                        nextContent();
+                    }, 500);
+                });
+
+                thumbsDown.addEventListener('click', function() {
+                    this.style.transform = 'scale(1.1)';
+                    this.classList.add('bg-red-200');
+                    setTimeout(() => {
+                        this.style.transform = 'scale(1)';
+                        this.classList.remove('bg-red-200');
+                        nextContent();
+                    }, 500);
+                });
+
+                // Hide on escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && isVisible) {
+                        hideDemo();
+                    }
+                });
+            });
+
+            // How It Works Scroll Animation
+            document.addEventListener('DOMContentLoaded', function() {
+                const howItWorksSection = document.getElementById('how-it-works');
+                if (!howItWorksSection) return;
+
+                const stepCards = document.querySelectorAll('.step-card');
+                const connectionDots = document.querySelectorAll('.connection-dot');
+                
+                let lastScrollDirection = null;
+                let lastScrollY = window.scrollY;
+                
+                // Track which steps have been animated
+                const stepStates = {
+                    1: { animated: false, visible: false },
+                    2: { animated: false, visible: false },
+                    3: { animated: false, visible: false }
+                };
+
+                function isInViewport(element, threshold = 0.5) {
+                    const rect = element.getBoundingClientRect();
+                    const elementHeight = rect.bottom - rect.top;
+                    const viewportHeight = window.innerHeight;
+                    
+                    // Calculate how much of the element is visible
+                    const visibleTop = Math.max(0, rect.top);
+                    const visibleBottom = Math.min(viewportHeight, rect.bottom);
+                    const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+                    
+                    return (visibleHeight / elementHeight) >= threshold;
+                }
+
+                function animateStep(stepNumber, direction) {
+                    const stepCard = document.querySelector(`[data-step="${stepNumber}"]`);
+                    if (!stepCard) return;
+
+                    const iconContainer = stepCard.querySelector('.icon-container');
+                    const stepTitle = stepCard.querySelector('.step-title');
+                    const stepDescription = stepCard.querySelector('.step-description');
+
+                    if (direction === 'forward') {
+                        // Remove reverse classes first
+                        iconContainer.classList.remove('animate-out');
+                        stepTitle.classList.remove('animate-out');
+                        stepDescription.classList.remove('animate-out');
+                        
+                        // Add forward animation classes
+                        setTimeout(() => {
+                            iconContainer.classList.add('animate-in');
+                        }, (stepNumber - 1) * 200);
+                        
+                        setTimeout(() => {
+                            stepTitle.classList.add('animate-in');
+                        }, (stepNumber - 1) * 200 + 300);
+                        
+                        setTimeout(() => {
+                            stepDescription.classList.add('animate-in');
+                        }, (stepNumber - 1) * 200 + 500);
+
+                        stepStates[stepNumber].animated = true;
+                    } else {
+                        // Remove forward classes
+                        iconContainer.classList.remove('animate-in');
+                        stepTitle.classList.remove('animate-in');
+                        stepDescription.classList.remove('animate-in');
+                        
+                        // Add reverse animation classes
+                        stepDescription.classList.add('animate-out');
+                        setTimeout(() => {
+                            stepTitle.classList.add('animate-out');
+                        }, 100);
+                        setTimeout(() => {
+                            iconContainer.classList.add('animate-out');
+                        }, 200);
+
+                        stepStates[stepNumber].animated = false;
+                    }
+                }
+
+                function animateDots(direction) {
+                    if (direction === 'forward') {
+                        // Progressive color animation through the dots
+                        connectionDots.forEach((dot, index) => {
+                            const stepData = parseFloat(dot.dataset.step);
+                            
+                            setTimeout(() => {
+                                dot.style.opacity = '1';
+                                dot.classList.remove('fade-out');
+                                
+                                // Color progression: blue → green → purple
+                                if (stepData < 2) {
+                                    // First section: Connect to Automate (blue)
+                                    dot.classList.add('blue');
+                                    dot.classList.remove('green', 'purple');
+                                } else if (stepData < 2.5) {
+                                    // Transition section: blue to green
+                                    dot.classList.add('green');
+                                    dot.classList.remove('blue', 'purple');
+                                } else {
+                                    // Final section: Automate to Scale (purple)
+                                    dot.classList.add('purple');
+                                    dot.classList.remove('blue', 'green');
+                                }
+                            }, index * 120);
+                        });
+                    } else {
+                        // Reverse animation - fade back to default state
+                        [...connectionDots].reverse().forEach((dot, index) => {
+                            setTimeout(() => {
+                                dot.style.opacity = '0.3';
+                                dot.classList.remove('blue', 'green', 'purple');
+                            }, index * 80);
+                        });
+                    }
+                }
+
+                function handleScroll() {
+                    const currentScrollY = window.scrollY;
+                    const scrollDirection = currentScrollY > lastScrollY ? 'down' : 'up';
+                    
+                    // Only process if direction changed or significant scroll
+                    if (scrollDirection !== lastScrollDirection || Math.abs(currentScrollY - lastScrollY) > 50) {
+                        lastScrollDirection = scrollDirection;
+                        
+                        const sectionVisible = isInViewport(howItWorksSection, 0.3);
+                        
+                        if (sectionVisible) {
+                            if (scrollDirection === 'down') {
+                                // Forward animation
+                                if (!stepStates[1].animated) {
+                                    animateStep(1, 'forward');
+                                    animateStep(2, 'forward'); 
+                                    animateStep(3, 'forward');
+                                    animateDots('forward');
+                                }
+                            } else if (scrollDirection === 'up') {
+                                // Check if we should reverse
+                                const sectionRect = howItWorksSection.getBoundingClientRect();
+                                if (sectionRect.top > window.innerHeight * 0.7) {
+                                    // Section is mostly out of view, reverse animations
+                                    if (stepStates[1].animated) {
+                                        animateStep(3, 'reverse');
+                                        animateStep(2, 'reverse');
+                                        animateStep(1, 'reverse');
+                                        animateDots('reverse');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    lastScrollY = currentScrollY;
+                }
+
+                // Throttled scroll handler
+                let scrollTimeout;
+                window.addEventListener('scroll', function() {
+                    if (scrollTimeout) {
+                        clearTimeout(scrollTimeout);
+                    }
+                    scrollTimeout = setTimeout(handleScroll, 16); // ~60fps
+                }, { passive: true });
+
+                // Initial check
+                handleScroll();
+            });
+        </script>
+        <style>
+            #ai-demo-overlay {
+                transform: translate(-50%, -50%) translateY(100px) scale(0.8);
+                opacity: 0;
+            }
+
+            /* Ensure only one demo overlay exists */
+            [data-demo-instance]:not([data-demo-instance="gemnar-main"]) {
+                display: none !important;
+            }
+
+            /* Mobile responsiveness for the centered widget */
+            @media (max-width: 640px) {
+                .mobile-chat-widget {
+                    width: calc(100vw - 2rem) !important;
+                    max-width: 340px !important;
+                    min-width: 280px !important;
+                }
+                
+                .mobile-demo-image {
+                    height: 160px !important;
+                    max-height: 160px !important;
+                }
+                
+                /* Ensure image container doesn't overflow */
+                #image-content {
+                    overflow: hidden !important;
+                }
+            }
+            
+            @media (max-width: 380px) {
+                .mobile-chat-widget {
+                    width: calc(100vw - 1rem) !important;
+                    max-width: 320px !important;
+                    min-width: 260px !important;
+                }
+                
+                .mobile-demo-image {
+                    height: 140px !important;
+                    max-height: 140px !important;
+                }
+            }
+            
+            /* Default desktop styling for demo images */
+            .mobile-demo-image {
+                height: 192px; /* h-48 equivalent */
+                max-height: 192px;
+            }
+            
+            /* Additional mobile improvements */
+            @media (max-width: 640px) and (orientation: landscape) {
+                .mobile-demo-image {
+                    height: 120px !important;
+                    max-height: 120px !important;
+                }
+            }
+            
+            /* Ensure images don't break on very small screens */
+            @media (max-width: 280px) {
+                .mobile-chat-widget {
+                    width: calc(100vw - 0.5rem) !important;
+                    max-width: 280px !important;
+                    min-width: 250px !important;
+                }
+                
+                .mobile-demo-image {
+                    height: 120px !important;
+                    max-height: 120px !important;
+                }
+            }
+
+            /* Ensure perfect centering */
+            #ai-demo-overlay {
+                margin: 0 !important;
+            }
+
+            /* SVG Robot Animations */
+            .robot-svg {
+                animation: robotBob 3s infinite ease-in-out;
+                transform-origin: center bottom;
+            }
+
+                         .robot-antenna-tip {
+                 animation: antennaGlow 2s infinite ease-in-out, antennaBlink 3.2s infinite ease-in-out;
+             }
+
+            .robot-eye-left, .robot-eye-right {
+                animation: robotBlink 4s infinite ease-in-out;
+            }
+
+            .robot-pupil-left, .robot-pupil-right {
+                animation: robotBlink 4s infinite ease-in-out;
+            }
+
+                         .robot-button1 {
+                 animation: buttonPulse1 3s infinite ease-in-out, buttonBlink1 4.1s infinite ease-in-out;
+             }
+
+             .robot-button2 {
+                 animation: buttonPulse2 3s infinite ease-in-out 0.5s, buttonBlink2 2.7s infinite ease-in-out;
+             }
+
+             .robot-button3 {
+                 animation: buttonPulse3 3s infinite ease-in-out 1s, buttonBlink3 3.8s infinite ease-in-out;
+             }
+
+                         .robot-arm-left {
+                 animation: armWaveLeft 6s infinite ease-in-out;
+                 transform-origin: right center;
+             }
+
+             .robot-arm-right {
+                 animation: armWaveRight 6s infinite ease-in-out;
+                 transform-origin: left center;
+             }
+
+            @keyframes robotBob {
+                0%, 100% {
+                    transform: translateY(0px) rotate(0deg);
+                }
+                50% {
+                    transform: translateY(-2px) rotate(1deg);
+                }
+            }
+
+            @keyframes antennaGlow {
+                0%, 100% {
+                    fill: #34d399;
+                    filter: drop-shadow(0 0 3px #34d399);
+                }
+                50% {
+                    fill: #10b981;
+                    filter: drop-shadow(0 0 6px #10b981);
+                }
+            }
+
+            @keyframes robotBlink {
+                0%, 90%, 100% {
+                    opacity: 1;
+                }
+                93%, 97% {
+                    opacity: 0.1;
+                }
+            }
+
+            @keyframes buttonPulse1 {
+                0%, 100% {
+                    fill: #34d399;
+                }
+                50% {
+                    fill: #10b981;
+                }
+            }
+
+            @keyframes buttonPulse2 {
+                0%, 100% {
+                    fill: #fbbf24;
+                }
+                50% {
+                    fill: #f59e0b;
+                }
+            }
+
+            @keyframes buttonPulse3 {
+                0%, 100% {
+                    fill: #f87171;
+                }
+                50% {
+                    fill: #ef4444;
+                }
+            }
+
+             @keyframes armWaveLeft {
+                 0%, 45%, 55%, 100% {
+                     transform: rotate(0deg);
+                 }
+                 50% {
+                     transform: rotate(15deg);
+                 }
+             }
+
+             @keyframes armWaveRight {
+                 0%, 10%, 20%, 80%, 90%, 100% {
+                     transform: rotate(0deg);
+                 }
+                 15% {
+                     transform: rotate(-15deg);
+                 }
+                 85% {
+                     transform: rotate(-15deg);
+                 }
+             }
+
+            /* Dots Animation */
+            .dots-animation {
+                display: inline-block;
+            }
+
+            .dot {
+                animation: dotBounce 1.4s infinite ease-in-out;
+                display: inline-block;
+                opacity: 0.4;
+            }
+
+            .dot:nth-child(1) {
+                animation-delay: 0s;
+            }
+
+            .dot:nth-child(2) {
+                animation-delay: 0.2s;
+            }
+
+            .dot:nth-child(3) {
+                animation-delay: 0.4s;
+            }
+
+                         @keyframes dotBounce {
+                 0%, 80%, 100% {
+                     transform: translateY(0);
+                     opacity: 0.4;
+                 }
+                 40% {
+                     transform: translateY(-4px);
+                     opacity: 1;
+                 }
+             }
+
+             /* Tweet Icon Animations */
+             .tweet-comment-icon {
+                 animation: commentPulse 7s infinite ease-in-out;
+             }
+
+             .tweet-retweet-icon {
+                 animation: retweetSpin 8s infinite ease-in-out;
+             }
+
+             .tweet-heart-icon {
+                 animation: heartBeat 6s infinite ease-in-out;
+             }
+
+             @keyframes commentPulse {
+                 0%, 80%, 100% {
+                     transform: scale(1);
+                     color: inherit;
+                 }
+                 85%, 95% {
+                     transform: scale(1.2);
+                     color: #3b82f6;
+                 }
+             }
+
+             @keyframes retweetSpin {
+                 0%, 85%, 100% {
+                     transform: rotate(0deg) scale(1);
+                     color: inherit;
+                 }
+                 90%, 95% {
+                     transform: rotate(360deg) scale(1.1);
+                     color: #10b981;
+                 }
+             }
+
+             @keyframes heartBeat {
+                 0%, 75%, 100% {
+                     transform: scale(1);
+                     color: inherit;
+                 }
+                 80% {
+                     transform: scale(1.3);
+                     color: #ef4444;
+                 }
+                 85% {
+                     transform: scale(1.1);
+                     color: #ef4444;
+                 }
+                 90% {
+                     transform: scale(1.2);
+                     color: #ef4444;
+                 }
+             }
+
+             /* Random Light Blinking Animations */
+             @keyframes antennaBlink {
+                 0%, 70%, 75%, 90%, 100% {
+                     opacity: 1;
+                 }
+                 72%, 88%, 92% {
+                     opacity: 0.3;
+                 }
+             }
+
+             @keyframes buttonBlink1 {
+                 0%, 60%, 65%, 80%, 85%, 100% {
+                     opacity: 1;
+                 }
+                 62%, 82% {
+                     opacity: 0.2;
+                 }
+             }
+
+             @keyframes buttonBlink2 {
+                 0%, 45%, 50%, 75%, 78%, 100% {
+                     opacity: 1;
+                 }
+                 47%, 76% {
+                     opacity: 0.1;
+                 }
+             }
+
+             @keyframes buttonBlink3 {
+                 0%, 55%, 58%, 70%, 73%, 85%, 88%, 100% {
+                     opacity: 1;
+                 }
+                 56%, 71%, 86% {
+                     opacity: 0.3;
+                 }
+             }
+
+             /* Bounce Animation Delays */
+             .bounce-delay-1 {
+                 animation-delay: 0.1s;
+             }
+
+             .bounce-delay-2 {
+                 animation-delay: 0.2s;
+             }
+
+             /* How It Works Animations */
+             .step-card {
+                 transition: all 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+             }
+
+             .icon-container {
+                 transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+             }
+
+             .step-title {
+                 transition: all 0.6s ease-out 0.3s;
+             }
+
+             .step-description {
+                 transition: all 0.6s ease-out 0.5s;
+             }
+
+             /* Animate in states */
+             .icon-container.animate-in {
+                 transform: scale(1) !important;
+             }
+
+             .step-title.animate-in,
+             .step-description.animate-in {
+                 opacity: 1 !important;
+                 transform: translateY(0) !important;
+             }
+
+             /* Initial states for text */
+             .step-title,
+             .step-description {
+                 transform: translateY(20px);
+             }
+
+             /* Connection Dots */
+             .connection-dot {
+                 width: 16px;
+                 height: 16px;
+                 border-radius: 50%;
+                 background: #e5e7eb;
+                 transition: all 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+                 position: relative;
+                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                 opacity: 0.3;
+             }
+
+             .connection-dot::after {
+                 content: '';
+                 position: absolute;
+                 top: 50%;
+                 left: 50%;
+                 transform: translate(-50%, -50%);
+                 width: 6px;
+                 height: 6px;
+                 border-radius: 50%;
+                 background: white;
+                 transition: all 0.6s ease;
+                 opacity: 0;
+             }
+
+             /* Color states for dots */
+             .connection-dot.blue {
+                 background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                 box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+             }
+
+             .connection-dot.blue::after {
+                 opacity: 1;
+             }
+
+             .connection-dot.green {
+                 background: linear-gradient(135deg, #10b981, #059669);
+                 box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+             }
+
+             .connection-dot.green::after {
+                 opacity: 1;
+             }
+
+             .connection-dot.purple {
+                 background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+                 box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+             }
+
+             .connection-dot.purple::after {
+                 opacity: 1;
+             }
+
+             /* Reverse animation states */
+             .icon-container.animate-out {
+                 transform: scale(0) !important;
+             }
+
+             .step-title.animate-out,
+             .step-description.animate-out {
+                 opacity: 0 !important;
+                 transform: translateY(20px) !important;
+             }
+        </style>
+    </div>
+    <!-- Quick Stats -->
+    <div class="bg-white/10 backdrop-blur-sm border-t border-white/20">
+        <div class="container mx-auto px-4 py-6">
+            <div class="grid grid-cols-3 gap-4 text-center text-white max-w-2xl mx-auto">
+                <div>
+                    <div class="text-2xl font-bold">5+</div>
+                    <div class="text-sm opacity-90">Platforms</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">24/7</div>
+                    <div class="text-sm opacity-90">Automation</div>
+                </div>
+                <div>
+                    <div class="text-2xl font-bold">AI</div>
+                    <div class="text-sm opacity-90">Powered</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Wave Section -->
+    <div class="relative -mt-12 lg:-mt-24">
+        <svg viewBox="0 0 1428 174"
+             version="1.1"
+             xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+            <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496" opacity="0.100000001">
+            </path>
+            </g>
+            </g>
+        </svg>
+    </div>
+    <!-- Referral Leaderboard Section -->
+    <section class="bg-white py-8 lg:py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-6xl mx-auto relative">
+                <!-- Fancy Border Container -->
+                <div class="relative p-1 bg-gradient-to-r from-pink-500 via-purple-500 to-orange-400 rounded-2xl shadow-2xl">
+                    <div class="bg-white rounded-xl p-6 lg:p-8 relative overflow-hidden">
+                        <!-- Decorative corners -->
+                        <div class="absolute top-0 left-0 w-20 h-20 bg-gradient-to-br from-pink-200 to-transparent rounded-br-full opacity-50">
+                        </div>
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-purple-200 to-transparent rounded-bl-full opacity-50">
+                        </div>
+                        <div class="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-orange-200 to-transparent rounded-tr-full opacity-50">
+                        </div>
+                        <div class="absolute bottom-0 right-0 w-20 h-20 bg-gradient-to-tl from-pink-200 to-transparent rounded-tl-full opacity-50">
+                        </div>
+                        <!-- Content -->
+                        <div class="relative z-10">{% include 'website/leaderboard_widget.html' %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Beta Testing Section -->
+    <section class="bg-gradient-to-r from-blue-50 to-indigo-50 py-16 lg:py-20">
+        <div class="container max-w-4xl mx-auto px-4">
+            <div class="text-center">
+                <div class="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold mb-6">
+                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
+                        </path>
+                    </svg>
+                    Beta Testing
+                </div>
+                <h2 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">Be Among the First to Experience Gemnar</h2>
+                <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Join our exclusive beta program and get early access to Gemnar's mobile app. Help shape the future of AI-powered marketing while growing your brand.
+                </p>
+                <!-- Beta Signup Form -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md mx-auto">
+                    <form id="beta-signup-form"
+                          method="post"
+                          action="{% url 'website:beta_signup' %}">
+                        {% csrf_token %}
+                        <div class="mb-6">
+                            <label for="beta-email"
+                                   class="block text-sm font-medium text-gray-700 mb-2 text-left">Email Address</label>
+                            <input type="email"
+                                   id="beta-email"
+                                   name="email"
+                                   required
+                                   placeholder="your@email.com"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button type="submit"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                            Join Beta Testing
+                        </button>
+                    </form>
+                    <!-- Success/Error Messages -->
+                    <div id="beta-message" class="mt-4 hidden">
+                        <div id="beta-success"
+                             class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm hidden">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                Thanks! We'll add you to TestFlight soon.
+                            </div>
+                        </div>
+                        <div id="beta-error"
+                             class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm hidden">
+                            <div class="flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span id="beta-error-text">Something went wrong. Please try again.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Beta Features -->
+                <div class="mt-12 grid md:grid-cols-3 gap-6 text-left">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-1">Early Access</h4>
+                            <p class="text-sm text-gray-600">Get the app before anyone else and influence development</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-1">Direct Feedback</h4>
+                            <p class="text-sm text-gray-600">Share your thoughts and help us build the perfect tool</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-900 mb-1">Exclusive Benefits</h4>
+                            <p class="text-sm text-gray-600">Special pricing and features for beta testers</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Core Features Section -->
+    <section class="bg-white py-16 lg:py-24">
+        <div class="container max-w-6xl mx-auto px-4">
+            <div class="text-center mb-12 lg:mb-16">
+                <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">Scale Your Marketing with AI</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Everything you need to automate content creation, connect with creators, and grow your brand across all channels.
+                </p>
+            </div>
+            <!-- Features Grid -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+                <!-- AI Content Generation -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-blue-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">AI Content Generation</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Send prompts, get professional posts. AI creates and publishes content to Twitter, Instagram, Reddit, and blogs automatically.
+                    </p>
+                </div>
+                <!-- Creator Marketplace -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-green-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Creator Marketplace</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Connect with thousands of creators for posts, reels, and stories. Built-in payments, contracts, and project management.
+                    </p>
+                </div>
+                <!-- Multi-Channel Management -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-purple-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Multi-Channel Management</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Manage Twitter, Instagram, Reddit, and blogs from one unified dashboard. Track engagement and optimize performance.
+                    </p>
+                </div>
+                <!-- Analytics Dashboard -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Performance Analytics</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Track performance across all platforms with detailed analytics. Optimize content strategy with data-driven insights.
+                    </p>
+                </div>
+                <!-- Blog System -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-red-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Content Publishing</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Create and publish blogs, share community updates. Built-in SEO optimization and content management tools.
+                    </p>
+                </div>
+                <!-- Referral System -->
+                <div class="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-indigo-600"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-3">Revenue Sharing</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed">
+                        Earn revenue through our referral program. Live leaderboards, company partnerships, and direct payouts.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- How It Works Section -->
+    <section class="bg-gray-50 py-16 lg:py-24" id="how-it-works">
+        <div class="container max-w-6xl mx-auto px-4">
+            <div class="text-center mb-12 lg:mb-16">
+                <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">How It Works</h2>
+                <p class="text-lg text-gray-600">Get started in minutes</p>
+            </div>
+            <!-- Steps Container -->
+            <div class="relative">
+                <!-- Steps Grid -->
+                <div class="grid md:grid-cols-3 gap-8 lg:gap-12 relative z-10">
+                    <!-- Step 1: Connect -->
+                    <div class="text-center step-card" data-step="1">
+                        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl icon-container">
+                            <svg class="w-10 h-10 text-white"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3 step-title">Connect</h3>
+                        <p class="text-gray-600 leading-relaxed step-description">Link your social accounts and set preferences</p>
+                    </div>
+                    <!-- Step 2: Automate -->
+                    <div class="text-center step-card" data-step="2">
+                        <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl icon-container">
+                            <svg class="w-10 h-10 text-white"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                </path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3 step-title">Automate</h3>
+                        <p class="text-gray-600 leading-relaxed step-description">Send prompts, AI creates and posts content</p>
+                    </div>
+                    <!-- Step 3: Scale -->
+                    <div class="text-center step-card" data-step="3">
+                        <div class="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl icon-container">
+                            <svg class="w-10 h-10 text-white"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-3 step-title">Scale</h3>
+                        <p class="text-gray-600 leading-relaxed step-description">Track results and optimize what works</p>
+                    </div>
+                </div>
+                <!-- Connection Dots -->
+                <div class="hidden md:flex absolute top-10 left-1/2 transform -translate-x-1/2 w-full max-w-4xl justify-center items-center z-0">
+                    <div class="flex items-center justify-center w-full">
+                        <!-- First spacer -->
+                        <div class="w-20"></div>
+                        <!-- First connecting line -->
+                        <div class="flex items-center justify-center flex-1 space-x-3">
+                            <div class="connection-dot" data-step="1"></div>
+                            <div class="connection-dot" data-step="1.3"></div>
+                            <div class="connection-dot" data-step="1.6"></div>
+                            <div class="connection-dot" data-step="1.9"></div>
+                        </div>
+                        <!-- Middle spacer -->
+                        <div class="w-20"></div>
+                        <!-- Second connecting line -->
+                        <div class="flex items-center justify-center flex-1 space-x-3">
+                            <div class="connection-dot" data-step="2.1"></div>
+                            <div class="connection-dot" data-step="2.4"></div>
+                            <div class="connection-dot" data-step="2.7"></div>
+                            <div class="connection-dot" data-step="3"></div>
+                        </div>
+                        <!-- Last spacer -->
+                        <div class="w-20"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Pricing Section -->
+    <section class="bg-white py-16 lg:py-24">
+        <div class="container max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12 lg:mb-16">
+                <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 mb-4">Simple Pricing</h2>
+                <p class="text-lg text-gray-600">Choose what works for you</p>
+            </div>
+            <div class="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-8 max-w-6xl mx-auto">
+                <!-- Starter Plan -->
+                <div class="w-full max-w-sm bg-white rounded-2xl border-2 border-gray-200 p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+                        <div class="text-4xl font-bold text-gray-900 mb-6">
+                            $99<span class="text-lg text-gray-600 font-normal">/mo</span>
+                        </div>
+                        <ul class="space-y-4 mb-8 text-left">
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Basic Analytics</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Email Templates</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">24/7 Support</span>
+                            </li>
+                        </ul>
+                        <a href="{% url 'website:brand_signup' %}?plan=starter"
+                           class="block w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 px-6 rounded-xl font-semibold text-center hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
+                <!-- Professional Plan - Featured -->
+                <div class="w-full max-w-sm bg-white rounded-2xl border-2 border-blue-500 p-8 relative shadow-2xl lg:transform lg:scale-110 lg:-mt-4 lg:mb-4">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                            Most Popular
+                        </span>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
+                        <div class="text-4xl font-bold text-gray-900 mb-6">
+                            $199<span class="text-lg text-gray-600 font-normal">/mo</span>
+                        </div>
+                        <ul class="space-y-4 mb-8 text-left">
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Advanced Analytics</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Lead Generation</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Automation Workflows</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Priority Support</span>
+                            </li>
+                        </ul>
+                        <a href="{% url 'website:brand_signup' %}?plan=professional"
+                           class="block w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-4 px-6 rounded-xl font-semibold text-center hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
+                <!-- Business Plan -->
+                <div class="w-full max-w-sm bg-white rounded-2xl border-2 border-gray-200 p-8 hover:shadow-lg transition-all duration-300">
+                    <div class="text-center">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+                        <div class="text-4xl font-bold text-gray-900 mb-6">
+                            $299<span class="text-lg text-gray-600 font-normal">/mo</span>
+                        </div>
+                        <ul class="space-y-4 mb-8 text-left">
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Custom Analytics</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">Account Manager</span>
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0"
+                                     fill="currentColor"
+                                     viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd">
+                                    </path>
+                                </svg>
+                                <span class="text-gray-700">White-label Solutions</span>
+                            </li>
+                        </ul>
+                        <a href="{% url 'website:brand_signup' %}?plan=enterprise&price=299"
+                           class="block w-full bg-gradient-to-r from-emerald-600 to-green-600 text-white py-4 px-6 rounded-xl font-semibold text-center hover:from-emerald-700 hover:to-green-700 transition-all duration-300 shadow-lg">
+                            Get Started
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Final CTA Section -->
+    <section class="py-16 lg:py-24">
+        <div class="container mx-auto text-center px-4">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl lg:text-5xl font-bold text-white mb-6 leading-tight">Ready to Automate?</h2>
+                <p class="text-lg lg:text-xl text-white/90 mb-8">Start generating content and growing your brand with AI today.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+                    <a href="{% url 'website:brand_signup' %}"
+                       class="bg-white text-gray-900 font-semibold rounded-full py-4 px-8 shadow-lg hover:shadow-xl transform transition hover:scale-105 duration-300">
+                        Get Started Now
+                    </a>
+                    <a href="{% url 'website:user_signup' %}"
+                       class="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-semibold rounded-full py-4 px-8 transition-colors duration-300">
+                        Join as Creator
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Beta Signup JavaScript -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const betaForm = document.getElementById('beta-signup-form');
+        const betaMessage = document.getElementById('beta-message');
+        const betaSuccess = document.getElementById('beta-success');
+        const betaError = document.getElementById('beta-error');
+        const betaErrorText = document.getElementById('beta-error-text');
+        
+        if (betaForm) {
+            betaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(betaForm);
+                const submitBtn = betaForm.querySelector('button[type="submit"]');
+                const originalBtnText = submitBtn.textContent;
+                
+                // Show loading state
+                submitBtn.textContent = 'Joining...';
+                submitBtn.disabled = true;
+                
+                // Hide previous messages
+                betaMessage.classList.add('hidden');
+                betaSuccess.classList.add('hidden');
+                betaError.classList.add('hidden');
+                
+                fetch('{% url "website:beta_signup" %}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    betaMessage.classList.remove('hidden');
+                    
+                    if (data.success) {
+                        betaSuccess.querySelector('div div').textContent = data.message;
+                        betaSuccess.classList.remove('hidden');
+                        
+                        // Clear form if new signup
+                        if (data.is_new) {
+                            betaForm.reset();
+                        }
+                    } else {
+                        betaErrorText.textContent = data.error || 'Something went wrong. Please try again.';
+                        betaError.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Beta signup error:', error);
+                    betaMessage.classList.remove('hidden');
+                    betaErrorText.textContent = 'Network error. Please try again.';
+                    betaError.classList.remove('hidden');
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.disabled = false;
+                });
+            });
+        }
+    });
+    </script>
+{% endblock %}

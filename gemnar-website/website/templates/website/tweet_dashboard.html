@@ -1,0 +1,802 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block content %}
+    <!-- Breadcrumb Navigation -->
+    {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Tweet Automation Dashboard</h1>
+            <a href="{% url 'website:tweet_config_create' %}"
+               class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Create New Configuration
+            </a>
+        </div>
+        <!-- Twitter API Configuration Status -->
+        <div class="mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold">Twitter API Configuration</h2>
+                    {% if twitter_keys_status.configured %}
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">✅ Configured</span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">❌ Not Configured</span>
+                    {% endif %}
+                </div>
+                {% if not twitter_keys_status.configured %}
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400"
+                                     viewBox="0 0 20 20"
+                                     fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800">Twitter API Configuration Required</h3>
+                                <div class="mt-2 text-sm text-yellow-700">
+                                    <p>You need to configure your Twitter API keys to enable tweet automation. Set up your keys below to get started.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- API Keys Status Display -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-700 mb-2">API Key (Consumer Key)</h4>
+                        <code class="text-sm text-gray-600">{{ twitter_keys_status.api_key }}</code>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-700 mb-2">API Secret (Consumer Secret)</h4>
+                        <code class="text-sm text-gray-600">{{ twitter_keys_status.api_secret }}</code>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-700 mb-2">Access Token</h4>
+                        <code class="text-sm text-gray-600">{{ twitter_keys_status.access_token }}</code>
+                    </div>
+                    <div class="border rounded-lg p-4">
+                        <h4 class="font-medium text-gray-700 mb-2">Access Token Secret</h4>
+                        <code class="text-sm text-gray-600">{{ twitter_keys_status.access_token_secret }}</code>
+                    </div>
+                </div>
+                <!-- Configure/Update Keys Button -->
+                <div class="flex justify-between items-center">
+                    <div class="flex space-x-3">
+                        <button onclick="toggleTwitterConfig()"
+                                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            {% if twitter_keys_status.configured %}
+                                Update Twitter API Keys
+                            {% else %}
+                                Configure Twitter API Keys
+                            {% endif %}
+                        </button>
+                        {% if twitter_keys_status.configured %}
+                            <button onclick="sendTestTweet()"
+                                    id="test-tweet-btn"
+                                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-2">
+                                🐦 Send Test Tweet
+                            </button>
+                            <button onclick="runDiagnostic()"
+                                    id="diagnostic-btn"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-2">
+                                🔍 Run Diagnostic
+                            </button>
+                            <button onclick="checkAccessLevel()"
+                                    id="access-level-btn"
+                                    class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                                📊 Check Access Level
+                            </button>
+                        {% endif %}
+                    </div>
+                    <button onclick="toggleTwitterGuide()"
+                            class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+                        📖 How to get Twitter API keys
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Twitter API Configuration Form (Hidden by default) -->
+        <div id="twitter-config-form" class="mb-8 hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">Configure Twitter API Keys</h3>
+                <form id="twitter-keys-form">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="api_key" class="block text-sm font-medium text-gray-700 mb-2">API Key (Consumer Key)</label>
+                            <input type="text"
+                                   id="api_key"
+                                   name="api_key"
+                                   value="{{ twitter_actual_values.api_key }}"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter your Twitter API key">
+                        </div>
+                        <div>
+                            <label for="api_secret" class="block text-sm font-medium text-gray-700 mb-2">API Secret (Consumer Secret)</label>
+                            <input type="text"
+                                   id="api_secret"
+                                   name="api_secret"
+                                   value="{{ twitter_actual_values.api_secret }}"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter your Twitter API secret">
+                        </div>
+                        <div>
+                            <label for="access_token"
+                                   class="block text-sm font-medium text-gray-700 mb-2">Access Token</label>
+                            <input type="text"
+                                   id="access_token"
+                                   name="access_token"
+                                   value="{{ twitter_actual_values.access_token }}"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter your Twitter access token">
+                        </div>
+                        <div>
+                            <label for="access_token_secret"
+                                   class="block text-sm font-medium text-gray-700 mb-2">Access Token Secret</label>
+                            <input type="text"
+                                   id="access_token_secret"
+                                   name="access_token_secret"
+                                   value="{{ twitter_actual_values.access_token_secret }}"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Enter your Twitter access token secret">
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-between">
+                        <button type="button"
+                                onclick="toggleTwitterConfig()"
+                                class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            Save Twitter API Keys
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Twitter API Guide (Hidden by default) -->
+        <div id="twitter-guide" class="mb-8 hidden">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold mb-4">How to Get Twitter API Keys</h3>
+                <div class="space-y-4">
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h4 class="font-semibold text-gray-800">Step 1: Apply for Twitter Developer Account</h4>
+                        <p class="text-gray-600 mt-1">
+                            Visit the Twitter Developer Portal and apply for a developer account if you don't have one.
+                        </p>
+                        <a href="https://developer.twitter.com/en/apply-for-access"
+                           target="_blank"
+                           class="text-blue-500 hover:text-blue-600 text-sm font-medium">
+                            🔗 Apply for Twitter Developer Account
+                        </a>
+                    </div>
+                    <div class="border-l-4 border-green-500 pl-4">
+                        <h4 class="font-semibold text-gray-800">Step 2: Create a New App</h4>
+                        <p class="text-gray-600 mt-1">Once approved, create a new Twitter app in the Developer Portal.</p>
+                        <a href="https://developer.twitter.com/en/portal/projects-and-apps"
+                           target="_blank"
+                           class="text-blue-500 hover:text-blue-600 text-sm font-medium">🔗 Create Twitter App</a>
+                    </div>
+                    <div class="border-l-4 border-yellow-500 pl-4">
+                        <h4 class="font-semibold text-gray-800">Step 3: Configure App Permissions</h4>
+                        <p class="text-gray-600 mt-1">Set your app permissions to "Read and Write" to enable posting tweets.</p>
+                    </div>
+                    <div class="border-l-4 border-purple-500 pl-4">
+                        <h4 class="font-semibold text-gray-800">Step 4: Generate Keys and Tokens</h4>
+                        <p class="text-gray-600 mt-1">Generate your API keys, secrets, and access tokens from the "Keys and Tokens" tab.</p>
+                        <ul class="mt-2 text-sm text-gray-600 list-disc list-inside">
+                            <li>
+                                <strong>API Key</strong> - Also called "Consumer Key"
+                            </li>
+                            <li>
+                                <strong>API Secret</strong> - Also called "Consumer Secret"
+                            </li>
+                            <li>
+                                <strong>Access Token</strong> - Your account's access token
+                            </li>
+                            <li>
+                                <strong>Access Token Secret</strong> - Your account's access token secret
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button onclick="toggleTwitterGuide()"
+                            class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded">
+                        Close Guide
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Tweet Configurations -->
+        <div class="mb-12">
+            <h2 class="text-2xl font-semibold mb-4">Your Tweet Configurations</h2>
+            {% if configs %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for config in configs %}
+                        <div class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-xl font-semibold">{{ config.name }}</h3>
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'website:tweet_config_edit' config.id %}"
+                                       class="text-blue-500 hover:text-blue-600">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button onclick="debugConfig({{ config.id }})"
+                                            class="text-yellow-500 hover:text-yellow-600"
+                                            title="Debug Configuration">
+                                        <i class="fas fa-bug"></i>
+                                    </button>
+                                    <button onclick="deleteConfig({{ config.id }})"
+                                            class="text-red-500 hover:text-red-600">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-2 text-gray-600">
+                                <p>
+                                    <strong>Schedule:</strong> {{ config.schedule.frequency|title }} at {{ config.schedule.time }} (<span class="user-timezone">UTC</span>)
+                                </p>
+                                {% if config.schedule.days %}
+                                    <p>
+                                        <strong>Days:</strong> {{ config.schedule.days|join:", " }}
+                                    </p>
+                                {% endif %}
+                                <p>
+                                    <strong>Topics:</strong> {{ config.topics|join:", " }}
+                                </p>
+                                <p>
+                                    <strong>Status:</strong>
+                                    {% if config.is_active %}
+                                        <span class="text-green-500">Active</span>
+                                    {% else %}
+                                        <span class="text-red-500">Inactive</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-gray-50 rounded-lg p-8 text-center">
+                    <p class="text-gray-600 mb-4">You haven't created any tweet configurations yet.</p>
+                    <a href="{% url 'website:tweet_config_create' %}"
+                       class="text-blue-500 hover:text-blue-600 font-medium">Create your first configuration</a>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Recent Tweets -->
+        <div>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold">Recent Tweets</h2>
+                <a href="{% url 'website:tweet_history' %}"
+                   class="text-blue-500 hover:text-blue-600">View All History</a>
+            </div>
+            {% if recent_tweets %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled For</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for tweet in recent_tweets %}
+                                <tr>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ tweet.content|truncatechars:100 }}</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                            {{ tweet.status|title }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm text-gray-900">{{ tweet.scheduled_for|date:"M d, Y H:i" }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <a href="{% url 'website:tweet_preview' tweet.id %}"
+                                           class="text-blue-500 hover:text-blue-600 mr-3">Preview</a>
+                                        {% if tweet.status == 'draft' %}
+                                            <button onclick="approveTweet({{ tweet.id }})"
+                                                    class="text-green-500 hover:text-green-600">Approve</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="bg-gray-50 rounded-lg p-8 text-center">
+                    <p class="text-gray-600">No tweets have been generated yet.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% block extra_js %}
+        <script>
+// Detect and display user's timezone
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const timezoneElements = document.querySelectorAll('.user-timezone');
+        timezoneElements.forEach(element => {
+            element.textContent = userTimezone;
+        });
+    } catch (error) {
+        console.log('Could not detect user timezone, keeping default');
+    }
+});
+
+function toggleTwitterConfig() {
+    const form = document.getElementById('twitter-config-form');
+    form.classList.toggle('hidden');
+}
+
+function toggleTwitterGuide() {
+    const guide = document.getElementById('twitter-guide');
+    guide.classList.toggle('hidden');
+}
+
+// Handle Twitter API keys form submission
+document.getElementById('twitter-keys-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+    
+    submitButton.textContent = 'Saving...';
+    submitButton.disabled = true;
+    
+                    fetch('{% url "website:update_twitter_api_keys" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+        },
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message + '\n\nThe page will reload to show the updated status.');
+            window.location.reload(); // Reload to show updated status
+        } else {
+            let errorMessage = '❌ Failed to save Twitter API keys:\n\n' + (data.error || 'Unknown error occurred');
+            errorMessage += '\n\n💡 Suggestions:\n• Check that all fields are filled correctly\n• Verify your API keys are valid\n• Ensure your keys have the correct permissions';
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        let errorMessage = '❌ Network error occurred while saving Twitter API keys:\n\n';
+        
+        if (error.message.includes('HTTP')) {
+            errorMessage += 'Server error: ' + error.message;
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Connection failed - please check your internet connection';
+        } else {
+            errorMessage += error.message || 'Unknown network error';
+        }
+        
+        errorMessage += '\n\n💡 Suggestions:\n• Check your internet connection\n• Try again in a few moments\n• Contact support if the problem persists';
+        
+        alert(errorMessage);
+    })
+    .finally(() => {
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+    });
+});
+
+// Handle test tweet
+function sendTestTweet() {
+    const testBtn = document.getElementById('test-tweet-btn');
+    const originalText = testBtn.textContent;
+    
+    if (!confirm('Are you sure you want to send a test tweet? This will post to your Twitter account.')) {
+        return;
+    }
+    
+    testBtn.textContent = 'Sending...';
+    testBtn.disabled = true;
+    
+    // Get CSRF token from the hidden form field instead of cookies
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch('{% url "website:send_test_tweet" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            let successMessage = '✅ Test tweet sent successfully!';
+            if (data.tweet_content) {
+                successMessage += '\n\nTweet: ' + data.tweet_content;
+            }
+            if (data.tweet_id) {
+                successMessage += '\n\nTweet ID: ' + data.tweet_id;
+            }
+            if (data.tweet_url) {
+                successMessage += '\n\nView tweet: ' + data.tweet_url;
+            }
+            alert(successMessage);
+        } else {
+            let errorMessage = '❌ Test tweet failed:\n\n' + (data.error || 'Unknown error occurred');
+            
+            // Add helpful suggestions based on error type
+            if (data.error && data.error.includes('authorization failed')) {
+                errorMessage += '\n\n💡 Suggestions:\n• Check your API keys are correct\n• Ensure your Twitter app has write permissions\n• Verify your access tokens are valid';
+            } else if (data.error && data.error.includes('rate limit')) {
+                errorMessage += '\n\n💡 Suggestion:\n• Wait a few minutes before trying again';
+            } else if (data.error && data.error.includes('forbidden')) {
+                errorMessage += '\n\n💡 Suggestions:\n• Check your Twitter app permissions\n• Ensure your account is not restricted\n• Verify your app is approved for posting';
+            } else if (data.error && data.error.includes('not configured')) {
+                errorMessage += '\n\n💡 Suggestion:\n• Configure your Twitter API keys first';
+            }
+            
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        let errorMessage = '❌ Network error occurred while sending test tweet:\n\n';
+        
+        if (error.message.includes('HTTP')) {
+            errorMessage += 'Server error: ' + error.message;
+            errorMessage += '\n\n💡 Suggestions:\n• Check your internet connection\n• Try again in a few moments\n• Contact support if the problem persists';
+        } else if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Connection failed - please check your internet connection';
+        } else {
+            errorMessage += error.message || 'Unknown network error';
+        }
+        
+        alert(errorMessage);
+    })
+    .finally(() => {
+        testBtn.textContent = originalText;
+        testBtn.disabled = false;
+    });
+}
+
+function deleteConfig(configId) {
+    if (confirm('Are you sure you want to delete this configuration?\n\nThis action cannot be undone and will also delete all related tweets.')) {
+        const deleteBtn = document.querySelector(`button[onclick="deleteConfig(${configId})"]`);
+        const originalText = deleteBtn ? deleteBtn.innerHTML : '';
+        
+        // Show loading state
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        }
+        
+                 // Debug: Check CSRF token
+         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+         console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
+         console.log('Attempting to delete config ID:', configId);
+         
+         fetch(`/tweet-config/${configId}/delete/`, {
+             method: 'POST',
+             headers: {
+                 'X-CSRFToken': csrfToken,
+                 'Content-Type': 'application/json',
+             },
+         })
+        .then(response => {
+            console.log('Delete response status:', response.status);
+            
+            if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error('Permission denied - you may not own this configuration');
+                } else if (response.status === 404) {
+                    throw new Error('Configuration not found - it may have already been deleted');
+                } else if (response.status === 500) {
+                    throw new Error('Server error - please try again later');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Delete response data:', data);
+            
+            if (data.success) {
+                alert('✅ ' + (data.message || 'Configuration deleted successfully'));
+                window.location.reload();
+            } else {
+                let errorMessage = '❌ Failed to delete configuration:\n\n' + (data.error || 'Unknown error occurred');
+                
+                // Add specific suggestions based on error type
+                if (data.error && data.error.includes('foreign key')) {
+                    errorMessage += '\n\n💡 This appears to be a database constraint error. The configuration may have related data that prevents deletion.';
+                } else if (data.error && data.error.includes('permission')) {
+                    errorMessage += '\n\n💡 You may not have permission to delete this configuration.';
+                } else if (data.error && data.error.includes('not found')) {
+                    errorMessage += '\n\n💡 The configuration may have already been deleted.';
+                } else {
+                    errorMessage += '\n\n💡 Suggestions:\n• Try refreshing the page and trying again\n• Check if the configuration still exists\n• Contact support if the problem persists';
+                }
+                
+                alert(errorMessage);
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            let errorMessage = '❌ Error deleting configuration:\n\n';
+            
+            if (error.message.includes('HTTP')) {
+                errorMessage += 'Server error: ' + error.message;
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Connection failed - please check your internet connection';
+            } else if (error.message.includes('Permission denied')) {
+                errorMessage += error.message + '\n\n💡 Make sure you are logged in and own this configuration';
+            } else if (error.message.includes('not found')) {
+                errorMessage += error.message + '\n\n💡 The configuration may have already been deleted';
+            } else {
+                errorMessage += error.message || 'Unknown network error';
+            }
+            
+            errorMessage += '\n\n💡 Additional steps:\n• Check your internet connection\n• Try refreshing the page\n• Contact support if the problem persists';
+            
+            alert(errorMessage);
+        })
+        .finally(() => {
+            // Restore button state
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
+        });
+    }
+}
+
+function approveTweet(tweetId) {
+    if (confirm('Are you sure you want to approve this tweet for posting?')) {
+        fetch(`/tweet/${tweetId}/preview/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=approve'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + (data.message || 'Tweet approved for posting!'));
+                window.location.reload();
+            } else {
+                let errorMessage = '❌ Failed to approve tweet:\n\n' + (data.error || 'Unknown error occurred');
+                errorMessage += '\n\n💡 Suggestions:\n• Try refreshing the page and trying again\n• Check if the tweet still exists\n• Contact support if the problem persists';
+                alert(errorMessage);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            let errorMessage = '❌ Network error occurred while approving tweet:\n\n';
+            
+            if (error.message.includes('HTTP')) {
+                errorMessage += 'Server error: ' + error.message;
+            } else if (error.message.includes('Failed to fetch')) {
+                errorMessage += 'Connection failed - please check your internet connection';
+            } else {
+                errorMessage += error.message || 'Unknown network error';
+            }
+            
+            errorMessage += '\n\n💡 Suggestions:\n• Check your internet connection\n• Try again in a few moments\n• Contact support if the problem persists';
+            
+            alert(errorMessage);
+        });
+    }
+}
+
+function runDiagnostic() {
+    const diagnosticBtn = document.getElementById('diagnostic-btn');
+    const originalText = diagnosticBtn.innerHTML;
+    
+    diagnosticBtn.disabled = true;
+    diagnosticBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running...';
+    
+    fetch('{% url "website:twitter_api_diagnostic" %}', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let diagnosticMessage = '✅ Twitter API Diagnostic Results:\n\n';
+            const info = data.diagnostic_info;
+            
+            diagnosticMessage += `🐦 Twitter Account: @${info.twitter_username}\n`;
+            diagnosticMessage += `👤 User ID: ${info.twitter_user_id}\n`;
+            diagnosticMessage += `📅 Account Created: ${info.account_created}\n`;
+            diagnosticMessage += `👥 Followers: ${info.followers_count}\n`;
+            diagnosticMessage += `👫 Following: ${info.friends_count}\n`;
+            diagnosticMessage += `✅ Verified: ${info.verified ? 'Yes' : 'No'}\n`;
+            diagnosticMessage += `🔒 Protected: ${info.protected ? 'Yes' : 'No'}\n\n`;
+            
+            if (info.rate_limits && info.rate_limits.statuses_update) {
+                const updateLimit = info.rate_limits.statuses_update;
+                diagnosticMessage += `📊 Tweet Rate Limit:\n`;
+                diagnosticMessage += `   • Remaining: ${updateLimit.remaining || 'Unknown'}\n`;
+                diagnosticMessage += `   • Limit: ${updateLimit.limit || 'Unknown'}\n\n`;
+            }
+            
+            diagnosticMessage += '✅ Your Twitter API configuration appears to be working!';
+            
+            alert(diagnosticMessage);
+        } else {
+            let errorMessage = '❌ Twitter API Diagnostic Failed:\n\n' + (data.error || 'Unknown error occurred');
+            
+            if (data.details) {
+                errorMessage += '\n\nDetails: ' + data.details;
+            }
+            
+            if (data.error && data.error.includes('Unauthorized')) {
+                errorMessage += '\n\n💡 This means your API keys are incorrect or your app doesn\'t have proper permissions.';
+                errorMessage += '\n\n📋 Check:\n• API keys are correctly entered\n• Twitter app has "Read and Write" permissions\n• Access tokens were regenerated after changing permissions';
+            } else if (data.error && data.error.includes('Forbidden')) {
+                errorMessage += '\n\n💡 This means your app doesn\'t have permission to perform this action.';
+                errorMessage += '\n\n📋 Check:\n• Your Twitter app has "Read and Write" permissions\n• Your Twitter account is not suspended\n• Your app is approved for posting tweets';
+            }
+            
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Diagnostic error:', error);
+        alert('❌ Network error occurred while running diagnostic:\n\n' + error.message);
+    })
+    .finally(() => {
+        diagnosticBtn.disabled = false;
+        diagnosticBtn.innerHTML = originalText;
+    });
+}
+
+function checkAccessLevel() {
+    const accessLevelBtn = document.getElementById('access-level-btn');
+    const originalText = accessLevelBtn.innerHTML;
+    
+    accessLevelBtn.disabled = true;
+    accessLevelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+    
+    fetch('{% url "website:check_twitter_api_access_level" %}', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let accessMessage = `📊 Twitter API Access Level Check:\n\n`;
+            accessMessage += `👤 Twitter Account: @${data.username}\n`;
+            accessMessage += `🔑 Access Level: ${data.access_level.toUpperCase()}\n`;
+            accessMessage += `📝 Can Post Tweets: ${data.can_post ? 'Yes ✅' : 'No ❌'}\n\n`;
+            
+            if (data.access_level === 'free') {
+                accessMessage += `⚠️ Your current access level (Free) doesn't support posting tweets.\n\n`;
+                accessMessage += `🔧 To fix this:\n`;
+                accessMessage += `1. Visit X Developer Portal\n`;
+                accessMessage += `2. Upgrade to "Basic access" ($100-200/month)\n`;
+                accessMessage += `3. Update your app configuration\n`;
+                accessMessage += `4. Regenerate your API keys after upgrade\n`;
+                accessMessage += `5. Update your credentials in Gemnar\n\n`;
+                accessMessage += `🌐 Upgrade your access at:\n`;
+                accessMessage += `https://developer.x.com/en/portal/dashboard`;
+            } else if (data.access_level === 'elevated') {
+                accessMessage += `✅ Great! Your access level supports posting tweets.\n\n`;
+                accessMessage += `If you're still getting errors, check:\n`;
+                accessMessage += `• Your app has "Read and Write" permissions\n`;
+                accessMessage += `• Your access tokens are valid\n`;
+                accessMessage += `• Your Twitter account is not restricted`;
+            }
+            
+            alert(accessMessage);
+        } else {
+            let errorMessage = `❌ Access level check failed:\n\n${data.error}`;
+            
+            if (data.error.includes('not configured')) {
+                errorMessage += '\n\n💡 Configure your Twitter API keys first using the form above.';
+            } else if (data.error.includes('Invalid credentials')) {
+                errorMessage += '\n\n💡 Check your API keys and tokens are correct.';
+            }
+            
+            alert(errorMessage);
+        }
+    })
+    .catch(error => {
+        console.error('Access level check error:', error);
+        alert('❌ Network error occurred while checking access level:\n\n' + error.message);
+    })
+    .finally(() => {
+        accessLevelBtn.disabled = false;
+        accessLevelBtn.innerHTML = originalText;
+    });
+}
+
+function debugConfig(configId) {
+    fetch(`/tweet-config/${configId}/debug/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const info = data.debug_info;
+            let debugMessage = `🐛 Configuration Debug Info:\n\n`;
+            debugMessage += `Config ID: ${info.config_id}\n`;
+            debugMessage += `Config Name: ${info.config_name}\n`;
+            debugMessage += `Owner: ${info.user_username} (ID: ${info.user_id})\n`;
+            debugMessage += `Current User: ${info.current_user_username} (ID: ${info.current_user_id})\n`;
+            debugMessage += `Is Owner: ${info.is_owner}\n`;
+            debugMessage += `Related Tweets: ${info.related_tweets_count}\n`;
+            debugMessage += `Created: ${info.created_at}\n`;
+            debugMessage += `Updated: ${info.updated_at}\n`;
+            
+            if (info.related_tweets.length > 0) {
+                debugMessage += `\nRelated Tweets:\n`;
+                info.related_tweets.forEach(tweet => {
+                    debugMessage += `- ID: ${tweet.id}, Status: ${tweet.status}\n`;
+                });
+            }
+            
+            alert(debugMessage);
+        } else {
+            alert(`❌ Debug failed: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        console.error('Debug error:', error);
+        alert(`❌ Debug error: ${error.message}`);
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+        </script>
+    {% endblock %}
+{% endblock %}

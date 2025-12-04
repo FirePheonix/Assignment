@@ -1,0 +1,37 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Copy test script
+      copy:
+        src: ../test_db.py
+        dest: /home/django/gemnar-website/test_db.py
+        owner: django
+        group: django
+        mode: '0755'
+
+    - name: Run database test
+      command: "/home/django/.local/bin/poetry run python test_db.py"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: db_test
+
+    - name: Display test results
+      debug:
+        var: db_test.stdout_lines
+
+    - name: Test website response
+      uri:
+        url: "https://gemnar.com"
+        method: GET
+        status_code: 200
+      register: website_test
+      ignore_errors: yes
+
+    - name: Display website status
+      debug:
+        msg: "Website status: {{ website_test.status if website_test.status is defined else 'Failed' }}" 

@@ -1,0 +1,1673 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Connect Instagram - {{ brand.name }}{% endblock %}
+{% block org_content %}
+    <div class="mb-6 flex items-start justify-between">
+        <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+           class="text-purple-600 hover:underline mb-2 inline-block">← Back to {{ brand.name }} Dashboard</a>
+        <div class="ml-4 flex-1">
+            <h1 class="text-2xl font-bold text-gray-900">Connect Instagram Account</h1>
+            <p class="text-gray-600">
+                Paste credentials & validate below. Need guidance? <a href="#need-help"
+    class="text-purple-600 underline hover:text-purple-800">Jump to help ↓</a>
+            </p>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:space-x-2">
+            <!-- Re-Auth Button (Legacy Flow) -->
+            <a href="{% url 'instagram_oauth_start' organization.pk brand.pk %}"
+               class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap"
+               title="Legacy OAuth (Basic Display) - normally NOT needed when using a System User Token">Legacy Re-Auth</a>
+            <!-- Quick Action Links (moved from bottom) -->
+            <div class="flex flex-col sm:flex-row gap-2">
+                <a href="https://developers.facebook.com/apps/"
+                   target="_blank"
+                   rel="noopener"
+                   class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-800 whitespace-nowrap"
+                   title="Open Meta Developer Apps dashboard">Open Facebook Apps</a>
+                <a href="https://developers.facebook.com/tools/explorer/"
+                   target="_blank"
+                   rel="noopener"
+                   class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-800 whitespace-nowrap"
+                   title="Open Graph API Explorer">Open Graph API</a>
+                {% if brand.instagram_app_id %}
+                    <a href="https://developers.facebook.com/apps/{{ brand.instagram_app_id }}/dashboard/{% if brand.instagram_business_id %}?business_id={{ brand.instagram_business_id }}{% endif %}"
+                       target="_blank"
+                       rel="noopener"
+                       class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium bg-purple-100 hover:bg-purple-200 text-purple-800 whitespace-nowrap"
+                       title="Open this specific Meta App using stored App ID">Open App {{ brand.instagram_app_id }}</a>
+                {% else %}
+                    <span class="inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium bg-gray-200 text-gray-400 cursor-not-allowed whitespace-nowrap"
+                          title="Save an App ID to enable direct link">Open App (no ID)</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="max-w-2xl">
+        <!-- Meta API Response Details (shown when available) -->
+        {% if meta_api_response %}
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 class="text-sm font-medium text-blue-800 mb-2">🔍 Meta API Response Details</h3>
+                <div class="text-sm text-blue-700 space-y-2">
+                    <div>
+                        <strong>Status Code:</strong> {{ meta_api_response.status_code }}
+                    </div>
+                    <div>
+                        <strong>API Endpoint:</strong> <code class="bg-blue-100 px-1 rounded">{{ meta_api_response.url }}</code>
+                    </div>
+                    {% if form_data.access_token or brand.instagram_access_token %}
+                        <div>
+                            <strong>Access Token:</strong>
+                            <code class="bg-blue-100 px-1 py-0.5 rounded break-all whitespace-pre-wrap">{{ form_data.access_token|default:brand.instagram_access_token }}</code>
+                        </div>
+                    {% endif %}
+                    {% if meta_api_response.raw_response %}
+                        <div class="mt-3">
+                            <strong>Raw Response:</strong>
+                            <pre class="bg-blue-100 p-2 rounded text-xs mt-1 overflow-x-auto">{{ meta_api_response.raw_response|pprint }}</pre>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Progress Bar -->
+        <div class="mb-8">
+            <h3 class="text-sm font-medium text-gray-700 mb-3">Setup Progress</h3>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div id="step-1" class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-medium">1</div>
+                        <span class="ml-2 text-sm font-medium text-gray-900">Access Token</span>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-200">
+                        <div id="progress-1"
+                             class="h-1 bg-purple-600 transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div id="step-2" class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
+                            2
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">User ID</span>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-200">
+                        <div id="progress-2"
+                             class="h-1 bg-purple-600 transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div id="step-3" class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
+                            3
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">App ID</span>
+                    </div>
+                    <div class="w-16 h-1 bg-gray-200">
+                        <div id="progress-3"
+                             class="h-1 bg-purple-600 transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <div id="step-4" class="flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-medium">
+                            4
+                        </div>
+                        <span class="ml-2 text-sm font-medium text-gray-500">App Secret</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <label for="access_token" class="text-sm font-medium text-gray-700">Legacy / Any Token *</label>
+                        <button type="button"
+                                id="save_access_token_btn"
+                                onclick="saveInstagramField('access_token')"
+                                class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                            Save
+                        </button>
+                    </div>
+                    <a href="https://developers.facebook.com/tools/access_token/"
+                       target="_blank"
+                       class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                        <svg class="w-3 h-3 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        How to get token
+                    </a>
+                </div>
+                <div class="flex space-x-2">
+                    <textarea id="access_token"
+                              name="access_token"
+                              required
+                              rows="2"
+                              autocomplete="off"
+                              spellcheck="false"
+                              oninput="autoResizeToken(this)"
+                              class="flex-1 px-4 py-3 border {% if field_errors.access_token %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.access_token %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent font-mono resize-y break-all whitespace-pre-wrap"
+                              placeholder="Enter your Instagram Access Token">{{ form_data.access_token|default:brand.instagram_access_token|default:'' }}</textarea>
+                    <button type="button"
+                            id="test_access_token"
+                            class="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onclick="testAccessToken()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z">
+                            </path>
+                        </svg>
+                        <span>Test</span>
+                    </button>
+                    <button type="button"
+                            id="open_get_token"
+                            class="px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
+                            onclick="openGetToken()"
+                            title="Open guide to generate a long-lived Instagram Basic Display token">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Get Token</span>
+                    </button>
+                </div>
+                <style>
+                    /* Temporary visual section delineation */
+                    .section-box { border:1px solid #d1d5db; padding:1rem; border-radius:0.5rem; background:#fff; }
+                    .section-box + .section-box { margin-top:1.25rem; }
+                </style>
+                {% if field_errors.access_token %}
+                    <p class="text-sm text-red-600 mt-1 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        {{ field_errors.access_token }}
+                    </p>
+                {% else %}
+                    <p class="text-xs text-gray-500 mt-1">
+                        Long-lived access token from Instagram Basic Display API
+                        <span class="mx-1">·</span>
+                        <a href="https://developers.facebook.com/tools/explorer/"
+                           target="_blank"
+                           class="text-purple-600 hover:text-purple-800 underline">Open Graph API Explorer →</a>
+                    </p>
+                {% endif %}
+                <!-- end access token section-box -->
+                <!-- Explicit Token Fields -->
+                <div class="mt-6 space-y-4 section-box">
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center">
+                                <label for="user_token" class="text-sm font-medium text-gray-700">User Token (Explicit)</label>
+                                <a href="https://developers.facebook.com/tools/access_token/"
+                                   target="_blank"
+                                   rel="noopener"
+                                   class="ml-2 text-[10px] text-blue-600 hover:text-blue-800 underline">Access Token Tool →</a>
+                            </div>
+                            <div class="flex items-center">
+                                <button type="button"
+                                        id="save_user_token_btn"
+                                        onclick="saveInstagramField('user_token')"
+                                        class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                                    Save
+                                </button>
+                                <button type="button"
+                                        id="test_user_token_explicit"
+                                        onclick="testExplicitToken('user_token')"
+                                        class="ml-2 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-semibold rounded">
+                                    Test
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="user_token"
+                                  name="user_token"
+                                  rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  placeholder="Store a user access token explicitly (optional)">{{ brand.instagram_user_token|default:'' }}</textarea>
+                        <p class="mt-1 text-[10px] text-gray-500">Separate field mirroring long-lived token if you wish to keep both.</p>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center">
+                                <label for="app_token" class="text-sm font-medium text-gray-700">App Token (Stored)</label>
+                                <a href="https://developers.facebook.com/tools/access_token/"
+                                   target="_blank"
+                                   rel="noopener"
+                                   class="ml-2 text-[10px] text-blue-600 hover:text-blue-800 underline">Access Token Tool →</a>
+                            </div>
+                            <div class="flex items-center">
+                                <button type="button"
+                                        id="save_app_token_btn"
+                                        onclick="saveInstagramField('app_token')"
+                                        class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                                    Save
+                                </button>
+                                <button type="button"
+                                        id="test_app_token_stored"
+                                        onclick="testExplicitToken('app_token')"
+                                        class="ml-2 px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-[10px] font-semibold rounded">
+                                    Test
+                                </button>
+                            </div>
+                        </div>
+                        <textarea id="app_token"
+                                  name="app_token"
+                                  rows="2"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                  placeholder="Optional: persist a generated app access token">{{ brand.instagram_app_token|default:'' }}</textarea>
+                        <p class="mt-1 text-[10px] text-gray-500">Normally generated transiently; only store if needed for diagnostics.</p>
+                    </div>
+                </div>
+                <!-- Test Results -->
+                <div id="test_results" class="hidden mt-3 p-3 rounded-lg">
+                    <div id="test_success"
+                         class="hidden bg-green-50 border border-green-200 text-green-800">
+                        <div class="flex items-center mb-2">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                            <span class="font-medium">Access Token Valid</span>
+                        </div>
+                        <div id="test_data" class="text-sm space-y-1"></div>
+                    </div>
+                    <div id="test_error"
+                         class="hidden bg-red-50 border border-red-200 text-red-800">
+                        <div class="flex items-center mb-2">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                            <span class="font-medium">Access Token Invalid</span>
+                        </div>
+                        <div id="test_error_message" class="text-sm"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Business ID Field -->
+            <div class="section-box">
+                <div class="flex items-center justify-between mb-2 mt-2">
+                    <label for="business_id" class="text-sm font-medium text-gray-700">Business ID (optional)</label>
+                    <button type="button"
+                            id="test_business_id"
+                            class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                            onclick="testBusinessId()">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4" />
+                        </svg>
+                        <span>Test</span>
+                    </button>
+                    <a href="https://business.facebook.com/settings/info"
+                       target="_blank"
+                       class="text-blue-600 hover:text-blue-800 text-xs flex items-center">Find Business ID</a>
+                </div>
+                <div class="flex space-x-2">
+                    <input id="business_id"
+                           name="business_id"
+                           value="{{ form_data.business_id|default:brand.instagram_business_id|default:'' }}"
+                           autocomplete="off"
+                           pattern="[0-9]*"
+                           inputmode="numeric"
+                           class="flex-1 px-4 py-2 border {% if field_errors.business_id %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.business_id %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent font-mono"
+                           placeholder="Enter Meta Business ID (if applicable)" />
+                    <button type="button"
+                            class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded disabled:opacity-50"
+                            onclick="saveInstagramField('business_id')"
+                            id="save_business_id_btn">Save</button>
+                </div>
+                {% if field_errors.business_id %}<p class="mt-1 text-xs text-red-600">{{ field_errors.business_id }}</p>{% endif %}
+            </div>
+            <div class="section-box">
+                <div class="flex items-center justify-between mb-2">
+                    <label for="user_id" class="text-sm font-medium text-gray-700">User ID *</label>
+                    <div class="flex items-center space-x-2">
+                        <a href="https://developers.facebook.com/docs/instagram-basic-display-api/reference/user"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                            <svg class="w-3 h-3 mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            How to find ID
+                        </a>
+                        <button type="button"
+                                id="test_user_id"
+                                class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onclick="testUserId()">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                            </svg>
+                            <span>Test</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text"
+                           id="user_id"
+                           name="user_id"
+                           required
+                           autocomplete="off"
+                           spellcheck="false"
+                           value="{{ form_data.user_id|default:brand.instagram_user_id|default:'' }}"
+                           class="flex-1 px-4 py-3 border {% if field_errors.user_id %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.user_id %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent font-mono"
+                           placeholder="Enter your Instagram User ID">
+                    <button type="button"
+                            class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded disabled:opacity-50"
+                            onclick="saveInstagramField('user_id')"
+                            id="save_user_id_btn">Save</button>
+                </div>
+                {% if field_errors.user_id %}
+                    <p class="text-sm text-red-600 mt-1 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        {{ field_errors.user_id }}
+                    </p>
+                {% else %}
+                    <p class="text-xs text-gray-500 mt-1">Your Instagram account's user ID</p>
+                {% endif %}
+                <!-- User ID Test Panel -->
+                <div id="user_id_test_panel"
+                     class="hidden mt-3 p-3 rounded-lg border text-xs space-y-1"></div>
+                <div id="business_id_test_panel"
+                     class="hidden mt-3 p-3 rounded-lg border text-xs space-y-1"></div>
+            </div>
+            <div class="section-box">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <label for="app_id" class="text-sm font-medium text-gray-700">App ID *</label>
+                        <button type="button"
+                                id="save_app_id_btn"
+                                onclick="saveInstagramField('app_id')"
+                                class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                            Save
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="https://developers.facebook.com/apps/"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                            <svg class="w-3 h-3 mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            Find in Developer Console
+                        </a>
+                        <button type="button"
+                                id="test_app_id"
+                                class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onclick="testAppId()">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                            </svg>
+                            <span>Test</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text"
+                           id="app_id"
+                           name="app_id"
+                           required
+                           autocomplete="off"
+                           spellcheck="false"
+                           value="{{ form_data.app_id|default:brand.instagram_app_id|default:'' }}"
+                           class="flex-1 px-4 py-3 border {% if field_errors.app_id %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.app_id %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent font-mono"
+                           placeholder="Enter your Facebook App ID">
+                </div>
+                {% if field_errors.app_id %}
+                    <p class="text-sm text-red-600 mt-1 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        {{ field_errors.app_id }}
+                    </p>
+                {% else %}
+                    <p class="text-xs text-gray-500 mt-1">Your Facebook app's App ID</p>
+                {% endif %}
+                <!-- App ID Test Panel -->
+                <div id="app_id_test_panel"
+                     class="hidden mt-3 p-3 rounded-lg border text-xs space-y-1"></div>
+            </div>
+            <div class="section-box">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center space-x-2">
+                        <label for="app_secret" class="text-sm font-medium text-gray-700">App Secret *</label>
+                        <button type="button"
+                                id="save_app_secret_btn"
+                                onclick="saveInstagramField('app_secret')"
+                                class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                            Save
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <a href="https://developers.facebook.com/apps/{% if form_data.app_id|default:brand.instagram_app_id %}{{ form_data.app_id|default:brand.instagram_app_id }}{% endif %}"
+                           target="_blank"
+                           class="text-blue-600 hover:text-blue-800 text-xs flex items-center">
+                            <svg class="w-3 h-3 mr-1"
+                                 fill="none"
+                                 stroke="currentColor"
+                                 viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            Find in App Settings (open to Facebook)
+                        </a>
+                        <button type="button"
+                                id="test_app_secret"
+                                class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onclick="testAppSecret()">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path>
+                            </svg>
+                            <span>Test</span>
+                        </button>
+                        <button type="button"
+                                id="generate_app_token"
+                                class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded transition-colors flex items-center space-x-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                onclick="generateAppAccessToken()"
+                                title="Generate an App Access Token (client_credentials)">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 4V9a2 2 0 012-2h8z" />
+                            </svg>
+                            <span>Generate App Token</span>
+                        </button>
+                    </div>
+                </div>
+                <input type="text"
+                       id="app_secret"
+                       name="app_secret"
+                       required
+                       autocomplete="new-password"
+                       spellcheck="false"
+                       value="{{ form_data.app_secret|default:brand.instagram_app_secret|default:'' }}"
+                       class="w-full px-4 py-3 border {% if field_errors.app_secret %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.app_secret %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent font-mono"
+                       placeholder="Enter your Facebook App Secret">
+                {% if field_errors.app_secret %}
+                    <p class="text-sm text-red-600 mt-1 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        {{ field_errors.app_secret }}
+                    </p>
+                {% else %}
+                    <p class="text-xs text-gray-500 mt-1">Your Facebook app's App Secret (kept secure)</p>
+                {% endif %}
+                <!-- App Access Token Result / Info -->
+                <div id="app_access_token_panel"
+                     class="hidden mt-3 p-3 rounded-lg border border-purple-200 bg-purple-50 text-xs text-purple-800 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <strong class="text-purple-900">App Access Token</strong>
+                        <button type="button"
+                                id="copy_app_token_btn"
+                                class="px-2 py-0.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px]"
+                                onclick="copyAppAccessToken()">Copy</button>
+                    </div>
+                    <div id="app_access_token_value"
+                         class="font-mono break-all whitespace-pre-wrap"></div>
+                    <details class="mt-1">
+                        <summary class="cursor-pointer underline">Limitations & Security</summary>
+                        <ul class="list-disc ml-4 mt-1 space-y-1">
+                            <li>Some user data available with a user access token will NOT be returned with an app access token.</li>
+                            <li>
+                                Use a <strong>user access token</strong> for reading user-specific data.
+                            </li>
+                            <li>
+                                App access tokens are considered <strong>insecure</strong> for Native/Desktop app types (Meta treats embedded app secrets as compromised).
+                            </li>
+                            <li>
+                                Do <strong>not</strong> embed this token in publicly distributed client apps.
+                            </li>
+                            <li>Scope: Primarily for app-level operations & debugging; not a replacement for publishing user media.</li>
+                        </ul>
+                    </details>
+                </div>
+                <div id="app_access_token_error"
+                     class="hidden mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs text-red-700"></div>
+                <!-- App Secret Test Result -->
+                <div id="app_secret_test_panel"
+                     class="hidden mt-3 p-3 rounded-lg border text-xs space-y-2">
+                    <div class="flex items-center justify-between">
+                        <strong id="app_secret_test_title" class="text-gray-800">App Secret Test</strong>
+                        <button type="button"
+                                id="copy_test_app_token_btn"
+                                class="hidden px-2 py-0.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-[10px]"
+                                onclick="copyTestAppToken()">Copy Token</button>
+                    </div>
+                    <div id="app_secret_test_message"
+                         class="font-mono break-all whitespace-pre-wrap text-gray-700"></div>
+                    <details id="app_secret_test_limitations" class="hidden">
+                        <summary class="cursor-pointer underline">Limitations</summary>
+                        <ul class="list-disc ml-4 mt-1 space-y-1 text-gray-600">
+                            <li>App access token is for app-level diagnostics; limited user data.</li>
+                            <li>Not a substitute for user access token when reading user content.</li>
+                            <li>Do not embed in distributed apps.</li>
+                        </ul>
+                    </details>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username (Optional)</label>
+                    <button type="button"
+                            id="save_username_btn"
+                            onclick="saveInstagramField('username')"
+                            class="px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold rounded">
+                        Save
+                    </button>
+                </div>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       autocomplete="off"
+                       value="{{ form_data.username|default:brand.instagram_username|default:'' }}"
+                       class="w-full px-4 py-3 border {% if field_errors.username %}border-red-500 bg-red-50{% else %}border-gray-300{% endif %} rounded-lg focus:outline-none focus:ring-2 {% if field_errors.username %}focus:ring-red-500{% else %}focus:ring-purple-500{% endif %} focus:border-transparent"
+                       placeholder="@your_instagram_handle">
+                {% if field_errors.username %}
+                    <p class="text-sm text-red-600 mt-1 flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd">
+                            </path>
+                        </svg>
+                        {{ field_errors.username }}
+                    </p>
+                {% else %}
+                    <p class="text-xs text-gray-500 mt-1">Your Instagram username for display purposes</p>
+                {% endif %}
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Security Notice</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>These credentials will be encrypted and stored securely. Only organization admins can view them.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Bulk submit buttons removed: per-field saves now supported -->
+        </form>
+        <!-- Test Instagram Post Section (restored) -->
+        <div id="test-instagram-post"
+             class="mt-10 mb-4 p-6 border border-purple-200 bg-white rounded-lg shadow-sm">
+            <div class="flex items-start justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <span>Test Instagram Post</span>
+                        <span class="text-xs font-medium bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Live</span>
+                    </h3>
+                    <p class="mt-1 text-xs text-gray-600 max-w-md">
+                        Send a lightweight test image + caption using your current Instagram credentials. This publishes to the connected account's feed. Use sparingly.
+                    </p>
+                </div>
+                <a href="#need-help"
+                   class="text-xs text-purple-600 underline hover:text-purple-800">Need help?</a>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="ig_test_caption"
+                           class="block text-sm font-medium text-gray-700 mb-1">Caption</label>
+                    <textarea id="ig_test_caption"
+                              rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              placeholder="Test post from Gemnar 🚀"></textarea>
+                    <p class="mt-1 text-[11px] text-gray-500">Max ~2,200 characters. Emojis supported.</p>
+                </div>
+                <div>
+                    <label for="ig_test_image"
+                           class="block text-sm font-medium text-gray-700 mb-1">Image (required)</label>
+                    <input id="ig_test_image"
+                           type="file"
+                           accept="image/*"
+                           class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+                    <p class="mt-1 text-[11px] text-gray-500">If omitted, a 1×1 placeholder image will be used automatically.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button"
+                            id="ig_test_post_btn"
+                            onclick="runInstagramTestPost()"
+                            class="inline-flex items-center px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg class="w-4 h-4 mr-1"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Post Test
+                    </button>
+                    <span class="text-[11px] text-gray-500">Posts appear immediately if credentials valid.</span>
+                </div>
+                <div id="ig_test_post_result" class="hidden"></div>
+                <details class="mt-2 text-xs text-gray-600">
+                    <summary class="cursor-pointer font-medium">Safety & Rate Notes</summary>
+                    <ul class="list-disc ml-5 mt-2 space-y-1">
+                        <li>Uses stored access token & user/app credentials above.</li>
+                        <li>Published content can be manually deleted from Instagram if needed.</li>
+                        <li>Avoid excessive tests to reduce risk of automated platform flags.</li>
+                        <li>Errors will display raw messages to aid debugging (permissions, scope, etc.).</li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+        <!-- Long-Lived Token Helper Section -->
+        <div id="token-helper"
+             class="mt-10 p-6 border border-blue-200 bg-blue-50 rounded-lg">
+            <h3 class="text-lg font-semibold text-blue-900 mb-2">Get / Refresh Long-Lived Token</h3>
+            <p class="text-xs text-blue-700 mb-4 leading-relaxed">
+                Steps: 1) Ensure App ID & Secret saved. 2) Click <strong>Start OAuth</strong> (opens Meta dialog) and approve with the FB user that manages the IG Business/Creator account. 3) Returned token is stored automatically. 4) Use <strong>Debug Token</strong> to inspect scopes & expiry. 5) <strong>Force Exchange</strong> only if you pasted a short-lived Basic Display token and want to upgrade it.
+            </p>
+            <div class="flex flex-wrap gap-3 mb-4">
+                <a href="{% url 'instagram_oauth_start' organization.pk brand.pk %}"
+                   class="inline-flex items-center px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
+                   title="Begin Meta OAuth login to get a new user token">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7H7v10h6m0 0l5-5m-5 5l5 5" />
+                    </svg>
+                    Start OAuth
+                </a>
+                <button type="button"
+                        onclick="debugInstagramToken()"
+                        id="debug_token_btn"
+                        class="inline-flex items-center px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0020 6.832V5.168a1 1 0 00-.447-.832L15 2.06l-5 2.5-5-2.5L.447 4.336A1 1 0 000 5.168v1.664a1 1 0 00.553.892L5 10l5-2.5 5 2.5z" />
+                    </svg>
+                    Debug Token
+                </button>
+                <button type="button"
+                        onclick="forceExchangeToken()"
+                        id="force_exchange_btn"
+                        class="inline-flex items-center px-4 py-2 rounded bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium"
+                        title="Attempt Basic Display short→long-lived exchange for the token in the Legacy/Any field">
+                    <svg class="w-4 h-4 mr-1"
+                         fill="none"
+                         stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9M20 20v-5h-.581m-15.357-2a8.003 8.003 0 0015.357 2" />
+                    </svg>
+                    Force Exchange
+                </button>
+            </div>
+            <div id="token_debug_panel"
+                 class="hidden mt-2 p-3 rounded border text-xs whitespace-pre-wrap break-all bg-white"></div>
+            <div id="token_classification_panel"
+                 class="hidden mt-3 p-3 rounded-lg border border-gray-200 bg-white text-xs text-gray-800">
+                <div class="flex flex-wrap items-center gap-2 mb-2" id="token_badges"></div>
+                <div id="missing_scopes_warning"
+                     class="hidden mt-2 p-2 rounded bg-yellow-50 border border-yellow-200 text-yellow-800"></div>
+            </div>
+            <details class="mt-4 text-xs text-blue-800">
+                <summary class="cursor-pointer font-medium">Manual Exchange (Short → Long-Lived)</summary>
+                <ol class="mt-2 list-decimal ml-4 space-y-1">
+                    <li>Obtain short-lived token via OAuth dialog.</li>
+                    <li>
+                        Exchange: <code>https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=APP_SECRET&access_token=SHORT_TOKEN</code>
+                    </li>
+                    <li>Paste returned token into Legacy / Any Token or User Token field & Save.</li>
+                    <li>
+                        Debug token to confirm scopes include <code>instagram_business_content_publish</code>.
+                    </li>
+                    <li>Run a test post.</li>
+                </ol>
+            </details>
+        </div>
+        <script>
+        async function debugInstagramToken(){
+            const btn=document.getElementById('debug_token_btn');
+            const panel=document.getElementById('token_debug_panel');
+            const classPanel=document.getElementById('token_classification_panel');
+            const badgesWrap=document.getElementById('token_badges');
+            const missingEl=document.getElementById('missing_scopes_warning');
+            btn.disabled=true; const orig=btn.textContent; btn.textContent='Debugging...';
+            panel.classList.add('hidden'); panel.textContent='';
+            classPanel.classList.add('hidden');
+            badgesWrap.innerHTML='';
+            missingEl.classList.add('hidden'); missingEl.textContent='';
+            try{
+                const resp=await fetch('{% url "debug_instagram_token" organization.pk brand.pk %}');
+                const data=await resp.json();
+                if(!data.success){
+                    panel.className='mt-2 p-3 rounded border border-red-200 bg-red-50 text-xs whitespace-pre-wrap break-all';
+                    panel.textContent='Debug failed: '+(data.error||'Unknown error');
+                }else{
+                    panel.className='mt-2 p-3 rounded border border-green-200 bg-green-50 text-xs whitespace-pre-wrap break-all';
+                    panel.textContent=JSON.stringify(data,null,2);
+                    // Build classification badges
+                    const classificationMap={
+                        graph_user_token:{label:'Graph User Token', cls:'bg-purple-100 text-purple-800 border-purple-200'},
+                        basic_display_style:{label:'Basic Display Style', cls:'bg-blue-100 text-blue-800 border-blue-200'},
+                        unknown:{label:'Unknown Token Type', cls:'bg-gray-100 text-gray-700 border-gray-200'}
+                    };
+                    const span=document.createElement('span');
+                    const cInfo=classificationMap[data.classification]||classificationMap.unknown;
+                    span.className='inline-block px-2 py-0.5 rounded border text-[10px] font-medium '+cInfo.cls;
+                    span.textContent=cInfo.label;
+                    badgesWrap.appendChild(span);
+                    // Expiry badge
+                    if(data.expires_at){
+                        const exp=new Date(data.expires_at*1000);
+                        const days=Math.round((exp-Date.now())/86400000);
+                        const expSpan=document.createElement('span');
+                        expSpan.className='inline-block px-2 py-0.5 rounded border text-[10px] font-medium '+(days>15?'bg-green-100 text-green-800 border-green-200':days>5?'bg-yellow-100 text-yellow-800 border-yellow-200':'bg-red-100 text-red-800 border-red-200');
+                        expSpan.textContent='Expires in '+days+'d';
+                        badgesWrap.appendChild(expSpan);
+                    }
+                    // Publish scope badge
+                    const publishSpan=document.createElement('span');
+                    publishSpan.className='inline-block px-2 py-0.5 rounded border text-[10px] font-medium '+(data.has_publish_scope?'bg-green-100 text-green-800 border-green-200':'bg-red-100 text-red-800 border-red-200');
+                    publishSpan.textContent=data.has_publish_scope?'Publish Scope Present':'Missing Publish Scope';
+                    badgesWrap.appendChild(publishSpan);
+                    // Missing recommended scopes warning
+                    if(Array.isArray(data.missing_recommended_scopes) && data.missing_recommended_scopes.length){
+                        missingEl.classList.remove('hidden');
+                        missingEl.innerHTML='<strong>Missing Recommended Scopes:</strong><br>'+data.missing_recommended_scopes.join(', ')+ '<br><span class="text-[10px]">Add these in Meta App → Roles/Permissions then re-auth.</span>';
+                    }
+                    classPanel.classList.remove('hidden');
+                }
+                panel.classList.remove('hidden');
+            }catch(e){
+                panel.className='mt-2 p-3 rounded border border-red-200 bg-red-50 text-xs';
+                panel.textContent='Network error: '+e.message;
+                panel.classList.remove('hidden');
+            }finally{ btn.disabled=false; btn.textContent=orig; }
+        }
+        async function forceExchangeToken(){
+            const tokenArea=document.getElementById('access_token');
+            const appSecret=document.getElementById('app_secret');
+            if(!tokenArea || !tokenArea.value.trim()){
+                alert('Paste a short-lived user token into the Legacy / Any Token field first.');
+                return;
+            }
+            if(!appSecret || !appSecret.value.trim()){
+                alert('Enter App Secret first to perform exchange.');
+                return;
+            }
+            const btn=document.getElementById('force_exchange_btn');
+            btn.disabled=true; const orig=btn.textContent; btn.textContent='Exchanging...';
+            try{
+                const params=new URLSearchParams({grant_type:'ig_exchange_token',client_secret: appSecret.value.trim(), access_token: tokenArea.value.trim()});
+                const url='https://graph.instagram.com/access_token?'+params.toString();
+                const resp=await fetch(url);
+                const data=await resp.json();
+                if(data.access_token){
+                    tokenArea.value=data.access_token;
+                    flashMessage('Exchanged to long-lived token (remember to Save if needed)','success');
+                }else{
+                    flashMessage('Exchange failed: '+(data.error?.message||JSON.stringify(data).slice(0,160)),'error');
+                }
+            }catch(e){
+                flashMessage('Network exchange error: '+e.message,'error');
+            }finally{ btn.disabled=false; btn.textContent=orig; }
+        }
+        async function saveInstagramField(field){
+            const url = "{% url 'update_instagram_field' organization.pk brand.pk 'FIELD_PLACEHOLDER' %}".replace('FIELD_PLACEHOLDER', field);
+            const inputEl = document.getElementById(field);
+            if(!inputEl){ return; }
+            const btn = document.getElementById('save_'+field+'_btn');
+            const original = btn ? btn.textContent : '';
+            if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ value: inputEl.value })
+                });
+                const data = await resp.json();
+                if(data.success){
+                    flashMessage('Saved '+field+' successfully', 'success');
+                } else {
+                    flashMessage('Failed to save '+field+': '+(data.error||'Unknown error'), 'error');
+                }
+            } catch(e){
+                flashMessage('Network error saving '+field, 'error');
+            } finally {
+                if(btn){ btn.disabled = false; btn.textContent = original || 'Save'; }
+            }
+        }
+        function getCsrfToken(){
+            // Prefer hidden input (works when CSRF cookie is HttpOnly)
+            const inp = document.querySelector('input[name=csrfmiddlewaretoken]');
+            if (inp && inp.value) return inp.value;
+            // Fallback to cookie parse if not HttpOnly
+            const name='csrftoken=';
+            const parts = document.cookie ? document.cookie.split(';') : [];
+            for (let p of parts){
+                p = p.trim();
+                if(p.startsWith(name)) return decodeURIComponent(p.substring(name.length));
+            }
+            return '';
+        }
+        function flashMessage(msg, type){
+            let bar=document.getElementById('flash_bar');
+            if(!bar){
+                bar=document.createElement('div');
+                bar.id='flash_bar';
+                bar.className='fixed top-4 right-4 z-50';
+                document.body.appendChild(bar);
+            }
+            const el=document.createElement('div');
+            el.className='mb-2 px-4 py-2 rounded shadow text-sm '+(type==='success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white');
+            el.textContent=msg;
+            bar.appendChild(el);
+            setTimeout(()=>{ el.remove(); if(!bar.childElementCount) bar.remove(); }, 4000);
+        }
+        </script>
+        <!-- Help Section -->
+        <div class="mt-8 bg-gray-50 border rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Need help?</h3>
+            <div class="space-y-3 text-sm text-gray-600">
+                <p>
+                    <strong>Can't find your credentials?</strong> Make sure you're logged into the correct Facebook account and have created a developer app.
+                </p>
+                <p>
+                    <strong>Getting authentication errors?</strong> Double-check that your app has Instagram permissions enabled and your Instagram account is added as a tester.
+                </p>
+                <p>
+                    <strong>Access token expired?</strong> Generate a new long-lived access token in your Facebook app settings.
+                </p>
+                <p>
+                    <strong>Instagram not showing up?</strong> Verify that your Instagram account is linked to a Facebook Page at <a href="https://www.facebook.com/settings/?tab=linked_profiles"
+    target="_blank"
+    class="text-blue-600 underline">Facebook Settings → Linked Profiles</a>.
+                </p>
+                <p>
+                    <strong>Can't see active integrations?</strong> Check <a href="https://www.facebook.com/settings/?tab=business_tools"
+    target="_blank"
+    class="text-blue-600 underline">Facebook Business Tools</a> for active integrations.
+                </p>
+                <p>
+                    <strong>App not showing in Instagram?</strong> Visit <a href="https://www.instagram.com/accounts/manage_access/"
+    target="_blank"
+    class="text-blue-600 underline">Instagram Manage Access</a> to see connected apps.
+                </p>
+                <p>
+                    <strong>Still having trouble?</strong> Contact our support team for assistance with Instagram integration.
+                </p>
+            </div>
+            <!-- Quick Links moved to header; removed here to reduce duplication -->
+        </div>
+        <!-- App Setup Verification -->
+        <div class="mt-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 class="text-sm font-medium text-green-800 mb-2">✅ Setup Verification Checklist</h3>
+            <div class="text-xs text-green-700 space-y-2">
+                <p>
+                    <strong>Before connecting, verify these settings in your Meta App:</strong>
+                </p>
+                <ul class="space-y-1 ml-4">
+                    <li>• App Type is set to "Business" (not Consumer)</li>
+                    <li>• Instagram product is added and configured</li>
+                    <li>• Your Instagram account is added under App Roles → Instagram Testers</li>
+                    <li>• Your Facebook user appears under App Roles → Roles</li>
+                    <li>• Instagram account shows up in Active Integrations on Facebook</li>
+                    <li>• Business verification is completed (for production use)</li>
+                </ul>
+                <p class="mt-2">
+                    <strong>Links to check:</strong>
+                </p>
+                <ul class="space-y-1 ml-4">
+                    <li>
+                        • <a href="https://developers.facebook.com/apps/1905186776933698/roles/test-users/"
+    target="_blank"
+    class="underline">App Testers</a>
+                    </li>
+                    <li>
+                        • <a href="https://developers.facebook.com/apps/1905186776933698/roles/roles/"
+    target="_blank"
+    class="underline">App Roles</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <!-- Need Help Section (All help text consolidated) -->
+        <div id="need-help" class="mt-14 space-y-8">
+            <h2 class="text-xl font-bold text-gray-900">Need Help?</h2>
+            <!-- Quick FAQ Cards -->
+            <div class="grid gap-4 md:grid-cols-2">
+                <div class="p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="font-semibold text-gray-800 mb-2 text-sm">Why re-authenticate?</h3>
+                    <p class="text-xs text-gray-600">
+                        If your token is expired (Code 190) or session invalidated, generate a fresh token using the re-auth flow.
+                    </p>
+                </div>
+                <div class="p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
+                    <h3 class="font-semibold text-gray-800 mb-2 text-sm">Missing data?</h3>
+                    <p class="text-xs text-gray-600">
+                        Ensure the Instagram account is Business/Creator, public, linked to a Facebook Page, and added as a Tester.
+                    </p>
+                </div>
+            </div>
+            <!-- Collapsible Detailed Help -->
+            <div class="space-y-6">
+                <details class="group border border-purple-200 bg-purple-50 rounded-lg p-5"
+                         open>
+                    <summary class="cursor-pointer font-medium text-purple-900 flex items-center justify-between">
+                        <span>Step-by-Step Setup</span>
+                        <span class="text-xs text-purple-600 group-open:hidden">(click to collapse)</span>
+                        <span class="text-xs text-purple-600 hidden group-open:inline">(click to expand)</span>
+                    </summary>
+                    <ol class="mt-4 space-y-3 text-purple-800 text-sm">
+                        <li>
+                            <strong>1.</strong> Create / open your app in <a class="underline"
+    target="_blank"
+    href="https://developers.facebook.com/apps/">Meta for Developers</a>
+                        </li>
+                        <li>
+                            <strong>2.</strong> Choose <strong>Business</strong> app type
+                        </li>
+                        <li>
+                            <strong>3.</strong> Choose <strong>Other</strong> as use case (unlocks Instagram)
+                        </li>
+                        <li>
+                            <strong>4.</strong> Add the <strong>Instagram</strong> product → Set up
+                        </li>
+                        <li>
+                            <strong>5.</strong> Instagram → API setup with business login
+                        </li>
+                        <li>
+                            <strong>6.</strong> Generate a token and log in as target IG account
+                        </li>
+                        <li>
+                            <strong>7.</strong> App Roles → Instagram Testers → Add your IG account
+                        </li>
+                        <li>
+                            <strong>8.</strong> Paste credentials here and validate each step
+                        </li>
+                    </ol>
+                    <div class="mt-4 p-3 bg-purple-100 rounded text-xs">
+                        <strong>Pro Tip:</strong> Use the <a class="underline"
+    target="_blank"
+    href="https://developers.facebook.com/tools/explorer/">Graph API Explorer</a> for ad‑hoc queries.
+                    </div>
+                </details>
+                <details class="group border border-blue-200 bg-blue-50 rounded-lg p-5">
+                    <summary class="cursor-pointer font-medium text-blue-900">Account Requirements</summary>
+                    <ul class="mt-3 space-y-2 text-blue-800 text-sm">
+                        <li>
+                            • Instagram account is <strong>Business</strong> or <strong>Creator</strong>
+                        </li>
+                        <li>
+                            • Linked to a <strong>Facebook Page</strong>
+                        </li>
+                        <li>
+                            • Account is <strong>public</strong> (for testing)
+                        </li>
+                        <li>
+                            • Added as <strong>Tester</strong> (App Roles → Instagram Testers)
+                        </li>
+                        <li class="text-xs">
+                            Check linked profiles: <a class="underline"
+    target="_blank"
+    href="https://www.facebook.com/settings/?tab=linked_profiles">Facebook Settings → Linked Profiles</a>
+                        </li>
+                    </ul>
+                </details>
+                <details class="group border border-yellow-200 bg-yellow-50 rounded-lg p-5">
+                    <summary class="cursor-pointer font-medium text-yellow-800">API Scope Changes (2025)</summary>
+                    <p class="mt-3 text-xs text-yellow-700">New scopes (replace older names):</p>
+                    <ul class="mt-2 text-xs space-y-1 ml-2 text-yellow-800">
+                        <li>• instagram_business_basic</li>
+                        <li>• instagram_business_content_publish</li>
+                        <li>• instagram_business_manage_messages</li>
+                        <li>• instagram_business_manage_comments</li>
+                    </ul>
+                </details>
+                <details class="group border border-red-200 bg-red-50 rounded-lg p-5">
+                    <summary class="cursor-pointer font-medium text-red-800">Business Verification</summary>
+                    <p class="mt-3 text-xs text-red-700">
+                        Needed only for production scale + broader publishing. Guide: <a class="underline"
+    target="_blank"
+    href="https://www.facebook.com/business/help/2058515294227817">Business Verification →</a>
+                    </p>
+                </details>
+                <details class="group border border-gray-200 bg-gray-50 rounded-lg p-5">
+                    <summary class="cursor-pointer font-medium text-gray-800">Common Error Codes</summary>
+                    <ul class="mt-3 text-xs text-gray-700 space-y-1">
+                        <li>
+                            <strong>Code 190:</strong> Invalid / expired token (re-auth)
+                        </li>
+                        <li>
+                            <strong>Subcodes 460/463/467:</strong> Session invalidated (password/security event)
+                        </li>
+                        <li>
+                            <strong>Code 100:</strong> Invalid parameter (check IDs)
+                        </li>
+                        <li>
+                            <strong>Code 10:</strong> Missing permission / product not added
+                        </li>
+                        <li>
+                            <strong>HTTP 403:</strong> App / permission not approved
+                        </li>
+                        <li>
+                            <strong>HTTP 400:</strong> Malformed request
+                        </li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+    </div>
+    <script>
+        async function testAccessToken() {
+            const accessToken = document.getElementById('access_token').value.trim();
+            const testButton = document.getElementById('test_access_token');
+            const testResults = document.getElementById('test_results');
+            const testSuccess = document.getElementById('test_success');
+            const testError = document.getElementById('test_error');
+            const testData = document.getElementById('test_data');
+            const testErrorMessage = document.getElementById('test_error_message');
+            
+            if (!accessToken) {
+                alert('Please enter an access token first');
+                return;
+            }
+            
+            // Disable button and show loading state
+            testButton.disabled = true;
+            testButton.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Testing...</span>
+            `;
+            
+            // Hide previous results
+            testResults.classList.add('hidden');
+            testSuccess.classList.add('hidden');
+            testError.classList.add('hidden');
+            
+            try {
+                const response = await fetch('{% url "test_instagram_token" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        access_token: accessToken
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Show results
+                testResults.classList.remove('hidden');
+                
+                if (data.success) {
+                    testSuccess.classList.remove('hidden');
+                    
+                    // Update progress for step 1
+                    updateProgress(1, true);
+                    
+                    // Display retrieved information
+                    let infoHtml = '';
+                    if (data.user_data) {
+                        if (data.user_data.id) {
+                            infoHtml += `<div><strong>User ID:</strong> ${data.user_data.id}</div>`;
+                            // Auto-populate user ID field
+                            document.getElementById('user_id').value = data.user_data.id;
+                            updateProgress(2, true);
+                        }
+                        if (data.user_data.username) {
+                            infoHtml += `<div><strong>Username:</strong> @${data.user_data.username}</div>`;
+                            // Auto-populate username field
+                            document.getElementById('username').value = data.user_data.username;
+                        }
+                        if (data.user_data.account_type) {
+                            infoHtml += `<div><strong>Account Type:</strong> ${data.user_data.account_type}</div>`;
+                        }
+                        if (data.user_data.media_count !== undefined) {
+                            infoHtml += `<div><strong>Media Count:</strong> ${data.user_data.media_count}</div>`;
+                        }
+                    }
+                    
+                    if (data.app_data) {
+                        if (data.app_data.app_id) {
+                            infoHtml += `<div><strong>App ID:</strong> ${data.app_data.app_id}</div>`;
+                            // Auto-populate app ID field
+                            document.getElementById('app_id').value = data.app_data.app_id;
+                            updateProgress(3, true);
+                        }
+                    }
+                    
+                    if (data.token_info) {
+                        if (data.token_info.expires_at) {
+                            infoHtml += `<div><strong>Token Expires:</strong> ${new Date(data.token_info.expires_at * 1000).toLocaleDateString()}</div>`;
+                        }
+                        if (data.token_info.scopes) {
+                            infoHtml += `<div><strong>Permissions:</strong> ${data.token_info.scopes.join(', ')}</div>`;
+                        }
+                    }
+                    
+                    testData.innerHTML = infoHtml || '<div>Token is valid but limited user data available.</div>';
+                    
+                                } else {
+                                        testError.classList.remove('hidden');
+                                        // Build detailed error including token preview and full token below
+                                        const rawToken = accessToken;
+                                        const preview = rawToken.length > 16 ? `${rawToken.slice(0,6)}…${rawToken.slice(-6)}` : rawToken;
+                                        const baseMsg = data.error || 'Failed to validate access token';
+                                        testErrorMessage.innerHTML = `
+                                                <div class="font-medium">${baseMsg}</div>
+                                                <div class="mt-1 text-xs text-red-700">Token Preview: <code class="bg-red-100 px-1 py-0.5 rounded">${preview}</code></div>
+                                                <details class="mt-2 text-xs">
+                                                    <summary class="cursor-pointer underline">Show full token</summary>
+                                                    <div class="mt-1 break-all bg-red-50 p-2 rounded border border-red-100">
+                                                        <code>${rawToken}</code>
+                                                    </div>
+                                                </details>
+                                        `;
+                                        updateProgress(1, false);
+                                }
+                
+            } catch (error) {
+                console.error('Error testing access token:', error);
+                testResults.classList.remove('hidden');
+                testError.classList.remove('hidden');
+                testErrorMessage.textContent = 'Network error occurred while testing token';
+            } finally {
+                // Re-enable button
+                testButton.disabled = false;
+                testButton.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                    </svg>
+                    <span>Test</span>
+                `;
+            }
+        }
+
+        // Generic tester for explicit user/app token textareas
+        async function testExplicitToken(field){
+            const area = document.getElementById(field);
+            if(!area){ return; }
+            const token = area.value.trim();
+            if(!token){ alert('Enter a token in the '+field+' field first'); return; }
+            const btn = document.getElementById(field === 'user_token' ? 'test_user_token_explicit' : 'test_app_token_stored');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span class="ml-1">Testing...</span>';
+            // Reuse existing result panel
+            const testResults = document.getElementById('test_results');
+            const testSuccess = document.getElementById('test_success');
+            const testError = document.getElementById('test_error');
+            const testData = document.getElementById('test_data');
+            const testErrorMessage = document.getElementById('test_error_message');
+            testResults.classList.add('hidden');
+            testSuccess.classList.add('hidden');
+            testError.classList.add('hidden');
+            try {
+                const response = await fetch('{% url "test_instagram_token" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+                    body: JSON.stringify({ access_token: token })
+                });
+                const data = await response.json();
+                testResults.classList.remove('hidden');
+                if(data.success){
+                    testSuccess.classList.remove('hidden');
+                    let infoHtml = '';
+                    if(data.user_data){
+                        if(data.user_data.id){ infoHtml += `<div><strong>User ID:</strong> ${data.user_data.id}</div>`; }
+                        if(data.user_data.username){ infoHtml += `<div><strong>Username:</strong> @${data.user_data.username}</div>`; }
+                        if(data.user_data.account_type){ infoHtml += `<div><strong>Account Type:</strong> ${data.user_data.account_type}</div>`; }
+                    }
+                    if(data.app_data){
+                        if(data.app_data.id){ infoHtml += `<div><strong>App ID:</strong> ${data.app_data.id}</div>`; }
+                        if(data.app_data.name){ infoHtml += `<div><strong>App Name:</strong> ${data.app_data.name}</div>`; }
+                    }
+                    testData.innerHTML = infoHtml || '<div>No additional data returned.</div>';
+                } else {
+                    testError.classList.remove('hidden');
+                    testErrorMessage.textContent = data.error || 'Invalid token';
+                }
+            } catch(e){
+                testResults.classList.remove('hidden');
+                testError.classList.remove('hidden');
+                testErrorMessage.textContent = e && e.message ? e.message : 'Network error testing token';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+        
+        // Progress tracking function
+        function updateProgress(step, success) {
+            const stepElement = document.getElementById(`step-${step}`);
+            const progressElement = document.getElementById(`progress-${step}`);
+            const stepCircle = stepElement.querySelector('div');
+            const stepText = stepElement.querySelector('span');
+            
+            if (success) {
+                stepCircle.className = 'w-8 h-8 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-medium';
+                stepCircle.innerHTML = '✓';
+                stepText.className = 'ml-2 text-sm font-medium text-green-600';
+                if (progressElement) {
+                    progressElement.style.width = '100%';
+                    progressElement.className = 'h-1 bg-green-600 transition-all duration-300';
+                }
+            } else {
+                stepCircle.className = 'w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-medium';
+                stepCircle.innerHTML = '✗';
+                stepText.className = 'ml-2 text-sm font-medium text-red-600';
+                if (progressElement) {
+                    progressElement.style.width = '0%';
+                    progressElement.className = 'h-1 bg-red-600 transition-all duration-300';
+                }
+            }
+        }
+        
+        // Test User ID function
+        async function testUserId() {
+            const userId = document.getElementById('user_id').value.trim();
+            const accessToken = document.getElementById('access_token').value.trim();
+            const testButton = document.getElementById('test_user_id');
+            const panel = document.getElementById('user_id_test_panel');
+            
+            if (!userId) {
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent = 'Enter a User ID first.';
+                panel.classList.remove('hidden');
+                return;
+            }
+            
+            if (!accessToken) {
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent = 'Enter an Access Token first.';
+                panel.classList.remove('hidden');
+                return;
+            }
+            
+            testButton.disabled = true;
+            testButton.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Testing...</span>';
+            
+            try {
+                const response = await fetch(`https://graph.instagram.com/${userId}?fields=id,username&access_token=${accessToken}`);
+                const data = await response.json();
+                
+                if (data.id) {
+                    updateProgress(2, true);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-green-200 bg-green-50 text-xs';
+                    panel.innerHTML = `<strong class='text-green-700'>User ID Valid</strong><div>ID: ${data.id}</div><div>Username: @${data.username || 'N/A'}</div>`;
+                    panel.classList.remove('hidden');
+                } else {
+                    updateProgress(2, false);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                    panel.textContent = 'Invalid User ID or access token expired';
+                    panel.classList.remove('hidden');
+                }
+            } catch (error) {
+                updateProgress(2, false);
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent = 'Error testing User ID';
+                panel.classList.remove('hidden');
+            } finally {
+                testButton.disabled = false;
+                testButton.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg><span>Test</span>';
+            }
+        }
+        // Test Business ID function
+        async function testBusinessId(){
+            const businessId = document.getElementById('business_id').value.trim();
+            const accessToken = document.getElementById('access_token').value.trim();
+            const btn = document.getElementById('test_business_id');
+            const panel = document.getElementById('business_id_test_panel');
+            if(!businessId){
+                panel.className='mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent='Enter a Business ID first.';
+                panel.classList.remove('hidden');
+                return;
+            }
+            if(!accessToken){
+                panel.className='mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent='Enter an Access Token first.';
+                panel.classList.remove('hidden');
+                return;
+            }
+            btn.disabled=true;
+            const orig=btn.innerHTML;
+            btn.innerHTML='<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Testing...</span>';
+            panel.classList.add('hidden');
+            try {
+                const resp = await fetch('{% url "test_instagram_business_id" organization.pk brand.pk %}', {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','X-CSRFToken':document.querySelector('[name=csrfmiddlewaretoken]').value},
+                    body: JSON.stringify({ business_id: businessId, access_token: accessToken })
+                });
+                let data; try { data = await resp.json(); } catch(parseErr){ data={success:false,error:'Non-JSON response', raw: await resp.text()}; }
+                panel.classList.remove('hidden');
+                if(data.success){
+                    panel.className='mt-3 p-3 rounded-lg border border-green-200 bg-green-50 text-xs';
+                    panel.innerHTML=`<strong class='text-green-700'>Business ID Valid</strong><div>ID: ${data.business_id}</div><div>Name: ${data.name||'N/A'}</div><div>Status: ${data.verification_status||'N/A'}</div>`;
+                } else {
+                    panel.className='mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                    panel.textContent=data.error || 'Invalid Business ID';
+                }
+            } catch(e){
+                panel.classList.remove('hidden');
+                panel.className='mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent='Error testing Business ID';
+            } finally {
+                btn.disabled=false;
+                btn.innerHTML=orig;
+            }
+        }
+        
+        // Test App ID function
+        async function testAppId() {
+            const appId = document.getElementById('app_id').value.trim();
+            const testButton = document.getElementById('test_app_id');
+            const panel = document.getElementById('app_id_test_panel');
+            
+            if (!appId) {
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent = 'Enter an App ID first.';
+                panel.classList.remove('hidden');
+                return;
+            }
+            
+            testButton.disabled = true;
+            testButton.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Testing...</span>';
+            
+            try {
+                const resp = await fetch('{% url "validate_facebook_app_id" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ app_id: appId, app_secret: document.getElementById('app_secret').value.trim() })
+                });
+                let data;
+                try { data = await resp.json(); } catch(parseErr){ data = { success:false, error:'Non-JSON response', raw: await resp.text() }; }
+                if (data.success) {
+                    updateProgress(3, true);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-green-200 bg-green-50 text-xs';
+                    panel.innerHTML = `<strong class='text-green-700'>App ID Valid</strong><div>ID: ${data.app_id}</div><div>Name: ${data.name || 'N/A'}</div><div>Used App Token: ${data.used_access_token ? 'Yes' : 'No'}</div>`;
+                    panel.classList.remove('hidden');
+                } else {
+                    updateProgress(3, false);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                    let html = `<strong class='text-red-700'>App ID Invalid</strong><div>${data.error || 'Failed validation'}</div>`;
+                    if (data.hints && data.hints.length){
+                        html += '<ul class="list-disc ml-4 mt-1 space-y-0.5">' + data.hints.map(h=>`<li>${h}</li>`).join('') + '</ul>';
+                    }
+                    if (data.meta){
+                        html += `<details class='mt-1'><summary class='underline cursor-pointer'>Raw</summary><pre class='mt-1 whitespace-pre-wrap break-all'>${JSON.stringify(data.meta, null, 2).slice(0,1500)}</pre></details>`;
+                    } else if (data.raw){
+                        html += `<details class='mt-1'><summary class='underline cursor-pointer'>Raw</summary><pre class='mt-1 whitespace-pre-wrap break-all'>${data.raw.slice(0,1500)}</pre></details>`;
+                    }
+                    panel.innerHTML = html;
+                    panel.classList.remove('hidden');
+                }
+            } catch (error) {
+                updateProgress(3, false);
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs';
+                panel.textContent = 'Error testing App ID';
+                panel.classList.remove('hidden');
+            } finally {
+                testButton.disabled = false;
+                testButton.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg><span>Test</span>';
+            }
+        }
+        
+        // Test App Secret function
+        async function testAppSecret() {
+            const appId = document.getElementById('app_id').value.trim();
+            const appSecret = document.getElementById('app_secret').value.trim();
+            const testButton = document.getElementById('test_app_secret');
+            const panel = document.getElementById('app_secret_test_panel');
+            const titleEl = document.getElementById('app_secret_test_title');
+            const msgEl = document.getElementById('app_secret_test_message');
+            const copyBtn = document.getElementById('copy_test_app_token_btn');
+            const limits = document.getElementById('app_secret_test_limitations');
+            
+            if (!appId || !appSecret) {
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs space-y-2';
+                titleEl.className = 'text-red-700 font-semibold';
+                titleEl.textContent = 'App Secret Test – Missing Fields';
+                msgEl.textContent = 'Enter both App ID and App Secret before testing.';
+                copyBtn.classList.add('hidden');
+                limits.classList.add('hidden');
+                panel.classList.remove('hidden');
+                return;
+            }
+            
+            testButton.disabled = true;
+            testButton.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Testing...</span>';
+            
+            try {
+                const response = await fetch(`https://graph.facebook.com/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&grant_type=client_credentials`);
+                const data = await response.json();
+                
+                if (data.access_token) {
+                    updateProgress(4, true);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-green-200 bg-green-50 text-xs space-y-2';
+                    titleEl.className = 'text-green-700 font-semibold';
+                    titleEl.textContent = 'App Secret Test – Success';
+                    msgEl.textContent = data.access_token;
+                    copyBtn.classList.remove('hidden');
+                    copyBtn.dataset.token = data.access_token;
+                    limits.classList.remove('hidden');
+                    panel.classList.remove('hidden');
+                } else {
+                    updateProgress(4, false);
+                    panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs space-y-2';
+                    titleEl.className = 'text-red-700 font-semibold';
+                    titleEl.textContent = 'App Secret Test – Failed';
+                    msgEl.textContent = (data.error && data.error.message) ? data.error.message : 'Invalid App Secret or App ID';
+                    copyBtn.classList.add('hidden');
+                    limits.classList.add('hidden');
+                    panel.classList.remove('hidden');
+                }
+            } catch (error) {
+                updateProgress(4, false);
+                panel.className = 'mt-3 p-3 rounded-lg border border-red-200 bg-red-50 text-xs space-y-2';
+                titleEl.className = 'text-red-700 font-semibold';
+                titleEl.textContent = 'App Secret Test – Error';
+                msgEl.textContent = 'Network or parsing error while testing secret.';
+                copyBtn.classList.add('hidden');
+                limits.classList.add('hidden');
+                panel.classList.remove('hidden');
+            } finally {
+                testButton.disabled = false;
+                testButton.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg><span>Test</span>';
+            }
+        }
+
+        function copyTestAppToken(){
+            const btn = document.getElementById('copy_test_app_token_btn');
+            const token = btn.dataset.token || '';
+            if(!token) return;
+            navigator.clipboard.writeText(token).then(()=>{
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(()=> btn.textContent = orig, 1500);
+            });
+        }
+
+        // Generate App Access Token (client_credentials)
+        async function generateAppAccessToken(){
+            const appId = document.getElementById('app_id').value.trim();
+            const appSecret = document.getElementById('app_secret').value.trim();
+            const btn = document.getElementById('generate_app_token');
+            const panel = document.getElementById('app_access_token_panel');
+            const valueEl = document.getElementById('app_access_token_value');
+            const errEl = document.getElementById('app_access_token_error');
+            if(!appId || !appSecret){
+                alert('Enter App ID and App Secret first.');
+                return;
+            }
+            btn.disabled = true;
+            const original = btn.innerHTML;
+            btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Generating...</span>';
+            panel.classList.add('hidden');
+            errEl.classList.add('hidden');
+            try{
+                const resp = await fetch('{% url "generate_instagram_app_token" organization.pk brand.pk %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ app_id: appId, app_secret: appSecret })
+                });
+                let data;
+                try {
+                    data = await resp.json();
+                } catch(parseErr){
+                    data = { success: false, error: 'Non-JSON response', raw: await resp.text() };
+                }
+                if(data.success && data.access_token){
+                    valueEl.textContent = data.access_token;
+                    panel.classList.remove('hidden');
+                    // Update summary snippet panel
+                    const snipWrap = document.getElementById('app_token_snippet');
+                    const snipVal = document.getElementById('app_token_snippet_value');
+                    if(snipWrap && snipVal){
+                        snipVal.textContent = data.access_token.slice(0,20)+'…';
+                        snipWrap.classList.remove('hidden');
+                    }
+                    updateProgress(4, true);
+                } else {
+                    errEl.textContent = (data.error || 'Failed to generate app access token') + ` (HTTP ${resp.status})`;
+                    if(data.meta){
+                        errEl.textContent += '\n' + JSON.stringify(data.meta, null, 2);
+                    } else if(data.raw){
+                        errEl.textContent += '\nRaw: ' + data.raw.slice(0,500);
+                    }
+                    errEl.classList.remove('hidden');
+                    updateProgress(4, false);
+                }
+            }catch(e){
+                console.error('generateAppAccessToken error', e);
+                errEl.textContent = 'Network error generating token: ' + (e && e.message ? e.message : e);
+                errEl.classList.remove('hidden');
+                updateProgress(4, false);
+            }finally{
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
+        }
+
+        function copyAppAccessToken(){
+            const token = document.getElementById('app_access_token_value').textContent.trim();
+            if(!token){ return; }
+            navigator.clipboard.writeText(token).then(()=>{
+                const btn = document.getElementById('copy_app_token_btn');
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(()=>{ btn.textContent = orig; }, 1500);
+            });
+        }
+        // Removed revealUserToken, copyUserToken, scrollToAppTokenPanel helpers along with token summary cards
+        
+        // Initialize progress on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if fields are already filled and update progress accordingly
+            const accessToken = document.getElementById('access_token').value.trim();
+            const userId = document.getElementById('user_id').value.trim();
+            const appId = document.getElementById('app_id').value.trim();
+            const appSecret = document.getElementById('app_secret').value.trim();
+            
+            if (accessToken) updateProgress(1, true);
+            if (userId) updateProgress(2, true);
+            if (appId) updateProgress(3, true);
+            if (appSecret) updateProgress(4, true);
+        });
+    </script>
+{% endblock %}
+{% block extra_js %}
+    {{ block.super }}
+    <script>
+        async function runInstagramTestPost(){
+            const btn = document.getElementById('ig_test_post_btn');
+            const result = document.getElementById('ig_test_post_result');
+            const caption = document.getElementById('ig_test_caption').value.trim() || 'Test post from Gemnar 🚀';
+            const fileInput = document.getElementById('ig_test_image');
+            result.className='hidden';
+            btn.disabled=true; const origHtml=btn.innerHTML; btn.innerHTML='<svg class="w-3 h-3 animate-spin mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Posting...';
+            try {
+                const url = '{% url "organization_brand_test_instagram" organization.pk brand.pk %}';
+                const formData = new FormData();
+                formData.append('content', caption);
+                if(fileInput.files.length){
+                    formData.append('image', fileInput.files[0]);
+                } else {
+                    const placeholder = new Blob([Uint8Array.from([137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,0,0,0,12,73,68,65,84,120,156,99,96,0,0,0,2,0,1,226,33,189,167,0,0,0,0,73,69,78,68,174,66,96,130])], {type:'image/png'});
+                    formData.append('image', placeholder, 'placeholder.png');
+                }
+                const resp = await fetch(url, {method:'POST', headers:{'X-CSRFToken':getCsrfToken()}, body: formData});
+                const data = await resp.json();
+                result.classList.remove('hidden');
+                if(data.success){
+                    result.className='mt-3 p-3 rounded border border-green-200 bg-green-50 text-green-800 text-xs';
+                    let html = '<strong>Success!</strong> Instagram post created.';
+                    if(data.instagram_id){ html += `<div>ID: ${data.instagram_id}</div>`; }
+                    if(data.instagram_url){ html += `<div><a href="${data.instagram_url}" target="_blank" class="underline">View Post →</a></div>`; }
+                    result.innerHTML = html;
+                } else {
+                    result.className='mt-3 p-3 rounded border border-red-200 bg-red-50 text-red-800 text-xs whitespace-pre-wrap break-all';
+                    result.innerHTML = '<strong>Failed:</strong> '+ (data.error || 'Unknown error');
+                }
+            } catch(e){
+                result.classList.remove('hidden');
+                result.className='mt-3 p-3 rounded border border-red-200 bg-red-50 text-red-800 text-xs';
+                result.textContent='Network error attempting test post: '+ e.message;
+            } finally {
+                btn.disabled=false; btn.innerHTML=origHtml; }
+        }
+    function openGetToken() {
+        // Open official getting started docs in new tab
+        window.open('https://developers.facebook.com/tools/access_token/', '_blank');
+        // Optionally show a quick inline helper (non-blocking)
+        if (!document.getElementById('get-token-hint')) {
+            const hint = document.createElement('div');
+            hint.id = 'get-token-hint';
+            hint.className = 'mt-4 p-3 border border-purple-200 bg-purple-50 rounded text-xs text-purple-800';
+            hint.innerHTML = '<strong>Token steps:</strong> 1) Create/Select App → 2) Add Instagram Basic Display → 3) Add tester + authorize → 4) Use code exchange to get short-lived token → 5) Exchange for long-lived token → Paste here.';
+            const formEl = document.querySelector('form');
+            if (formEl) formEl.parentNode.insertBefore(hint, formEl.nextSibling);
+            setTimeout(()=>{ hint.classList.add('opacity-0'); setTimeout(()=>hint.remove(), 12000); }, 10000);
+        }
+    }
+        function autoResizeToken(el){
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+        }
+        // Auto-resize on load if value prefilled
+        document.addEventListener('DOMContentLoaded', ()=>{
+            const ta = document.getElementById('access_token');
+            if(ta){ autoResizeToken(ta); }
+        });
+    </script>
+{% endblock %}

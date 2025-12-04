@@ -1,0 +1,170 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block extra_css %}
+    <style>
+    .messages-container {
+        height: calc(100vh - 300px);
+        overflow-y: auto;
+    }
+    .message {
+        max-width: 70%;
+    }
+    .message.sent {
+        margin-left: auto;
+        background-color: #10B981;
+        color: white;
+    }
+    .message.received {
+        margin-right: auto;
+        background-color: #F3F4F6;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Chat Header -->
+            <div class="bg-white rounded-t-lg shadow-sm p-4 border-b">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-xl font-bold">
+                            {% if user == chat_room.user %}
+                                {{ chat_room.brand.name }}
+                            {% else %}
+                                {{ chat_room.user.username }}
+                            {% endif %}
+                        </h1>
+                    </div>
+                    <a href="{% url 'chat:chat_list' %}"
+                       class="text-gray-600 hover:text-gray-800">Back to Chats</a>
+                </div>
+            </div>
+            <!-- Messages Container -->
+            <div class="bg-white shadow-sm p-4 messages-container" id="messages">
+                {% for message in chat_messages %}
+                    <div class="message mb-4 p-3 rounded-lg {% if message.sender == user %}sent{% else %}received{% endif %}">
+                        <div class="font-semibold text-sm mb-1">{{ message.sender.username }}</div>
+                        <div>{{ message.get_decrypted_content }}</div>
+                        <div class="text-xs mt-1 opacity-75">{{ message.timestamp|date:"M d, Y H:i" }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <!-- Message Input -->
+            <div class="bg-white rounded-b-lg shadow-sm p-4 border-t">
+                <form id="chat-form" class="flex gap-4">
+                    <input type="text"
+                           id="chat-message-input"
+                           class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                           placeholder="Type your message...">
+                    <button type="submit"
+                            class="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors">
+                        Send
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+    const roomName = {{ chat_room.id }};
+    const userId = {{ user.id }};
+    
+    // Use secure WebSocket if on HTTPS, regular WebSocket if on HTTP
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const chatSocket = new WebSocket(
+        wsProtocol + '//' + window.location.host + '/ws/chat/' + roomName + '/'
+    );
+
+        // Get DOM elements safely
+        const messagesContainer = document.getElementById('messages');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-message-input');
+
+        if (!messagesContainer || !chatForm || !chatInput) {
+            console.error('Required DOM elements not found');
+            return;
+        }
+
+        chatSocket.onopen = function(e) {
+            console.log('WebSocket connection opened');
+        };
+
+    chatSocket.onmessage = function(e) {
+            try {
+        const data = JSON.parse(e.data);
+                console.log('Received message:', data);
+                
+                if (data.type === 'chat_message') {
+        const messageDiv = document.createElement('div');
+                    const isOwnMessage = data.user_id == userId;
+                    
+                    messageDiv.classList.add('message', 'mb-4', 'p-3', 'rounded-lg');
+                    if (isOwnMessage) {
+                        messageDiv.classList.add('sent');
+                    } else {
+                        messageDiv.classList.add('received');
+                    }
+                    
+        messageDiv.innerHTML = `
+                        <div class="font-semibold text-sm mb-1">${data.username || 'Unknown'}</div>
+                        <div>${data.message || ''}</div>
+            <div class="text-xs mt-1 opacity-75">${new Date().toLocaleTimeString()}</div>
+        `;
+        
+                    messagesContainer.appendChild(messageDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else if (data.type === 'error') {
+                    console.error('WebSocket error:', data.message);
+                }
+            } catch (error) {
+                console.error('Error processing message:', error);
+            }
+    };
+
+    chatSocket.onclose = function(e) {
+            console.log('Chat socket closed:', e.code, e.reason);
+            if (e.code !== 1000) {
+                console.error('WebSocket closed unexpectedly');
+            }
+        };
+
+        chatSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+
+        // Focus input
+        chatInput.focus();
+
+        // Handle Enter key
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+        }
+        });
+
+        // Handle form submission
+        chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+            sendMessage();
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+        
+            if (message && chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                    'type': 'chat_message',
+                    'message': message
+            }));
+                chatInput.value = '';
+            }
+        }
+
+    // Scroll to bottom on load
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+    </script>
+{% endblock %}

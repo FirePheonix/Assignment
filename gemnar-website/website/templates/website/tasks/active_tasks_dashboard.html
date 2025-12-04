@@ -1,0 +1,351 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}Active Tasks Dashboard - Gemnar{% endblock %}
+{% block extra_css %}
+    <style>
+    /* Custom badge styles */
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    
+    .status-post { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+    .status-reel { background: #ede9fe; color: #7c3aed; border: 1px solid #d8b4fe; }
+    .status-story { background: #e0f2fe; color: #0891b2; border: 1px solid #bae6fd; }
+    
+    .incentive-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+    
+    .incentive-pay { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .incentive-barter { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .incentive-none { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    
+    /* Application stats */
+    .app-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.375rem;
+        margin-top: 0.5rem;
+    }
+    
+    .app-stat-item {
+        text-align: center;
+        padding: 0.5rem 0.25rem;
+        border-radius: 0.375rem;
+        border: 1px solid;
+        transition: all 0.2s ease;
+    }
+    
+    .app-stat-pending { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+    .app-stat-accepted { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+    .app-stat-completed { background: #ede9fe; border-color: #d8b4fe; color: #7c3aed; }
+    .app-stat-rejected { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Main Content Container with White Background -->
+    <div class="bg-white min-h-screen">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Breadcrumbs -->
+            <nav class="flex mb-4" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                    <li class="inline-flex items-center">
+                        <a href="{% url 'website:landing' %}"
+                           class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                            <i class="fas fa-home mr-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li aria-current="page">
+                        <div class="flex items-center">
+                            <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                            <span class="text-sm font-medium text-gray-500">Active Tasks Dashboard</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+            <div class="mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Active Tasks Dashboard</h1>
+                        <p class="text-gray-600 text-sm">Manage creator tasks and monitor application progress</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        {% if is_admin %}
+                            <a href="{% url 'website:all_tasks_overview' %}"
+                               class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-chart-bar mr-2"></i>Reports
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'website:task_create' %}"
+                           class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg inline-flex items-center text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Task
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-lg bg-blue-100 text-blue-600">
+                            <i class="fas fa-clipboard-list text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Active Tasks</p>
+                            <p class="text-xl font-bold text-gray-900">{{ total_active_tasks }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-green-600 text-xs">+0 this week</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-lg bg-indigo-100 text-indigo-600">
+                            <i class="fas fa-users text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Total Applications</p>
+                            <p class="text-xl font-bold text-gray-900">{{ total_applications_sum }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-green-600 text-xs">+0 this week</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-lg bg-orange-100 text-orange-600">
+                            <i class="fas fa-clock text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Pending Review</p>
+                            <p class="text-xl font-bold text-gray-900">{{ total_pending_sum }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-red-600 text-xs">Needs attention</span>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    <div class="flex items-center">
+                        <div class="p-2 rounded-lg bg-green-100 text-green-600">
+                            <i class="fas fa-check-circle text-lg"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-xs font-medium text-gray-600 uppercase tracking-wide">Completed</p>
+                            <p class="text-xl font-bold text-gray-900">{{ total_completed_sum }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-green-600 text-xs">{{ total_completed_sum }} closed this week</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Filter Bar -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-5">
+                <div class="flex flex-col lg:flex-row gap-3 items-start lg:items-center">
+                    <h3 class="text-sm font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-filter text-gray-600 mr-2"></i>Filter Tasks
+                    </h3>
+                    <div class="flex flex-wrap gap-3 flex-1">
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-medium text-gray-700 uppercase tracking-wide">Category</label>
+                            <select id="categoryFilter"
+                                    class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                                <option value="">All Categories</option>
+                                <option value="POST">Post</option>
+                                <option value="REEL">Reel</option>
+                                <option value="STORY">Story</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-medium text-gray-700 uppercase tracking-wide">Genre</label>
+                            <select id="genreFilter"
+                                    class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                                <option value="">All Genres</option>
+                                <option value="MAKEUP">Makeup</option>
+                                <option value="FOOD">Food</option>
+                                <option value="CLOTHING">Clothing</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-medium text-gray-700 uppercase tracking-wide">Incentive</label>
+                            <select id="incentiveFilter"
+                                    class="border border-gray-300 rounded-md px-3 py-1.5 text-sm">
+                                <option value="">All Incentives</option>
+                                <option value="PAY">Paid</option>
+                                <option value="BARTER">Barter</option>
+                                <option value="NONE">No Incentive</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1 justify-end">
+                            <button onclick="clearFilters()"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1.5 rounded-md text-sm mt-4 lg:mt-5 transition-colors">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tasks Grid -->
+            {% if tasks_with_stats %}
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {% for task_data in tasks_with_stats %}
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                             data-category="{{ task_data.task.category }}"
+                             data-genre="{{ task_data.task.genre }}"
+                             data-incentive="{{ task_data.task.incentive_type }}">
+                            <!-- Task Header -->
+                            <div class="p-4 pb-3">
+                                <div class="flex justify-between items-start mb-3">
+                                    <h3 class="text-lg font-bold text-gray-900 line-clamp-2 flex-1 mr-3">{{ task_data.task.title }}</h3>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="status-badge status-{{ task_data.task.category|lower }}">{{ task_data.task.get_category_display }}</span>
+                                        <span class="incentive-badge incentive-{{ task_data.task.incentive_type|lower }}">
+                                            {{ task_data.task.get_incentive_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Task Description -->
+                                <p class="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
+                                    {{ task_data.task.description|truncatewords:20 }}
+                                </p>
+                                <!-- Task Details -->
+                                <div class="grid grid-cols-1 gap-2 text-sm text-gray-600 mb-3">
+                                    <div class="flex items-center bg-gray-50 rounded-md p-2">
+                                        <i class="fas fa-building w-4 text-blue-600 mr-2"></i>
+                                        <span class="font-medium truncate">{{ task_data.task.brand.username }}</span>
+                                    </div>
+                                    <div class="flex items-center bg-gray-50 rounded-md p-2">
+                                        <i class="fas fa-tag w-4 text-purple-600 mr-2"></i>
+                                        <span>{{ task_data.task.get_genre_display }}</span>
+                                    </div>
+                                    {% if task_data.task.deadline %}
+                                        <div class="flex items-center bg-gray-50 rounded-md p-2">
+                                            <i class="fas fa-calendar w-4 text-orange-600 mr-2"></i>
+                                            <span>{{ task_data.task.deadline|date:"M d, Y" }}</span>
+                                        </div>
+                                    {% endif %}
+                                    {% if task_data.task.pay_amount %}
+                                        <div class="flex items-center bg-green-50 rounded-md p-2">
+                                            <i class="fas fa-dollar-sign w-4 text-green-600 mr-2"></i>
+                                            <span class="font-semibold text-green-700">${{ task_data.task.pay_amount }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Applications Summary -->
+                            <div class="px-4 py-3 bg-gray-50 border-t">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="text-xs font-semibold text-gray-800 flex items-center uppercase tracking-wide">
+                                        <i class="fas fa-users mr-2 text-gray-600"></i>
+                                        Applications
+                                    </h4>
+                                    <span class="text-xs font-bold text-gray-700">{{ task_data.total_applications }} total</span>
+                                </div>
+                                <div class="app-stats-grid">
+                                    <div class="app-stat-item app-stat-pending">
+                                        <div class="font-bold text-base text-amber-700">{{ task_data.pending_applications }}</div>
+                                        <div class="text-xs font-medium text-amber-600 uppercase">Pending</div>
+                                    </div>
+                                    <div class="app-stat-item app-stat-accepted">
+                                        <div class="font-bold text-base text-green-700">{{ task_data.accepted_applications }}</div>
+                                        <div class="text-xs font-medium text-green-600 uppercase">Accepted</div>
+                                    </div>
+                                    <div class="app-stat-item app-stat-completed">
+                                        <div class="font-bold text-base text-purple-700">{{ task_data.completed_applications }}</div>
+                                        <div class="text-xs font-medium text-purple-600 uppercase">Completed</div>
+                                    </div>
+                                    <div class="app-stat-item app-stat-rejected">
+                                        <div class="font-bold text-base text-red-700">{{ task_data.rejected_applications }}</div>
+                                        <div class="text-xs font-medium text-red-600 uppercase">Rejected</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Action Buttons -->
+                            <div class="p-4 pt-3 flex gap-2">
+                                <a href="{% url 'website:task_detail_management' task_data.task.pk %}"
+                                   class="flex-1 btn-primary text-white text-center text-sm font-semibold">
+                                    <i class="fas fa-cog mr-1"></i>Manage
+                                </a>
+                                <a href="{% url 'website:task_analytics' task_data.task.pk %}"
+                                   class="flex-1 btn-secondary text-white text-center text-sm font-semibold">
+                                    <i class="fas fa-chart-line mr-1"></i>Analytics
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                    <i class="fas fa-clipboard-list text-gray-400 text-5xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Active Tasks Found</h3>
+                    <p class="text-gray-500 mb-6 text-sm">
+                        You don't have any active tasks to manage right now.
+                        <br>
+                        Start by browsing available tasks or create new ones to get started.
+                    </p>
+                    <div class="space-y-2">
+                        <a href="{% url 'website:api_tasks_list' %}"
+                           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium transition-colors">
+                            <i class="fas fa-search mr-2"></i>Browse Available Tasks
+                        </a>
+                        <a href="{% url 'website:task_create' %}"
+                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg inline-flex items-center text-sm font-medium transition-colors ml-2">
+                            <i class="fas fa-plus mr-2"></i>Create New Task
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+// Filter functionality
+function filterTasks() {
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const genreFilter = document.getElementById('genreFilter').value;
+    const incentiveFilter = document.getElementById('incentiveFilter').value;
+    
+    const taskCards = document.querySelectorAll('[data-category]');
+    
+    taskCards.forEach(card => {
+        const category = card.dataset.category;
+        const genre = card.dataset.genre;
+        const incentive = card.dataset.incentive;
+        
+        const showCard = 
+            (categoryFilter === '' || category === categoryFilter) &&
+            (genreFilter === '' || genre === genreFilter) &&
+            (incentiveFilter === '' || incentive === incentiveFilter);
+        
+        card.style.display = showCard ? 'block' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('categoryFilter').value = '';
+    document.getElementById('genreFilter').value = '';
+    document.getElementById('incentiveFilter').value = '';
+    filterTasks();
+}
+
+// Add event listeners
+document.getElementById('categoryFilter').addEventListener('change', filterTasks);
+document.getElementById('genreFilter').addEventListener('change', filterTasks);
+document.getElementById('incentiveFilter').addEventListener('change', filterTasks);
+    </script>
+{% endblock %}

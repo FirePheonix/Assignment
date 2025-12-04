@@ -1,0 +1,562 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Session Replay - {{ session.ip_address }}{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet"
+          type="text/css"
+          href="{% static 'css/session_replay.css' %}">
+    <style>
+        .animation-delay-100 {
+            animation-delay: 0.1s;
+        }
+        .animation-delay-200 {
+            animation-delay: 0.2s;
+        }
+        .replay-viewport-hidden {
+            display: none;
+        }
+        .error-state-hidden {
+            display: none;
+        }
+        .mouse-cursor-hidden {
+            opacity: 0;
+        }
+        .pause-icon-hidden {
+            display: none;
+        }
+        .progress-bar-initial {
+            width: 0%;
+        }
+        .progress-handle-initial {
+            left: 0%;
+        }
+        /* Improved loading animation */
+        @keyframes spin-double {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin-double 2s linear infinite;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Breadcrumb Navigation -->
+    {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+    <div class="min-h-screen bg-gray-900 session-replay-content">
+        <!-- Header -->
+        <div class="bg-gray-800 border-b border-gray-700">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center">
+                        <a href="{% url 'website:analytics_sessions' brand.id %}"
+                           class="text-gray-400 hover:text-gray-300 mr-4 transition-colors">
+                            <i class="fas fa-arrow-left text-lg"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-100">Session Replay</h1>
+                            <p class="text-gray-300 text-sm">{{ session.ip_address }} • {{ session.started_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 text-sm text-gray-200">
+                        <div class="flex items-center space-x-1 bg-gray-700 px-3 py-1 rounded-full">
+                            <i class="fas fa-clock text-blue-400"></i>
+                            <span>{{ session.duration_seconds|floatformat:0 }}s</span>
+                        </div>
+                        <div class="flex items-center space-x-1 bg-gray-700 px-3 py-1 rounded-full">
+                            <i class="fas fa-eye text-green-400"></i>
+                            <span>{{ session.page_views }} pages</span>
+                        </div>
+                        <div class="flex items-center space-x-1 bg-gray-700 px-3 py-1 rounded-full">
+                            {% if session.device_type == 'desktop' %}
+                                <i class="fas fa-desktop text-purple-400"></i>
+                            {% elif session.device_type == 'mobile' %}
+                                <i class="fas fa-mobile-alt text-purple-400"></i>
+                            {% elif session.device_type == 'tablet' %}
+                                <i class="fas fa-tablet-alt text-purple-400"></i>
+                            {% else %}
+                                <i class="fas fa-question text-purple-400"></i>
+                            {% endif %}
+                            <span>{{ session.device_type|title }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="flex h-screen">
+            <!-- Replay Viewer (Main Area) -->
+            <div class="flex-1 flex flex-col">
+                <!-- Page Tabs -->
+                <div class="bg-gray-800 border-b border-gray-700 px-4">
+                    <div class="flex space-x-1 overflow-x-auto py-2">
+                        {% for pageview in pageviews %}
+                            <button onclick="switchPage('{{ pageview.id }}')"
+                                    id="tab-{{ pageview.id }}"
+                                    class="page-tab flex-shrink-0 px-4 py-2 text-sm rounded-t-lg border-b-2 transition-colors {% if forloop.first %}bg-gray-700 text-gray-100 border-blue-500{% else %}text-gray-400 hover:text-gray-200 border-transparent{% endif %}">
+                                <i class="fas fa-globe mr-2 text-xs"></i>
+                                {{ pageview.title|truncatechars:20|default:pageview.path|truncatechars:20 }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <!-- Replay Viewport -->
+                <div class="flex-1 bg-gray-900 flex items-center justify-center p-4">
+                    <div class="relative bg-white rounded-lg shadow-2xl" id="replay-container">
+                        <!-- Loading State -->
+                        <div id="loading-state"
+                             class="flex items-center justify-center w-full h-96">
+                            <div class="text-center">
+                                <div class="relative">
+                                    <div class="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-500 mx-auto mb-4"></div>
+                                    <div class="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-r-purple-500 animate-pulse mx-auto">
+                                    </div>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-100 mb-2">Loading Session Replay</h3>
+                                <p class="text-gray-300 text-sm">Processing recording data...</p>
+                                <div class="mt-4 flex items-center justify-center space-x-1">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full animate-bounce animation-delay-100"></div>
+                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-bounce animation-delay-200"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Replay Canvas -->
+                        <div id="replay-viewport"
+                             class="relative overflow-hidden rounded-lg replay-viewport-hidden">
+                            <iframe id="replay-frame" class="border-0 rounded-lg replay-frame">
+                            </iframe>
+                            <!-- Mouse Cursor -->
+                            <div id="mouse-cursor"
+                                 class="absolute w-4 h-4 pointer-events-none z-50 transition-all duration-75 mouse-cursor-hidden">
+                                <svg viewBox="0 0 24 24" class="w-full h-full">
+                                    <path d="M8.5,20.5L12,17L15.5,20.5L14,22L12,20L10,22L8.5,20.5M12,2C13.31,2 14.5,2.34 15.5,3C16.44,3.67 17,4.66 17,6C17,7.34 16.44,8.33 15.5,9C14.5,9.66 13.31,10 12,10C10.69,10 9.5,9.66 8.5,9C7.56,8.33 7,7.34 7,6C7,4.66 7.56,3.67 8.5,3C9.5,2.34 10.69,2 12,2Z" fill="red" stroke="white" stroke-width="1" />
+                                </svg>
+                            </div>
+                            <!-- Click Indicators -->
+                            <div id="click-indicators"></div>
+                        </div>
+                        <!-- Error State -->
+                        <div id="error-state"
+                             class="flex items-center justify-center w-full h-96 error-state-hidden">
+                            <div class="text-center p-8">
+                                <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-video-slash text-white text-2xl"></i>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-100 mb-3">No Recording Available</h3>
+                                <p class="text-gray-300 mb-4 max-w-md mx-auto">
+                                    This session doesn't have recording data available. This can happen if:
+                                </p>
+                                <div class="bg-gray-800 border border-gray-600 rounded-lg p-4 mb-6 max-w-md mx-auto">
+                                    <ul class="text-sm text-gray-200 space-y-3 text-left">
+                                        <li class="flex items-start">
+                                            <i class="fas fa-circle text-xs text-yellow-400 mt-2 mr-3 flex-shrink-0"></i>
+                                            <span class="text-gray-200">Recording was disabled when this session occurred</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-circle text-xs text-yellow-400 mt-2 mr-3 flex-shrink-0"></i>
+                                            <span class="text-gray-200">The session was too short to capture meaningful data</span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <i class="fas fa-circle text-xs text-yellow-400 mt-2 mr-3 flex-shrink-0"></i>
+                                            <span class="text-gray-200">Recording failed due to privacy settings or ad blockers</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="flex items-center justify-center space-x-4">
+                                    <a href="{% url 'website:analytics_sessions' brand.id %}"
+                                       class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Back to Sessions
+                                    </a>
+                                    <a href="{% url 'website:analytics_settings' brand.id %}"
+                                       class="inline-flex items-center px-4 py-2 bg-gray-600 text-gray-100 rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                                        <i class="fas fa-cog mr-2"></i>
+                                        Recording Settings
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Playback Controls -->
+                <div class="bg-gray-800 border-t border-gray-700 p-4">
+                    <div class="flex items-center space-x-4">
+                        <!-- Play/Pause Button -->
+                        <button id="play-pause-btn"
+                                onclick="togglePlayback()"
+                                class="flex items-center justify-center w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full text-white transition-colors">
+                            <i id="play-icon" class="fas fa-play"></i>
+                            <i id="pause-icon" class="fas fa-pause pause-icon-hidden"></i>
+                        </button>
+                        <!-- Timeline -->
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3">
+                                <span id="current-time" class="text-sm text-gray-200 font-mono">00:00</span>
+                                <div class="flex-1 bg-gray-700 rounded-full h-2 relative cursor-pointer"
+                                     onclick="seekTo(event)">
+                                    <div id="progress-bar"
+                                         class="bg-blue-500 h-2 rounded-full transition-all duration-75 progress-bar-initial">
+                                    </div>
+                                    <div id="progress-handle"
+                                         class="absolute top-0 w-4 h-4 bg-white rounded-full shadow-md transform -translate-y-1 -translate-x-2 transition-all duration-75 progress-handle-initial">
+                                    </div>
+                                </div>
+                                <span id="total-time" class="text-sm text-gray-200 font-mono">00:00</span>
+                            </div>
+                        </div>
+                        <!-- Speed Controls -->
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-200">Speed:</span>
+                            <select id="speed-selector"
+                                    onchange="changeSpeed()"
+                                    class="bg-gray-700 text-gray-200 text-sm rounded px-2 py-1 border border-gray-600">
+                                <option value="0.5">0.5x</option>
+                                <option value="1" selected>1x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2">2x</option>
+                                <option value="4">4x</option>
+                            </select>
+                        </div>
+                        <!-- Fullscreen -->
+                        <button onclick="toggleFullscreen()"
+                                class="flex items-center justify-center w-10 h-10 text-gray-400 hover:text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Side Panel -->
+            <div class="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+                <!-- Session Info -->
+                <div class="p-4 border-b border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-100 mb-3">Session Details</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">IP Address:</span>
+                            <span class="text-gray-100 font-mono">{{ session.ip_address }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Device:</span>
+                            <span class="text-gray-100 capitalize">{{ session.device_type }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Browser:</span>
+                            <span class="text-gray-100">{{ session.browser }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Location:</span>
+                            <span class="text-gray-100">{{ session.country|default:"Unknown" }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-300">Referrer:</span>
+                            <span class="text-gray-100 text-xs">{{ session.referrer|truncatechars:20|default:"Direct" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Events Timeline -->
+                <div class="flex-1 overflow-y-auto">
+                    <div class="p-4">
+                        <h4 class="text-sm font-semibold text-gray-100 mb-3">Events Timeline</h4>
+                        <div id="events-timeline" class="space-y-2">
+                            <!-- Events will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+let replayData = {};
+let currentPageview = null;
+let isPlaying = false;
+let currentTime = 0;
+let totalDuration = 0;
+let playbackSpeed = 1;
+let animationId = null;
+
+// Load first page on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const firstPageview = '{{ pageviews.first.id }}';
+    if (firstPageview && firstPageview !== 'None') {
+        switchPage(firstPageview);
+    } else {
+        console.warn('No pageviews available for session replay');
+        showError();
+    }
+});
+
+async function switchPage(pageviewId) {
+    // Validate pageviewId
+    if (!pageviewId) {
+        console.error('switchPage: pageviewId is required');
+        return;
+    }
+    
+    // Update tab appearance
+    document.querySelectorAll('.page-tab').forEach(tab => {
+        tab.classList.remove('bg-gray-700', 'text-gray-100', 'border-blue-500');
+        tab.classList.add('text-gray-400', 'border-transparent');
+    });
+    
+    // Find the target tab and update its appearance
+    const targetTab = document.getElementById(`tab-${pageviewId}`);
+    if (targetTab) {
+        targetTab.classList.remove('text-gray-400', 'border-transparent');
+        targetTab.classList.add('bg-gray-700', 'text-gray-100', 'border-blue-500');
+    } else {
+        console.error(`switchPage: Tab element not found for pageview ${pageviewId}`);
+    }
+
+    // Stop current playback
+    stopPlayback();
+    
+    // Show loading state
+    document.getElementById('loading-state').style.display = 'flex';
+    document.getElementById('replay-viewport').classList.add('replay-viewport-hidden');
+    document.getElementById('error-state').classList.add('error-state-hidden');
+
+    try {
+        const response = await fetch(`/api/analytics/recording/${pageviewId}/data/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            replayData = data;
+            currentPageview = pageviewId;
+            setupReplay();
+        } else {
+            showError();
+        }
+    } catch (error) {
+        console.error('Error loading recording:', error);
+        showError();
+    }
+}
+
+function setupReplay() {
+    const loadingState = document.getElementById('loading-state');
+    const replayViewport = document.getElementById('replay-viewport');
+    
+    if (loadingState) {
+        loadingState.style.display = 'none';
+    }
+    if (replayViewport) {
+        replayViewport.classList.remove('replay-viewport-hidden');
+    }
+    
+    // Set up viewport size
+    const viewport = document.getElementById('replay-viewport');
+    const frame = document.getElementById('replay-frame');
+    
+    if (replayData.pageview.viewport_width && replayData.pageview.viewport_height) {
+        const scale = Math.min(800 / replayData.pageview.viewport_width, 600 / replayData.pageview.viewport_height);
+        frame.style.width = replayData.pageview.viewport_width + 'px';
+        frame.style.height = replayData.pageview.viewport_height + 'px';
+        frame.style.transform = `scale(${scale})`;
+        
+        viewport.style.width = (replayData.pageview.viewport_width * scale) + 'px';
+        viewport.style.height = (replayData.pageview.viewport_height * scale) + 'px';
+    }
+    
+    // Set up timeline
+    totalDuration = replayData.duration || 0;
+    document.getElementById('total-time').textContent = formatTime(totalDuration / 1000);
+    
+    // Load the page in iframe
+    frame.src = replayData.pageview.url;
+    
+    // Populate events timeline
+    populateEventsTimeline();
+    
+    // Reset playback
+    currentTime = 0;
+    updateProgress();
+}
+
+function populateEventsTimeline() {
+    const timeline = document.getElementById('events-timeline');
+    timeline.innerHTML = '';
+    
+    if (!replayData.events || replayData.events.length === 0) {
+        timeline.innerHTML = '<p class="text-gray-300 text-sm">No events recorded</p>';
+        return;
+    }
+    
+    replayData.events.forEach(event => {
+        const eventElement = document.createElement('div');
+        eventElement.className = 'flex items-center space-x-2 text-xs p-2 rounded bg-gray-700 hover:bg-gray-600 cursor-pointer';
+        
+        const icon = getEventIcon(event.event_type);
+        const time = new Date(event.timestamp).toLocaleTimeString();
+        
+        eventElement.innerHTML = `
+            <i class="${icon} text-blue-400"></i>
+            <div class="flex-1">
+                <div class="text-gray-200 capitalize font-medium">${event.event_type.replace('_', ' ')}</div>
+                <div class="text-gray-400 text-xs">${time}</div>
+            </div>
+        `;
+        
+        timeline.appendChild(eventElement);
+    });
+}
+
+function getEventIcon(eventType) {
+    const icons = {
+        'click': 'fas fa-mouse-pointer',
+        'form_submit': 'fas fa-paper-plane',
+        'form_focus': 'fas fa-edit',
+        'scroll': 'fas fa-arrows-alt-v',
+        'error': 'fas fa-exclamation-triangle'
+    };
+    return icons[eventType] || 'fas fa-circle';
+}
+
+function togglePlayback() {
+    if (isPlaying) {
+        stopPlayback();
+    } else {
+        startPlayback();
+    }
+}
+
+function startPlayback() {
+    if (!replayData.mouse_movements) return;
+    
+    isPlaying = true;
+    
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    
+    if (playIcon) {
+        playIcon.style.display = 'none';
+    }
+    if (pauseIcon) {
+        pauseIcon.classList.remove('pause-icon-hidden');
+    }
+    
+    animateReplay();
+}
+
+function stopPlayback() {
+    isPlaying = false;
+    
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+    
+    if (playIcon) {
+        playIcon.style.display = 'block';
+    }
+    if (pauseIcon) {
+        pauseIcon.classList.add('pause-icon-hidden');
+    }
+    
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+    }
+}
+
+function animateReplay() {
+    if (!isPlaying) return;
+    
+    const movements = replayData.mouse_movements;
+    const currentMovement = movements.find(m => m.timestamp >= currentTime);
+    
+    if (currentMovement) {
+        updateMousePosition(currentMovement.x, currentMovement.y);
+    }
+    
+    // Update time and progress
+    currentTime += (16 * playbackSpeed); // 16ms per frame * speed
+    updateProgress();
+    
+    if (currentTime >= totalDuration) {
+        stopPlayback();
+        currentTime = totalDuration;
+        updateProgress();
+        return;
+    }
+    
+    animationId = requestAnimationFrame(animateReplay);
+}
+
+function updateMousePosition(x, y) {
+    const cursor = document.getElementById('mouse-cursor');
+    const viewport = document.getElementById('replay-viewport');
+    
+    if (!cursor || !viewport) {
+        console.warn('updateMousePosition: Required elements not found');
+        return;
+    }
+    
+    const rect = viewport.getBoundingClientRect();
+    
+    cursor.classList.remove('mouse-cursor-hidden');
+    cursor.style.left = (x * viewport.clientWidth / replayData.pageview.viewport_width) + 'px';
+    cursor.style.top = (y * viewport.clientHeight / replayData.pageview.viewport_height) + 'px';
+}
+
+function updateProgress() {
+    const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
+    
+    const progressBar = document.getElementById('progress-bar');
+    const progressHandle = document.getElementById('progress-handle');
+    const currentTimeEl = document.getElementById('current-time');
+    
+    if (progressBar) {
+        progressBar.style.width = progress + '%';
+    }
+    if (progressHandle) {
+        progressHandle.style.left = progress + '%';
+    }
+    if (currentTimeEl) {
+        currentTimeEl.textContent = formatTime(currentTime / 1000);
+    }
+}
+
+function seekTo(event) {
+    const progressContainer = event.currentTarget;
+    const rect = progressContainer.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const percentage = clickX / rect.width;
+    
+    currentTime = percentage * totalDuration;
+    updateProgress();
+}
+
+function changeSpeed() {
+    playbackSpeed = parseFloat(document.getElementById('speed-selector').value);
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+function showError() {
+    const loadingState = document.getElementById('loading-state');
+    const replayViewport = document.getElementById('replay-viewport');
+    const errorState = document.getElementById('error-state');
+    
+    if (loadingState) {
+        loadingState.style.display = 'none';
+    }
+    if (replayViewport) {
+        replayViewport.classList.add('replay-viewport-hidden');
+    }
+    if (errorState) {
+        errorState.classList.remove('error-state-hidden');
+    }
+}
+
+function toggleFullscreen() {
+    const container = document.getElementById('replay-container');
+    if (!document.fullscreenElement) {
+        container.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+    </script>
+{% endblock %}

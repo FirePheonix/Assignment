@@ -1,0 +1,73 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}
+    {% trans "Create Brand" %} - {{ organization.name }}
+{% endblock %}
+{% block org_content %}
+    <div class="mb-4">
+        <a href="{% url 'organization_detail' organization.pk %}"
+           class="text-blue-600 hover:underline">← {% trans "Back to Organization" %}</a>
+    </div>
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+        <div>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">{% trans "Brand Name" %} *</label>
+            <input type="text"
+                   id="name"
+                   name="name"
+                   required
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                   placeholder="e.g., Nike, Apple, Tesla">
+        </div>
+        <div>
+            <label for="url" class="block text-sm font-medium text-gray-700 mb-2">{% trans "Brand Website" %} *</label>
+            <input type="url"
+                   id="url"
+                   name="url"
+                   required
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                   placeholder="https://example.com">
+        </div>
+        <div>
+            <label for="description"
+                   class="block text-sm font-medium text-gray-700 mb-2">{% trans "Brand Description" %}</label>
+            <textarea id="description"
+                      name="description"
+                      rows="4"
+                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="Tell us about your brand..."></textarea>
+        </div>
+        <!-- Default Brand Setting -->
+        <div class="flex items-center">
+            <input type="checkbox"
+                   id="is_default"
+                   name="is_default"
+                   class="rounded border-gray-300 text-purple-600 focus:ring-purple-500 h-4 w-4">
+            <label for="is_default" class="ml-2 text-sm font-medium text-gray-700">
+                {% trans "Set as default brand for" %} {{ organization.name }}
+            </label>
+        </div>
+        <p class="text-xs text-gray-500 ml-6 -mt-1">
+            {% trans "The default brand will be pre-selected in dashboards and selectors" %}
+        </p>
+        <div class="bg-blue-50 p-4 rounded-lg">
+            <h3 class="text-lg font-semibold text-blue-900 mb-2">{% trans "What happens next?" %}</h3>
+            <ul class="space-y-1 text-blue-800 text-sm">
+                <li>✓ Your brand will be created under {{ organization.name }}</li>
+                <li>✓ You'll get a unique gemnar.com/brand-name URL</li>
+                <li>✓ You can connect Twitter for automated posting</li>
+                <li>✓ Organization admins can manage the brand</li>
+            </ul>
+        </div>
+        <div class="flex space-x-4">
+            <button type="submit"
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                {% trans "Create Brand" %}
+            </button>
+            <a href="{% url 'organization_detail' organization.pk %}"
+               class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition">
+                {% trans "Cancel" %}
+            </a>
+        </div>
+    </form>
+{% endblock %}

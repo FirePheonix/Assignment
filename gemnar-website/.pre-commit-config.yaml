@@ -1,0 +1,118 @@
+default_language_version:
+    python: python3.13
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-ast
+      - id: check-builtin-literals
+      - id: check-yaml
+      - id: fix-encoding-pragma
+        args:
+          - --remove
+      - id: mixed-line-ending
+        args:
+          - --fix=lf
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.4
+    hooks:
+      - id: gitleaks
+        name: gitleaks-secret-scan
+        args:
+          - --config=.gitleaks.toml
+        stages: [pre-commit]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.13
+    hooks:
+      - id: ruff
+        args: 
+          - --fix
+          - --unsafe-fixes
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types_or: [css, scss, javascript, ts, tsx, json]
+        exclude: |
+          (?x)^(
+              staticfiles/.*|
+              static/admin/.*|
+              node_modules/.*|
+              venv/.*
+          )$
+
+  - repo: https://github.com/djlint/djLint
+    rev: v1.36.1
+    hooks:
+      - id: djlint
+        args:
+          - --reformat
+          - --lint
+          - --ignore=H021
+        files: 'website/templates/website/marketing_grade_processing.html'
+      - id: djlint
+        args:
+          - --reformat
+          - --lint
+        exclude: 'website/templates/website/marketing_grade_processing.html'
+
+  - repo: local
+    hooks:
+      - id: django-collectstatic
+        name: Django Collect Static
+        entry: |
+          bash -c '
+            if ! poetry env info -p &> /dev/null; then
+              echo "Poetry environment not found. Running '\''poetry install'\''..."
+              poetry install
+              echo "Poetry install completed."
+            fi
+            if [ -z "$GITHUB_ACTIONS" ]; then
+              VENV_PATH=$(poetry env info -p 2>/dev/null)
+              echo "Poetry env path: $VENV_PATH"
+              if [ -n "$VENV_PATH" ] && [ -f "$VENV_PATH/bin/python" ]; then
+                echo "Using Poetry venv Python: $VENV_PATH/bin/python"
+                "$VENV_PATH/bin/python" manage.py collectstatic --noinput
+              else
+                echo "Using poetry run fallback..."
+                poetry run python manage.py collectstatic --noinput
+              fi
+            fi
+          '
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        verbose: true
+      - id: django-test
+        name: Django Tests
+        entry: |
+          bash -c '
+            if ! poetry env info -p &> /dev/null; then
+              echo "Poetry environment not found. Running '\''poetry install'\''..."
+              poetry install
+              echo "Poetry install completed."
+            fi
+            if [ -z "$GITHUB_ACTIONS" ]; then
+              VENV_PATH=$(poetry env info -p 2>/dev/null)
+              echo "Poetry env path: $VENV_PATH"
+              if [ -n "$VENV_PATH" ] && [ -f "$VENV_PATH/bin/python" ]; then
+                echo "Using Poetry venv Python: $VENV_PATH/bin/python"
+                "$VENV_PATH/bin/python" manage.py test --failfast
+              else
+                echo "Using poetry run fallback..."
+                poetry run python manage.py test --failfast
+              fi
+            fi
+          '
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        verbose: true
+
+fail_fast: true

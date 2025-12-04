@@ -1,0 +1,55 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Set production environment variable
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "ENVIRONMENT=production"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Run Django migrations
+      command: "/home/django/.local/bin/poetry run python manage.py migrate"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: migrate_result
+
+    - name: Display migration results
+      debug:
+        var: migrate_result.stdout_lines
+
+    - name: Run Django migrations with verbose output
+      command: "/home/django/.local/bin/poetry run python manage.py migrate --verbosity=2"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: migrate_verbose_result
+
+    - name: Display verbose migration results
+      debug:
+        var: migrate_verbose_result.stdout_lines
+
+    - name: Check migration status
+      command: "/home/django/.local/bin/poetry run python manage.py showmigrations"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: showmigrations_result
+
+    - name: Display migration status
+      debug:
+        var: showmigrations_result.stdout_lines
+
+    - name: Restart uvicorn service
+      systemd:
+        name: uvicorn
+        state: restarted
+        daemon_reload: yes 

@@ -1,0 +1,713 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}{{ company.name }}{% endblock %}
+{% block org_content %}
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'organization_detail' organization.pk %}"
+                   class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-building mr-2"></i>
+                    {{ organization.name }}
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a href="{% url 'crm_dashboard' organization.pk %}"
+                       class="text-sm font-medium text-gray-700 hover:text-blue-600">CRM Dashboard</a>
+                </div>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a href="{% url 'crm_company_list' organization.pk %}"
+                       class="text-sm font-medium text-gray-700 hover:text-blue-600">Companies</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-sm font-medium text-gray-500">{{ company.name }}</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ company.name }}</h1>
+                <p class="text-gray-600">
+                    {{ company.industry|default:"Company Profile" }} •
+                    {% if company.assigned_to %}
+                        Assigned to {{ company.assigned_to.get_full_name|default:company.assigned_to.username }}
+                    {% else %}
+                        Unassigned
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex space-x-2">
+                <a href="{% url 'crm_company_edit' organization.pk company.pk %}"
+                   class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                    <i class="fas fa-edit mr-2"></i>
+                    Edit Company
+                </a>
+                <button class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>
+                    Delete
+                </button>
+            </div>
+        </div>
+        <!-- Company Information -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Company Info -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Basic Information Card -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Company Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Website</label>
+                            <div class="mt-1">
+                                <a href="{{ company.website }}"
+                                   target="_blank"
+                                   class="text-blue-600 hover:text-blue-800 flex items-center">
+                                    <i class="fas fa-external-link-alt mr-2 text-sm"></i>
+                                    {{ company.website }}
+                                </a>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Email</label>
+                            <div class="mt-1">
+                                <a href="mailto:{{ company.email }}"
+                                   class="text-blue-600 hover:text-blue-800">{{ company.email }}</a>
+                            </div>
+                        </div>
+                        {% if company.phone %}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">Phone</label>
+                                <div class="mt-1">
+                                    <a href="tel:{{ company.phone }}"
+                                       class="text-blue-600 hover:text-blue-800">{{ company.phone }}</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if company.industry %}
+                            <div>
+                                <label class="block text-sm font-medium text-gray-500">Industry</label>
+                                <div class="mt-1 text-gray-900">{{ company.industry }}</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Social Media -->
+                {% if company.twitter_handle or company.instagram_handle or company.linkedin_url %}
+                    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Social Media</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {% if company.twitter_handle %}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Twitter</label>
+                                    <div class="mt-1">
+                                        <a href="{{ company.twitter_url }}"
+                                           target="_blank"
+                                           class="text-blue-400 hover:text-blue-600 flex items-center mb-2">
+                                            <i class="fab fa-twitter mr-2"></i>
+                                            @{{ company.twitter_handle }}
+                                        </a>
+                                        <button onclick="getLatestTweet('{{ company.twitter_handle }}')"
+                                                id="get-tweet-btn"
+                                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded-full transition-colors duration-200 flex items-center">
+                                            <i class="fas fa-sync-alt mr-1"></i>
+                                            Get Latest Tweet
+                                        </button>
+                                    </div>
+                                    <!-- Tweet Display Area -->
+                                    <div id="tweet-container"
+                                         class="hidden mt-4 p-4 bg-gray-50 rounded-lg border">
+                                        <div id="tweet-content"></div>
+                                        <div id="tweet-loading"
+                                             class="hidden flex items-center justify-center py-4">
+                                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                                            <span class="ml-2 text-sm text-gray-600">Fetching latest tweet...</span>
+                                        </div>
+                                        <div id="tweet-error" class="hidden text-red-600 text-sm"></div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if company.instagram_handle %}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">Instagram</label>
+                                    <div class="mt-1">
+                                        <a href="{{ company.instagram_url }}"
+                                           target="_blank"
+                                           class="text-pink-400 hover:text-pink-600 flex items-center">
+                                            <i class="fab fa-instagram mr-2"></i>
+                                            @{{ company.instagram_handle }}
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if company.linkedin_url %}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-500">LinkedIn</label>
+                                    <div class="mt-1">
+                                        <a href="{{ company.linkedin_company_url }}"
+                                           target="_blank"
+                                           class="text-blue-600 hover:text-blue-800 flex items-center">
+                                            <i class="fab fa-linkedin mr-2"></i>
+                                            Company Page
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Notes/Description -->
+                {% if company.description %}
+                    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Notes</h3>
+                        <div class="prose prose-sm text-gray-700">{{ company.description|linebreaks }}</div>
+                    </div>
+                {% endif %}
+                <!-- Related Contacts -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Related Contacts</h3>
+                        <a href="{% url 'crm_contact_create' organization.pk %}"
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-plus mr-1"></i>Add Contact
+                        </a>
+                    </div>
+                    {% if contacts %}
+                        <div class="space-y-3">
+                            {% for contact in contacts %}
+                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-blue-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">
+                                            <a href="{% url 'crm_contact_detail' organization.pk contact.pk %}"
+                                               class="hover:text-blue-600">{{ contact.full_name }}</a>
+                                        </p>
+                                        <p class="text-sm text-gray-500">{{ contact.email }}</p>
+                                        {% if contact.job_title %}<p class="text-xs text-gray-400">{{ contact.job_title }}</p>{% endif %}
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ contact.get_contact_type_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6">
+                            <div class="text-gray-400 text-4xl mb-2">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <p class="text-gray-500">No contacts found for this company</p>
+                            <p class="text-sm text-gray-400">Add contacts to track your relationships with this company</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Related Deals -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Related Deals</h3>
+                        <a href="{% url 'crm_deal_create' organization.pk %}"
+                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <i class="fas fa-plus mr-1"></i>Add Deal
+                        </a>
+                    </div>
+                    {% if deals %}
+                        <div class="space-y-3">
+                            {% for deal in deals %}
+                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-handshake text-green-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-gray-900">{{ deal.name }}</p>
+                                        <p class="text-sm text-gray-500">${{ deal.value|floatformat:0 }} • {{ deal.get_stage_display }}</p>
+                                        <p class="text-xs text-gray-400">Contact: {{ deal.contact.full_name }}</p>
+                                    </div>
+                                    <div class="flex-shrink-0">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {% if deal.stage == 'closed_won' %}bg-green-100 text-green-800 {% elif deal.stage == 'closed_lost' %}bg-red-100 text-red-800 {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                                            {{ deal.get_stage_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-6">
+                            <div class="text-gray-400 text-4xl mb-2">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <p class="text-gray-500">No deals found for this company</p>
+                            <p class="text-sm text-gray-400">Create deals to track business opportunities</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Sidebar -->
+            <div class="space-y-6">
+                <!-- Assignment & Status -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Assignment & Status</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Assigned To</label>
+                            <div class="mt-1">
+                                {% if company.assigned_to %}
+                                    <div class="flex items-center">
+                                        <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center mr-2">
+                                            <span class="text-xs font-bold text-blue-600">
+                                                {{ company.assigned_to.first_name|first }}{{ company.assigned_to.last_name|first }}
+                                            </span>
+                                        </div>
+                                        <span class="text-gray-900">{{ company.assigned_to.get_full_name|default:company.assigned_to.username }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-500 italic">Unassigned</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Status</label>
+                            <div class="mt-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if company.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    {% if company.is_active %}
+                                        Active
+                                    {% else %}
+                                        Inactive
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-500">Member Since</label>
+                            <div class="mt-1 text-gray-900">{{ company.created_at|date:"M d, Y" }}</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tags -->
+                {% if company.tag_list %}
+                    <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Tags</h3>
+                        <div class="flex flex-wrap gap-2">
+                            {% for tag in company.tag_list %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {{ tag }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <!-- Quick Stats -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Stats</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500">Total Contacts</span>
+                            <span class="text-sm font-medium text-gray-900">{{ contacts|length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500">Total Deals</span>
+                            <span class="text-sm font-medium text-gray-900">{{ deals|length }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500">Deal Value</span>
+                            <span class="text-sm font-medium text-gray-900">
+                                {% if deals %}
+                                    $
+                                    {% for deal in deals %}
+                                        {{ deal.value|add:0 }}
+                                        {% if not forloop.last %}+{% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    $0
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-sm text-gray-500">Added</span>
+                            <span class="text-sm font-medium text-gray-900">{{ company.created_at|date:"M Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Quick Actions -->
+                <div class="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <a href="mailto:{{ company.email }}"
+                           class="w-full text-left px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors flex items-center">
+                            <i class="fas fa-envelope mr-2"></i>
+                            Send Email
+                        </a>
+                        <a href="{{ company.website }}"
+                           target="_blank"
+                           class="w-full text-left px-3 py-2 text-sm bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors flex items-center">
+                            <i class="fas fa-external-link-alt mr-2"></i>
+                            Visit Website
+                        </a>
+                        {% if company.phone %}
+                            <a href="tel:{{ company.phone }}"
+                               class="w-full text-left px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors flex items-center">
+                                <i class="fas fa-phone mr-2"></i>
+                                Call Company
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'crm_contact_create' organization.pk %}"
+                           class="w-full text-left px-3 py-2 text-sm bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100 transition-colors flex items-center">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Add Contact
+                        </a>
+                        <button onclick="generateContactTweet()"
+                                id="generate-contact-tweet-btn"
+                                class="w-full text-left px-3 py-2 text-sm bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors flex items-center">
+                            <i class="fab fa-twitter mr-2"></i>
+                            Generate Contact Tweet
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- JavaScript for Tweet Fetching -->
+    <script>
+    async function getLatestTweet(twitterHandle) {
+        const btn = document.getElementById('get-tweet-btn');
+        const container = document.getElementById('tweet-container');
+        const content = document.getElementById('tweet-content');
+        const loading = document.getElementById('tweet-loading');
+        const error = document.getElementById('tweet-error');
+        
+        // Show loading state
+        container.classList.remove('hidden');
+        loading.classList.remove('hidden');
+        content.innerHTML = '';
+        error.classList.add('hidden');
+        
+        // Disable button
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Loading...';
+        
+        try {
+            const response = await fetch(`{% url 'crm_get_latest_tweet' organization.pk company.pk %}?handle=${encodeURIComponent(twitterHandle)}`, {
+                method: 'GET',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            const data = await response.json();
+            
+            loading.classList.add('hidden');
+            
+            if (data.success && data.tweet) {
+                const tweet = data.tweet;
+                const tweetData = data.tweet_data;
+                
+                content.innerHTML = `
+                    <div class="space-y-3">
+                        <!-- Tweet Header -->
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i class="fab fa-twitter text-blue-500"></i>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-900">@${twitterHandle}</p>
+                                <p class="text-xs text-gray-500">${tweet.created_at}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Tweet Content -->
+                        <div class="bg-white p-4 rounded-lg border">
+                            <p class="text-gray-800 whitespace-pre-wrap">${tweet.text}</p>
+                        </div>
+                        
+                        <!-- Tweet Stats -->
+                        <div class="grid grid-cols-4 gap-4 text-center">
+                            <div class="bg-white p-2 rounded">
+                                <div class="text-lg font-semibold text-red-500">${tweet.public_metrics.like_count || 0}</div>
+                                <div class="text-xs text-gray-500">Likes</div>
+                            </div>
+                            <div class="bg-white p-2 rounded">
+                                <div class="text-lg font-semibold text-green-500">${tweet.public_metrics.retweet_count || 0}</div>
+                                <div class="text-xs text-gray-500">Retweets</div>
+                            </div>
+                            <div class="bg-white p-2 rounded">
+                                <div class="text-lg font-semibold text-blue-500">${tweet.public_metrics.reply_count || 0}</div>
+                                <div class="text-xs text-gray-500">Replies</div>
+                            </div>
+                            <div class="bg-white p-2 rounded">
+                                <div class="text-lg font-semibold text-purple-500">${tweet.public_metrics.quote_count || 0}</div>
+                                <div class="text-xs text-gray-500">Quotes</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Additional Tweet Data -->
+                        ${tweet.lang ? `<p class="text-xs text-gray-500">Language: ${tweet.lang}</p>` : ''}
+                        ${tweet.source ? `<p class="text-xs text-gray-500">Posted via: ${tweet.source}</p>` : ''}
+                        
+                        <!-- Tweet Link -->
+                        <div class="pt-3 border-t">
+                            <a href="https://twitter.com/${twitterHandle}/status/${tweet.id}" target="_blank" class="text-blue-500 hover:text-blue-600 text-sm flex items-center">
+                                <i class="fas fa-external-link-alt mr-1"></i>
+                                View on Twitter
+                            </a>
+                        </div>
+                    </div>
+                `;
+            } else {
+                error.textContent = data.error || 'Failed to fetch tweet';
+                error.classList.remove('hidden');
+            }
+            
+        } catch (err) {
+            loading.classList.add('hidden');
+            error.textContent = 'Network error. Please try again.';
+            error.classList.remove('hidden');
+            console.error('Tweet fetch error:', err);
+        } finally {
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i>Get Latest Tweet';
+        }
+    }
+
+    // Contact Tweet Generation
+    async function generateContactTweet() {
+        const btn = document.getElementById('generate-contact-tweet-btn');
+        
+        // Show loading state
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Generating...';
+        
+        try {
+            const response = await fetch(`{% url 'crm_generate_contact_tweet' organization.pk company.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    company_id: {{ company.pk }},
+                    organization_id: {{ organization.pk }}
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show the generated tweet in a modal
+                showContactTweetModal(data);
+            } else {
+                alert('Error generating contact tweet: ' + (data.error || 'Unknown error'));
+            }
+            
+        } catch (err) {
+            alert('Network error. Please try again.');
+            console.error('Contact tweet generation error:', err);
+        } finally {
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-twitter mr-2"></i>Generate Contact Tweet';
+        }
+    }
+
+    function showContactTweetModal(data) {
+        // Store tweet data globally for use by send function
+        window.currentContactTweetData = data;
+        
+        // Create modal HTML
+        const modal = document.createElement('div');
+        modal.id = 'contact-tweet-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        
+        const noteHtml = data.note ? `<div class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800"><strong>Note:</strong> ${data.note}</div>` : '';
+        
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Generated Contact Tweet</h3>
+                        <button onclick="closeContactTweetModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fab fa-twitter text-blue-500"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-gray-900">${data.brand_name}</div>
+                                    <div class="mt-2 text-gray-800 whitespace-pre-wrap">${data.tweet}</div>
+                                    <div class="mt-3 flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-building mr-1"></i>Target: ${data.company_name}</span>
+                                        <span>${data.tweet.length}/280 characters</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ${noteHtml}
+                        
+                        <div class="flex justify-between items-center pt-4 border-t">
+                            <div class="text-sm text-gray-500">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Review the tweet before posting to ensure it matches your brand voice
+                            </div>
+                            <div class="flex space-x-3">
+                                <button onclick="sendContactTweet('${data.tweet.replace(/'/g, "\\'")}')" 
+                                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        id="send-tweet-btn">
+                                    <i class="fab fa-twitter mr-1"></i>Send Tweet
+                                </button>
+                                <button onclick="copyContactTweet('${data.tweet.replace(/'/g, "\\'")}')" 
+                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-copy mr-1"></i>Copy Tweet
+                                </button>
+                                <button onclick="closeContactTweetModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                                    Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+
+    function closeContactTweetModal() {
+        const modal = document.getElementById('contact-tweet-modal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    function copyContactTweet(tweetText) {
+        navigator.clipboard.writeText(tweetText).then(function() {
+            // Show success feedback
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>Copied!';
+            btn.className = btn.className.replace('bg-blue-600 hover:bg-blue-700', 'bg-green-600 hover:bg-green-700');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-blue-600 hover:bg-blue-700');
+            }, 2000);
+        }, function(err) {
+            alert('Failed to copy tweet to clipboard');
+        });
+    }
+
+    async function sendContactTweet(tweetText) {
+        const btn = document.getElementById('send-tweet-btn');
+        
+        // Show confirmation dialog
+        if (!confirm('Are you sure you want to send this tweet?')) {
+            return;
+        }
+        
+        // Show loading state
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Sending...';
+        
+        try {
+            // Get the stored tweet data
+            const tweetData = window.currentContactTweetData || {};
+            
+            const response = await fetch(`{% url 'crm_send_contact_tweet' organization.pk company.pk %}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tweet_content: tweetText,
+                    brand_id: tweetData.brand_id || null,
+                    company_id: {{ company.pk }},
+                    organization_id: {{ organization.pk }}
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Show success feedback
+                btn.innerHTML = '<i class="fas fa-check mr-1"></i>Tweet Sent!';
+                btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-emerald-600 hover:bg-emerald-700');
+                
+                // Show success alert with tweet URL if available
+                let message = 'Tweet sent successfully!';
+                if (data.tweet_url) {
+                    message += `\n\nView tweet: ${data.tweet_url}`;
+                }
+                alert(message);
+                
+                // Close modal after short delay
+                setTimeout(() => {
+                    closeContactTweetModal();
+                }, 2000);
+                
+            } else {
+                // Show error
+                alert('Error sending tweet: ' + (data.error || 'Unknown error'));
+                
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+            
+        } catch (err) {
+            alert('Network error. Please try again.');
+            console.error('Tweet sending error:', err);
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+        }
+    }
+
+    // Helper function to get CSRF token
+    function getCSRFToken() {
+        return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+               document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+               getCookie('csrftoken');
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    </script>
+{% endblock %}

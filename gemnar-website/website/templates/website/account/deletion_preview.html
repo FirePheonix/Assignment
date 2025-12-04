@@ -1,0 +1,189 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Delete Account - Preview{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Back Button -->
+            <div class="mb-6">
+                <a href="{% url 'website:account_settings' %}"
+                   class="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to Account Settings
+                </a>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-start">
+                        <i class="fas fa-exclamation-triangle text-red-500 mt-1 mr-3"></i>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Delete Account</h1>
+                            <p class="text-gray-600 mt-1">Review what will be permanently deleted</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <!-- Warning Message -->
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <div class="flex items-start">
+                            <i class="fas fa-exclamation-circle text-red-600 mt-1 mr-3"></i>
+                            <div>
+                                <h3 class="text-sm font-semibold text-red-900">This action cannot be undone</h3>
+                                <p class="text-sm text-red-700 mt-1">
+                                    Once you delete your account, all of your data will be permanently removed from our servers.
+                                    You will not be able to recover this information.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Account Information -->
+                    <div class="mb-8">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h2>
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Username</label>
+                                    <p class="text-sm text-gray-900">{{ preview.username }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email</label>
+                                    <p class="text-sm text-gray-900">{{ preview.email }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Data Summary -->
+                    <div class="mb-8">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Data That Will Be Deleted</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Brands -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-store text-blue-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Brands</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.brands }}</p>
+                                <p class="text-xs text-gray-600">Brand profiles you own</p>
+                            </div>
+                            <!-- Conversations -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-comments text-green-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Conversations</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">
+                                    {{ preview.data_to_delete.conversations|add:preview.data_to_delete.chat_rooms }}
+                                </p>
+                                <p class="text-xs text-gray-600">Chat conversations</p>
+                            </div>
+                            <!-- Images -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-images text-purple-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Images</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.images }}</p>
+                                <p class="text-xs text-gray-600">Uploaded images</p>
+                            </div>
+                            <!-- Tasks Created -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-tasks text-orange-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Tasks Created</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.tasks_created }}</p>
+                                <p class="text-xs text-gray-600">Tasks you created for creators</p>
+                            </div>
+                            <!-- Task Applications -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-file-alt text-indigo-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Applications</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.task_applications }}</p>
+                                <p class="text-xs text-gray-600">Your task applications</p>
+                            </div>
+                            <!-- Comments -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-comment text-teal-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Comments</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.blog_comments }}</p>
+                                <p class="text-xs text-gray-600">Blog post comments</p>
+                            </div>
+                            <!-- Profile Views -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-eye text-pink-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Profile Views</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.profile_impressions }}</p>
+                                <p class="text-xs text-gray-600">Profile impression records</p>
+                            </div>
+                            <!-- Social Connections -->
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-link text-red-600 mr-2"></i>
+                                    <h3 class="text-sm font-semibold text-gray-900">Connections</h3>
+                                </div>
+                                <p class="text-2xl font-bold text-gray-900">{{ preview.data_to_delete.service_connections }}</p>
+                                <p class="text-xs text-gray-600">Social media connections</p>
+                            </div>
+                            <!-- Referral Data -->
+                            {% if preview.data_to_delete.has_referral_code %}
+                                <div class="bg-gray-50 rounded-lg p-4">
+                                    <div class="flex items-center mb-2">
+                                        <i class="fas fa-users text-yellow-600 mr-2"></i>
+                                        <h3 class="text-sm font-semibold text-gray-900">Referrals</h3>
+                                    </div>
+                                    <p class="text-2xl font-bold text-gray-900">
+                                        {{ preview.data_to_delete.referral_signups|add:preview.data_to_delete.referral_subscriptions }}
+                                    </p>
+                                    <p class="text-xs text-gray-600">Referral activity</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Additional Information -->
+                    <div class="mb-8">
+                        <h2 class="text-lg font-semibold text-gray-900 mb-4">Additional Information</h2>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <ul class="text-sm text-blue-800 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mt-1 mr-2 flex-shrink-0"></i>
+                                    <span>All uploaded files (images, documents) will be permanently deleted from our servers</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mt-1 mr-2 flex-shrink-0"></i>
+                                    <span>Your username and email will become available for new registrations after 30 days</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mt-1 mr-2 flex-shrink-0"></i>
+                                    <span>Some anonymized activity logs may be retained for analytics purposes</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-info-circle text-blue-600 mt-1 mr-2 flex-shrink-0"></i>
+                                    <span>You will receive a confirmation email after deletion is complete</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-between pt-6 border-t border-gray-200">
+                        <a href="{% url 'website:account_settings' %}"
+                           class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Cancel
+                        </a>
+                        <a href="{% url 'website:account_deletion_confirm' %}"
+                           class="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                            <i class="fas fa-trash mr-2"></i>
+                            Continue to Delete Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

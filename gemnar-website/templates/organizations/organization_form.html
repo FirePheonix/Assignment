@@ -1,0 +1,23 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}
+    {% if object %}
+        {% trans "Update Organization" %}
+    {% else %}
+        {% trans "Create Organization" %}
+    {% endif %}
+{% endblock %}
+{% block org_content %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            {% if object %}
+                {% trans "Update" %}
+            {% else %}
+                {% trans "Create" %}
+            {% endif %}
+        </button>
+    </form>
+{% endblock %}

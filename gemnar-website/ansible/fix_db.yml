@@ -1,0 +1,135 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Stop uvicorn service
+      systemd:
+        name: uvicorn
+        state: stopped
+
+    - name: Set production environment variable
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "ENVIRONMENT=production"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Drop and recreate database
+      postgresql_db:
+        name: gemnar_db
+        state: absent
+      become_user: postgres
+      ignore_errors: yes
+
+    - name: Create fresh database
+      postgresql_db:
+        name: gemnar_db
+        owner: gemnar_user
+        state: present
+      become_user: postgres
+
+    - name: Grant all privileges to user
+      postgresql_privs:
+        db: gemnar_db
+        privs: ALL
+        type: database
+        role: gemnar_user
+      become_user: postgres
+
+    - name: Remove any existing migration files from production
+      file:
+        path: "/home/django/gemnar-website/website/migrations"
+        state: absent
+      become_user: django
+
+    - name: Create migrations directory
+      file:
+        path: "/home/django/gemnar-website/website/migrations"
+        state: directory
+        owner: django
+        group: django
+        mode: '0755'
+      become_user: django
+
+    - name: Create __init__.py in migrations
+      file:
+        path: "/home/django/gemnar-website/website/migrations/__init__.py"
+        state: touch
+        owner: django
+        group: django
+        mode: '0644'
+      become_user: django
+
+    - name: Make fresh migrations
+      command: "/home/django/.local/bin/poetry run python manage.py makemigrations"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: makemigrations_result
+
+    - name: Display makemigrations results
+      debug:
+        var: makemigrations_result.stdout_lines
+
+    - name: Run Django migrations
+      command: "/home/django/.local/bin/poetry run python manage.py migrate"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: migrate_result
+
+    - name: Display migration results
+      debug:
+        var: migrate_result.stdout_lines
+
+    - name: Create superuser
+      command: "/home/django/.local/bin/poetry run python manage.py shell -c \"
+        from django.contrib.auth import get_user_model;
+        User = get_user_model();
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser('admin', 'admin@gemnar.com', 'admin123');
+            print('Superuser created')
+        else:
+            print('Superuser already exists')
+        \""
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: superuser_result
+      ignore_errors: yes
+
+    - name: Display superuser creation result
+      debug:
+        var: superuser_result.stdout_lines
+
+    - name: Check migration status
+      command: "/home/django/.local/bin/poetry run python manage.py showmigrations"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: showmigrations_result
+
+    - name: Display migration status
+      debug:
+        var: showmigrations_result.stdout_lines
+
+    - name: Start uvicorn service
+      systemd:
+        name: uvicorn
+        state: started
+        daemon_reload: yes
+
+    - name: Check uvicorn status
+      command: systemctl status uvicorn --no-pager -l
+      register: uvicorn_status
+      ignore_errors: yes
+
+    - name: Display uvicorn status
+      debug:
+        var: uvicorn_status.stdout_lines 

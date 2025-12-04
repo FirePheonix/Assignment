@@ -1,0 +1,179 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_tags %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Tweet History</h1>
+            <a href="{% url 'website:tweet_dashboard' %}"
+               class="text-blue-500 hover:text-blue-600">Back to Dashboard</a>
+        </div>
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <form method="get"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="status"
+                            name="status"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="">All</option>
+                        <option value="draft" {% if filters.status == 'draft' %}selected{% endif %}>Draft</option>
+                        <option value="approved"
+                                {% if filters.status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="posted" {% if filters.status == 'posted' %}selected{% endif %}>Posted</option>
+                        <option value="failed" {% if filters.status == 'failed' %}selected{% endif %}>Failed</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input type="date"
+                           id="start_date"
+                           name="start_date"
+                           value="{{ filters.start_date|default:'' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
+                    <input type="date"
+                           id="end_date"
+                           name="end_date"
+                           value="{{ filters.end_date|default:'' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                    <input type="text"
+                           id="search"
+                           name="search"
+                           value="{{ filters.search|default:'' }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                           placeholder="Search tweet content...">
+                </div>
+                <div class="md:col-span-2 lg:col-span-4 flex justify-end">
+                    <button type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+        <!-- Tweet List -->
+        {% if tweets %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Posted</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for tweet in tweets %}
+                            <tr>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ tweet.content|truncatechars:100 }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ tweet.status|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">{{ tweet.created_at|date:"M d, Y H:i" }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        {% if tweet.posted_at %}
+                                            {{ tweet.posted_at|date:"M d, Y H:i" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    <a href="{% url 'website:tweet_preview' tweet.id %}"
+                                       class="text-blue-500 hover:text-blue-600 mr-3">Preview</a>
+                                    {% if tweet.status == 'draft' %}
+                                        <button onclick="approveTweet({{ tweet.id }})"
+                                                class="text-green-500 hover:text-green-600">Approve</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+                <div class="mt-4 flex justify-center">
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                         aria-label="Pagination">
+                        {% if current_page > 1 %}
+                            <a href="?page={{ current_page|add:'-1' }}&status={{ filters.status|default:'' }}&start_date={{ filters.start_date|default:'' }}&end_date={{ filters.end_date|default:'' }}&search={{ filters.search|default:'' }}"
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                Previous
+                            </a>
+                        {% endif %}
+                        {% for page in total_pages|get_range %}
+                            <a href="?page={{ page }}&status={{ filters.status|default:'' }}&start_date={{ filters.start_date|default:'' }}&end_date={{ filters.end_date|default:'' }}&search={{ filters.search|default:'' }}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium {% if page == current_page %}text-blue-600 bg-blue-50{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                                {{ page }}
+                            </a>
+                        {% endfor %}
+                        {% if current_page < total_pages %}
+                            <a href="?page={{ current_page|add:'1' }}&status={{ filters.status|default:'' }}&start_date={{ filters.start_date|default:'' }}&end_date={{ filters.end_date|default:'' }}&search={{ filters.search|default:'' }}"
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                Next
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-gray-50 rounded-lg p-8 text-center">
+                <p class="text-gray-600">No tweets found matching your criteria.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% block extra_js %}
+        <script>
+function approveTweet(tweetId) {
+    fetch(`/website/tweet/${tweetId}/preview/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'action=approve'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error approving tweet: ' + data.error);
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+        </script>
+    {% endblock %}
+{% endblock %}

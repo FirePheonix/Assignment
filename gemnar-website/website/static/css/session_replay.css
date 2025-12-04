@@ -1,0 +1,83 @@
+/* Session Replay Styles */
+.replay-viewport-hidden {
+  display: none !important;
+}
+
+.replay-viewport-visible {
+  display: block !important;
+}
+
+.replay-frame {
+  width: 1200px;
+  height: 800px;
+  transform: scale(0.8);
+  transform-origin: top left;
+}
+
+.mouse-cursor-hidden {
+  display: none !important;
+}
+
+.mouse-cursor-visible {
+  display: block !important;
+}
+
+.error-state-hidden {
+  display: none !important;
+}
+
+.error-state-visible {
+  display: flex !important;
+}
+
+.pause-icon-hidden {
+  display: none !important;
+}
+
+.pause-icon-visible {
+  display: inline !important;
+}
+
+.progress-bar-initial {
+  width: 0%;
+}
+
+.progress-handle-initial {
+  left: 0%;
+}
+
+/* Dynamic styles that will be updated by JavaScript */
+.progress-bar-dynamic {
+  transition: width 0.075s;
+}
+
+.progress-handle-dynamic {
+  transition: left 0.075s;
+}
+
+/* Responsive scaling for replay frame */
+.replay-frame-scaled {
+  transition: transform 0.2s ease;
+}
+
+/* Enhanced text contrast for session replay */
+.session-replay-content {
+  color: #e5e7eb; /* gray-200 */
+}
+
+.session-replay-content .text-gray-500 {
+  color: #9ca3af !important; /* gray-400 */
+}
+
+.session-replay-content .text-gray-400 {
+  color: #d1d5db !important; /* gray-300 */
+}
+
+/* Ensure all list items have good contrast */
+.session-replay-content ul li {
+  color: #e5e7eb; /* gray-200 */
+}
+
+.session-replay-content ul li span {
+  color: #e5e7eb; /* gray-200 */
+}

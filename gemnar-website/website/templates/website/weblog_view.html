@@ -1,0 +1,168 @@
+{% extends 'website/base.html' %}
+{% block title %}{{ title }} - Gemnar{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>{{ title }}</h1>
+                    <div>
+                        <small class="text-muted">{{ page_obj.paginator.count }} total entries</small>
+                    </div>
+                </div>
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="get" class="row g-3">
+                            <div class="col-md-4">
+                                <label for="activity_type" class="form-label">Activity Type</label>
+                                <select name="activity_type" id="activity_type" class="form-select">
+                                    <option value="">All Types</option>
+                                    {% for value, label in activity_types %}
+                                        <option value="{{ value }}"
+                                                {% if value == current_activity_type %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="status" class="form-label">Status</label>
+                                <select name="status" id="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    {% for value, label in statuses %}
+                                        <option value="{{ value }}"
+                                                {% if value == current_status %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">Filter</button>
+                                    <a href="{% url 'website:weblog_view' %}" class="btn btn-secondary">Clear</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <!-- WebLog Entries -->
+                <div class="card">
+                    <div class="card-body">
+                        {% if page_obj %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Started At</th>
+                                            <th>Activity</th>
+                                            <th>Status</th>
+                                            <th>Items</th>
+                                            <th>Duration</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for log in page_obj %}
+                                            <tr>
+                                                <td>
+                                                    <small>{{ log.started_at|date:"Y-m-d H:i:s" }}</small>
+                                                </td>
+                                                <td>
+                                                    <div>
+                                                        <strong>{{ log.activity_name }}</strong>
+                                                    </div>
+                                                    <small class="text-muted">{{ log.get_activity_type_display }}</small>
+                                                </td>
+                                                <td>
+                                                    {% if log.status == 'completed' %}
+                                                        <span class="badge bg-success">{{ log.get_status_display }}</span>
+                                                    {% elif log.status == 'failed' %}
+                                                        <span class="badge bg-danger">{{ log.get_status_display }}</span>
+                                                    {% elif log.status == 'in_progress' %}
+                                                        <span class="badge bg-warning">{{ log.get_status_display }}</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ log.get_status_display }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <small>
+                                                        {% if log.items_processed > 0 %}
+                                                            Processed: {{ log.items_processed }}
+                                                            <br>
+                                                            Success: {{ log.items_succeeded }}
+                                                            <br>
+                                                            Failed: {{ log.items_failed }}
+                                                        {% else %}
+                                                            No items
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <small>
+                                                        {% if log.duration_seconds %}
+                                                            {{ log.duration_seconds|floatformat:1 }}s
+                                                        {% elif log.is_running %}
+                                                            <em>Running...</em>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <small>
+                                                        {% if log.description %}{{ log.description|truncatechars:50 }}{% endif %}
+                                                        {% if log.error_message %}
+                                                            <br>
+                                                            <span class="text-danger">Error: {{ log.error_message|truncatechars:50 }}</span>
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <!-- Pagination -->
+                            {% if page_obj.has_other_pages %}
+                                <nav aria-label="Page navigation">
+                                    <ul class="pagination justify-content-center">
+                                        {% if page_obj.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page=1{% if current_activity_type %}&activity_type={{ current_activity_type }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">First</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page={{ page_obj.previous_page_number }}{% if current_activity_type %}&activity_type={{ current_activity_type }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a>
+                                            </li>
+                                        {% endif %}
+                                        <li class="page-item active">
+                                            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                        </li>
+                                        {% if page_obj.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page={{ page_obj.next_page_number }}{% if current_activity_type %}&activity_type={{ current_activity_type }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                   href="?page={{ page_obj.paginator.num_pages }}{% if current_activity_type %}&activity_type={{ current_activity_type }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Last</a>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No WebLog entries found.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

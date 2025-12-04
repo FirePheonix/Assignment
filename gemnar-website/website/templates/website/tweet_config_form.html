@@ -1,0 +1,380 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% load website_tags %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-3xl font-bold">{{ title }}</h1>
+                <a href="{% url 'website:tweet_dashboard' %}"
+                   class="text-blue-500 hover:text-blue-600">Back to Dashboard</a>
+            </div>
+            <form id="configForm"
+                  class="bg-white rounded-lg shadow-md p-6"
+                  method="post">
+                {% csrf_token %}
+                <!-- Basic Information -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold mb-4">Basic Information</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Configuration Name</label>
+                            <input type="text"
+                                   id="name"
+                                   name="name"
+                                   required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   value="{{ config.name|default:'' }}"
+                                   placeholder="E.g., Marketing Tweets">
+                        </div>
+                        <div>
+                            <label for="prompt_template" class="block text-sm font-medium text-gray-700">Tweet Prompt Template</label>
+                            <select id="prompt_template_select"
+                                    class="mb-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="">Select a template or write your own</option>
+                                {% for prompt in sample_prompts %}<option value="{{ prompt }}">{{ prompt }}</option>{% endfor %}
+                            </select>
+                            <textarea id="prompt_template"
+                                      name="prompt_template"
+                                      required
+                                      rows="3"
+                                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                      placeholder="Use {topic}, {tone}, and {keywords} as placeholders">{{ config.prompt_template|default:'' }}</textarea>
+                            <p class="mt-1 text-sm text-gray-500">Available placeholders: {topic}, {tone}, {keywords}</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Content Configuration -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold mb-4">Content Configuration</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="topics" class="block text-sm font-medium text-gray-700">Topics</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input type="text"
+                                       id="topicInput"
+                                       class="flex-1 rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="Add a topic and press Enter">
+                                <button type="button"
+                                        onclick="addTopic()"
+                                        class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100">
+                                    Add
+                                </button>
+                            </div>
+                            <div id="topicsList" class="mt-2 flex flex-wrap gap-2">
+                                {% if config %}
+                                    {% for topic in config.topics %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                            {{ topic }}
+                                            <button type="button"
+                                                    onclick="removeTag(this, 'topics')"
+                                                    class="ml-1 text-blue-600 hover:text-blue-800">×</button>
+                                            <input type="hidden" name="topics" value="{{ topic }}">
+                                        </span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="tones" class="block text-sm font-medium text-gray-700">Tones</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input type="text"
+                                       id="toneInput"
+                                       class="flex-1 rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="Add a tone and press Enter">
+                                <button type="button"
+                                        onclick="addTone()"
+                                        class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100">
+                                    Add
+                                </button>
+                            </div>
+                            <div id="tonesList" class="mt-2 flex flex-wrap gap-2">
+                                {% if config %}
+                                    {% for tone in config.tones %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                            {{ tone }}
+                                            <button type="button"
+                                                    onclick="removeTag(this, 'tones')"
+                                                    class="ml-1 text-green-600 hover:text-green-800">×</button>
+                                            <input type="hidden" name="tones" value="{{ tone }}">
+                                        </span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="keywords" class="block text-sm font-medium text-gray-700">Keywords</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input type="text"
+                                       id="keywordInput"
+                                       class="flex-1 rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="Add a keyword and press Enter">
+                                <button type="button"
+                                        onclick="addKeyword()"
+                                        class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100">
+                                    Add
+                                </button>
+                            </div>
+                            <div id="keywordsList" class="mt-2 flex flex-wrap gap-2">
+                                {% if config %}
+                                    {% for keyword in config.keywords %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                                            {{ keyword }}
+                                            <button type="button"
+                                                    onclick="removeTag(this, 'keywords')"
+                                                    class="ml-1 text-purple-600 hover:text-purple-800">×</button>
+                                            <input type="hidden" name="keywords" value="{{ keyword }}">
+                                        </span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <label for="hashtags" class="block text-sm font-medium text-gray-700">Hashtags</label>
+                            <div class="mt-1 flex rounded-md shadow-sm">
+                                <input type="text"
+                                       id="hashtagInput"
+                                       class="flex-1 rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                       placeholder="Add a hashtag and press Enter">
+                                <button type="button"
+                                        onclick="addHashtag()"
+                                        class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 hover:bg-gray-100">
+                                    Add
+                                </button>
+                            </div>
+                            <div id="hashtagsList" class="mt-2 flex flex-wrap gap-2">
+                                {% if config %}
+                                    {% for hashtag in config.hashtags %}
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                            {{ hashtag }}
+                                            <button type="button"
+                                                    onclick="removeTag(this, 'hashtags')"
+                                                    class="ml-1 text-yellow-600 hover:text-yellow-800">×</button>
+                                            <input type="hidden" name="hashtags" value="{{ hashtag }}">
+                                        </span>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Schedule Configuration -->
+                <div class="mb-8">
+                    <h2 class="text-xl font-semibold mb-4">Schedule Configuration</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="frequency" class="block text-sm font-medium text-gray-700">Frequency</label>
+                            <select id="frequency"
+                                    name="frequency"
+                                    required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                <option value="daily"
+                                        {% if config.schedule.frequency == 'daily' %}selected{% endif %}>Daily</option>
+                                <option value="weekly"
+                                        {% if config.schedule.frequency == 'weekly' %}selected{% endif %}>
+                                    Weekly
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="time" class="block text-sm font-medium text-gray-700">Time (system timezone)</label>
+                            <input type="time"
+                                   id="time"
+                                   name="time"
+                                   required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                   value="{{ config.schedule.time|default:'09:00' }}">
+                        </div>
+                        <div id="daysSelection"
+                             class="{% if config.schedule.frequency != 'weekly' %}hidden{% endif %}">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Days of Week</label>
+                            <div class="space-y-2">
+                                {% for day in "Mon,Tue,Wed,Thu,Fri,Sat,Sun"|split:"," %}
+                                    <label class="inline-flex items-center mr-4">
+                                        <input type="checkbox"
+                                               name="days"
+                                               value="{{ day }}"
+                                               {% if config and day in config.schedule.days %}checked{% endif %}
+                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                        <span class="ml-2">{{ day }}</span>
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-4">
+                    <button type="button"
+                            onclick="window.location.href='{% url 'website:tweet_dashboard' %}'"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 border border-transparent rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {{ config|yesno:"Update,Create" }} Configuration
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% block extra_js %}
+        <script>
+document.getElementById('prompt_template_select').addEventListener('change', function() {
+    if (this.value) {
+        document.getElementById('prompt_template').value = this.value;
+    }
+});
+
+document.getElementById('frequency').addEventListener('change', function() {
+    const daysSelection = document.getElementById('daysSelection');
+    if (this.value === 'weekly') {
+        daysSelection.classList.remove('hidden');
+    } else {
+        daysSelection.classList.add('hidden');
+    }
+});
+
+function addTag(inputId, listId, tagClass, nameAttr) {
+    const input = document.getElementById(inputId);
+    const value = input.value.trim();
+    if (value) {
+        const list = document.getElementById(listId);
+        const tag = document.createElement('span');
+        tag.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${tagClass}`;
+        tag.innerHTML = `
+            ${value}
+            <button type="button" onclick="removeTag(this, '${nameAttr}')" class="ml-1 hover:text-gray-800">×</button>
+            <input type="hidden" name="${nameAttr}" value="${value}">
+        `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+}
+
+function removeTag(button, inputName) {
+    button.closest('span').remove();
+}
+
+function addTopic() {
+    addTag('topicInput', 'topicsList', 'bg-blue-100 text-blue-800', 'topics');
+}
+
+function addTone() {
+    addTag('toneInput', 'tonesList', 'bg-green-100 text-green-800', 'tones');
+}
+
+function addKeyword() {
+    addTag('keywordInput', 'keywordsList', 'bg-purple-100 text-purple-800', 'keywords');
+}
+
+function addHashtag() {
+    const input = document.getElementById('hashtagInput');
+    let value = input.value.trim();
+    if (value) {
+        if (!value.startsWith('#')) {
+            value = '#' + value;
+        }
+        const list = document.getElementById('hashtagsList');
+        const tag = document.createElement('span');
+        tag.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800';
+        tag.innerHTML = `
+            ${value}
+            <button type="button" onclick="removeTag(this, 'hashtags')" class="ml-1 hover:text-gray-800">×</button>
+            <input type="hidden" name="hashtags" value="${value}">
+        `;
+        list.appendChild(tag);
+        input.value = '';
+    }
+}
+
+// Handle Enter key in input fields
+['topicInput', 'toneInput', 'keywordInput', 'hashtagInput'].forEach(id => {
+    document.getElementById(id).addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            switch(id) {
+                case 'topicInput': addTopic(); break;
+                case 'toneInput': addTone(); break;
+                case 'keywordInput': addKeyword(); break;
+                case 'hashtagInput': addHashtag(); break;
+            }
+        }
+    });
+});
+
+// Form submission
+document.getElementById('configForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate required fields
+    const name = document.getElementById('name').value.trim();
+    const promptTemplate = document.getElementById('prompt_template').value.trim();
+    const frequency = document.getElementById('frequency').value;
+    const time = document.getElementById('time').value;
+    
+    if (!name) {
+        alert('Please enter a configuration name');
+        return;
+    }
+    if (!promptTemplate) {
+        alert('Please enter a prompt template');
+        return;
+    }
+    if (!frequency) {
+        alert('Please select a frequency');
+        return;
+    }
+    if (!time) {
+        alert('Please select a time');
+        return;
+    }
+    
+    // If weekly frequency, ensure at least one day is selected
+    if (frequency === 'weekly') {
+        const selectedDays = Array.from(document.querySelectorAll('input[name="days"]:checked')).length;
+        if (selectedDays === 0) {
+            alert('Please select at least one day of the week');
+            return;
+        }
+    }
+    
+    const formData = new FormData(this);
+    
+    fetch(window.location.href, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{% url "website:tweet_dashboard" %}';
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving the configuration');
+    });
+});
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+        </script>
+    {% endblock %}
+{% endblock %}

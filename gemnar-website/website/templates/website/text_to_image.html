@@ -1,0 +1,504 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}{{ title }} - Gemnar{% endblock %}
+{% block extra_head %}
+    <style>
+    .loading-spinner {
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #d53369;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .generated-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .result-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 1rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Fix for input text color */
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    textarea,
+    select {
+        color: #000000 !important;
+    }
+
+    /* Placeholder color */
+    input::placeholder,
+    textarea::placeholder {
+        color: #6B7280 !important;
+    }
+
+    .image-preview {
+        max-width: 256px;
+        max-height: 256px;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        border: 2px dashed #e5e7eb;
+    }
+
+    .image-upload-area {
+        border: 2px dashed #e5e7eb;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .image-upload-area:hover {
+        border-color: #d53369;
+        background-color: rgba(213, 51, 105, 0.05);
+    }
+
+    .strength-value {
+        min-width: 3em;
+        text-align: center;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <!--Hero-->
+    <div>
+        <div class="container px-3 mx-auto flex flex-wrap flex-col md:flex-row items-center">
+            <!--Left Col-->
+            <div class="flex flex-col w-full md:w-2/5 justify-center items-start text-center md:text-left">
+                <p class="uppercase tracking-loose w-full">AI Image Generation</p>
+                <h1 class="my-4 text-5xl font-bold leading-tight">Create Stunning Images from Text</h1>
+                <p class="leading-normal text-2xl mb-8">Transform your ideas into beautiful visuals using advanced AI technology.</p>
+            </div>
+            <!--Right Col-->
+            <div class="w-full md:w-3/5 py-6 text-center">
+                <img class="w-full md:w-4/5 z-50"
+                     src="{% static 'images/hero.png' %}"
+                     alt="AI Image Generation"
+                     width="auto"
+                     height="auto" />
+            </div>
+        </div>
+    </div>
+    <!-- Main Content -->
+    <section class="bg-white border-b py-8">
+        <div class="container max-w-5xl mx-auto px-3">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Form Section -->
+                <div class="form-container p-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Generate Your Image</h2>
+                    <form id="textToImageForm" class="space-y-6">
+                        {% csrf_token %}
+                        <!-- Image Upload -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Reference Image (Optional)</label>
+                            <div id="imageUploadArea"
+                                 class="image-upload-area p-4 text-center cursor-pointer">
+                                <input type="file" id="imageInput" class="hidden" accept="image/*">
+                                <img id="imagePreview"
+                                     class="image-preview mx-auto mb-2 hidden"
+                                     alt="Preview of uploaded image"
+                                     width="auto"
+                                     height="auto">
+                                <div id="uploadPrompt" class="py-8">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400"
+                                         stroke="currentColor"
+                                         fill="none"
+                                         viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <p class="mt-1 text-sm text-gray-600">Click to upload or drag and drop</p>
+                                    <p class="text-xs text-gray-500">PNG, JPG up to 5MB</p>
+                                </div>
+                            </div>
+                            <button type="button"
+                                    id="removeImageBtn"
+                                    class="mt-2 text-sm text-red-600 hover:text-red-800 hidden">Remove Image</button>
+                        </div>
+                        <!-- Strength Slider (only shown when image is uploaded) -->
+                        <div id="strengthControl" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transformation Strength</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="range"
+                                       id="strength"
+                                       name="strength"
+                                       min="0"
+                                       max="100"
+                                       value="90"
+                                       class="flex-grow">
+                                <span id="strength-value" class="strength-value text-sm text-gray-600">0.90</span>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Higher values = more transformation, lower values = more faithful to original</p>
+                        </div>
+                        <!-- Prompt Input -->
+                        <div>
+                            <label for="prompt" class="block text-sm font-medium text-gray-700 mb-2">Describe your image</label>
+                            <textarea id="prompt"
+                                      name="prompt"
+                                      rows="4"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500"
+                                      placeholder="An astronaut floating inside a giant hourglass in space, surrounded by stars and glowing dust..."
+                                      required></textarea>
+                            <p class="mt-1 text-sm text-gray-500">Be descriptive for better results</p>
+                        </div>
+                        <!-- Model Selection -->
+                        <div>
+                            <label for="model" class="block text-sm font-medium text-gray-700 mb-2">AI Model</label>
+                            <select id="model"
+                                    name="model"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500">
+                                {% for model in models %}
+                                    <option value="{{ model.value }}"{% if forloop.first %} selected{% endif %}>{{ model.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!-- Size Presets -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Image Size</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                {% for preset in size_presets %}
+                                    <button type="button"
+                                            class="size-preset px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                                            data-width="{{ preset.width }}"
+                                            data-height="{{ preset.height }}">{{ preset.name }}</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <!-- Custom Size -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="width" class="block text-sm font-medium text-gray-700 mb-2">Width</label>
+                                <input type="number"
+                                       id="width"
+                                       name="width"
+                                       value="1024"
+                                       min="256"
+                                       max="2048"
+                                       step="64"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500" />
+                            </div>
+                            <div>
+                                <label for="height" class="block text-sm font-medium text-gray-700 mb-2">Height</label>
+                                <input type="number"
+                                       id="height"
+                                       name="height"
+                                       value="1024"
+                                       min="256"
+                                       max="2048"
+                                       step="64"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500" />
+                            </div>
+                        </div>
+                        <!-- Steps -->
+                        <div>
+                            <label for="steps" class="block text-sm font-medium text-gray-700 mb-2">
+                                Generation Steps (Higher = Better Quality)
+                            </label>
+                            <input type="range"
+                                   id="steps"
+                                   name="steps"
+                                   min="10"
+                                   max="100"
+                                   value="30"
+                                   class="w-full" />
+                            <div class="flex justify-between text-sm text-gray-500">
+                                <span>10 (Fast)</span>
+                                <span id="steps-value">30</span>
+                                <span>100 (Best)</span>
+                            </div>
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                id="generateBtn"
+                                class="w-full bg-gradient-to-r from-pink-500 to-yellow-500 text-white font-bold py-3 px-6 rounded-lg hover:from-pink-600 hover:to-yellow-600 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 transition duration-200">
+                            Generate Image
+                        </button>
+                    </form>
+                </div>
+                <!-- Results Section -->
+                <div class="result-container p-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Generated Image</h2>
+                    <div id="loadingState" class="hidden text-center py-16">
+                        <div class="loading-spinner mx-auto mb-4"></div>
+                        <p class="text-gray-600">Generating your image...</p>
+                        <p class="text-sm text-gray-500 mt-2">This may take 30-60 seconds</p>
+                    </div>
+                    <div id="errorState" class="hidden text-center py-16">
+                        <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                        <p class="text-red-600 font-medium mb-2">Generation Failed</p>
+                        <p id="errorMessage" class="text-gray-600 text-sm"></p>
+                    </div>
+                    <div id="successState" class="hidden">
+                        <div class="text-center mb-4">
+                            <img id="generatedImage"
+                                 class="generated-image mx-auto"
+                                 alt="Generated image"
+                                 width="512"
+                                 height="512" />
+                        </div>
+                        <div class="text-center space-y-2">
+                            <button id="downloadBtn"
+                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <svg class="w-4 h-4 mr-2"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                    </path>
+                                </svg>
+                                Download Image
+                            </button>
+                        </div>
+                    </div>
+                    <div id="defaultState" class="text-center py-16">
+                        <div class="text-gray-400 text-6xl mb-4">🎨</div>
+                        <p class="text-gray-600">Your generated image will appear here</p>
+                        <p class="text-sm text-gray-500 mt-2">Fill out the form and click "Generate Image" to get started</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('textToImageForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const stepsSlider = document.getElementById('steps');
+    const stepsValue = document.getElementById('steps-value');
+    const sizePresets = document.querySelectorAll('.size-preset');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    
+    // State management
+    const defaultState = document.getElementById('defaultState');
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const successState = document.getElementById('successState');
+    const errorMessage = document.getElementById('errorMessage');
+    const generatedImage = document.getElementById('generatedImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    // Image upload handling
+    const imageUploadArea = document.getElementById('imageUploadArea');
+    const imageInput = document.getElementById('imageInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+    const strengthControl = document.getElementById('strengthControl');
+    const strengthSlider = document.getElementById('strength');
+    const strengthValue = document.getElementById('strength-value');
+    
+    let uploadedImage = null;
+
+    // Update steps value display
+    stepsSlider.addEventListener('input', function() {
+        stepsValue.textContent = this.value;
+    });
+    
+    // Handle size presets
+    sizePresets.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            sizePresets.forEach(btn => btn.classList.remove('bg-pink-100', 'border-pink-500'));
+            // Add active class to clicked button
+            this.classList.add('bg-pink-100', 'border-pink-500');
+            
+            // Update input values
+            widthInput.value = this.dataset.width;
+            heightInput.value = this.dataset.height;
+        });
+    });
+    
+    // Set default active preset
+    if (sizePresets.length > 2) {
+        sizePresets[2].click(); // 1024x1024
+    }
+    
+    function showState(state) {
+        [defaultState, loadingState, errorState, successState].forEach(el => el.classList.add('hidden'));
+        state.classList.remove('hidden');
+    }
+    
+    function showError(message) {
+        errorMessage.textContent = message;
+        showState(errorState);
+    }
+    
+    function showSuccess(imageUrl) {
+        generatedImage.src = imageUrl;
+        showState(successState);
+        
+        // Setup download functionality
+        downloadBtn.onclick = function() {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = 'generated_image.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+    }
+    
+    // Handle drag and drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        imageUploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        imageUploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        imageUploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        imageUploadArea.classList.add('border-pink-500');
+    }
+
+    function unhighlight(e) {
+        imageUploadArea.classList.remove('border-pink-500');
+    }
+
+    imageUploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    // Click to upload
+    imageUploadArea.addEventListener('click', () => {
+        imageInput.click();
+    });
+
+    imageInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    // Remove image button
+    removeImageBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        uploadedImage = null;
+        imageInput.value = '';
+        imagePreview.classList.add('hidden');
+        uploadPrompt.classList.remove('hidden');
+        removeImageBtn.classList.add('hidden');
+        strengthControl.classList.add('hidden');
+    });
+
+    // Strength slider
+    strengthSlider.addEventListener('input', function() {
+        const value = (this.value / 100).toFixed(2);
+        strengthValue.textContent = value;
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB');
+                return;
+            }
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Please upload an image file');
+                return;
+            }
+
+            uploadedImage = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                uploadPrompt.classList.add('hidden');
+                removeImageBtn.classList.remove('hidden');
+                strengthControl.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Form submission
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        
+        // Add strength if image is uploaded
+        if (uploadedImage) {
+            formData.append('image', uploadedImage);
+            formData.append('strength', strengthSlider.value / 100);
+        }
+        
+        // Disable button and show loading
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Generating...';
+        showState(loadingState);
+        
+        try {
+            const response = await fetch('{% url "website:text_to_image" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            });
+            
+            const result = await response.json();
+            
+            console.log('🔍 Full API Response:', result);
+            
+            if (result.success) {
+                const imageUrl = result.data.data[0].imageURL;
+                if (imageUrl) {
+                    console.log('🖼️ Found image URL:', imageUrl);
+                    showSuccess(imageUrl);
+                } else {
+                    console.log('❌ No image URL found');
+                    showError('No image URL found in response.');
+                }
+            } else {
+                console.log('❌ API Error:', result.error);
+                showError(result.error || 'An unknown error occurred.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showError('Network error. Please check your connection and try again.');
+        } finally {
+            // Re-enable button
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate Image';
+        }
+    });
+});
+    </script>
+{% endblock %}

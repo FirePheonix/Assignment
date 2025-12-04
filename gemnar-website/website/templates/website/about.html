@@ -1,0 +1,131 @@
+{% extends 'website/base.html' %}
+{% block title %}About - Gemnar{% endblock %}
+{% block description %}
+    Learn about Gemnar's mission to transform businesses through generation marketing and AI-powered solutions.
+{% endblock %}
+{% block keywords %}about gemnar, generation marketing, company, mission, team{% endblock %}
+{% block content %}
+    <div class="pb-12">
+        <div class="container mx-auto px-6">
+            <div class="text-center text-white">
+                <h1 class="text-4xl lg:text-6xl font-bold text-white mb-6">About Gemnar</h1>
+                <p class="text-xl text-white opacity-90 max-w-3xl mx-auto">
+                    We're revolutionizing how businesses approach marketing through the power of generation marketing and AI.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Wave Section -->
+    <div class="relative -mt-12 lg:-mt-24">
+        <svg viewBox="0 0 1428 174"
+             version="1.1"
+             xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+            <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496" opacity="0.100000001">
+            </path>
+            </g>
+            </g>
+        </svg>
+    </div>
+    <section class="bg-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <!-- Mission Section -->
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Our Mission</h2>
+                    <p class="text-lg text-gray-600 leading-relaxed mb-6">
+                        At Gemnar, we believe every business deserves access to powerful marketing tools that drive real results.
+                        Our mission is to democratize generation marketing by combining cutting-edge AI technology with
+                        human expertise to help businesses of all sizes scale their marketing efforts effectively.
+                    </p>
+                    <p class="text-lg text-gray-600 leading-relaxed">
+                        We're not just another marketing platform – we're your strategic partner in building sustainable
+                        growth through data-driven marketing strategies that actually convert.
+                    </p>
+                </div>
+                <!-- What We Do Section -->
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">What We Do</h2>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">AI-Powered Analytics</h3>
+                            <p class="text-gray-600">
+                                Transform raw data into actionable insights with our advanced AI engine that identifies
+                                opportunities and optimizes performance in real-time.
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Multi-Channel Integration</h3>
+                            <p class="text-gray-600">
+                                Seamlessly connect all your marketing channels into one unified ecosystem that
+                                drives engagement across every touchpoint.
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Automated Workflows</h3>
+                            <p class="text-gray-600">
+                                Streamline your marketing operations with intelligent automation that scales
+                                your efforts while maintaining personalization.
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-6 rounded-lg">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Customer Journey Mapping</h3>
+                            <p class="text-gray-600">
+                                Visualize and optimize every step of your customer's journey with AI-powered
+                                insights that maximize conversions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Values Section -->
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Our Values</h2>
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-3 h-3 bg-pink-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2">Innovation First</h3>
+                                <p class="text-gray-600">
+                                    We constantly push the boundaries of what's possible in marketing technology,
+                                    always staying ahead of industry trends.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-3 h-3 bg-pink-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2">Results-Driven</h3>
+                                <p class="text-gray-600">
+                                    Every feature we build is designed to deliver measurable results that impact
+                                    your bottom line.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-3 h-3 bg-pink-500 rounded-full mt-2 flex-shrink-0"></div>
+                            <div>
+                                <h3 class="text-xl font-semibold text-gray-800 mb-2">Customer Success</h3>
+                                <p class="text-gray-600">
+                                    Your success is our success. We're committed to providing the support and
+                                    tools you need to achieve your goals.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- CTA Section -->
+                <div class="text-center bg-gradient-to-r from-pink-500 to-orange-400 p-8 rounded-lg text-white">
+                    <h2 class="text-2xl font-bold mb-4">Ready to Transform Your Marketing?</h2>
+                    <p class="text-lg mb-6 opacity-90">
+                        Join thousands of businesses already using Gemnar to scale their marketing efforts.
+                    </p>
+                    <a href="{% url 'website:signup' %}"
+                       class="bg-white text-pink-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition duration-300">
+                        Get Started Today
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

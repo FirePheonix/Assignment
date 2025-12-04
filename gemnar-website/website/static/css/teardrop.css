@@ -1,0 +1,27 @@
+.teardrop {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: rgba(
+    0,
+    191,
+    255,
+    0.5
+  ); /* Deep sky blue with transparency */
+  border-radius: 50% 0 50% 50%;
+  transform: rotate(45deg);
+  pointer-events: none;
+  animation: fall 1s linear forwards;
+  z-index: 9999;
+}
+
+@keyframes fall {
+  from {
+    transform: translateY(0) rotate(45deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100px) rotate(45deg);
+    opacity: 0;
+  }
+}

@@ -1,0 +1,153 @@
+<!-- Application Card Partial -->
+<div class="application-card bg-white rounded-lg p-6 shadow-sm">
+    <div class="flex items-start justify-between">
+        <!-- Creator Info -->
+        <div class="flex items-start space-x-4">
+            <div class="creator-avatar">
+                {% if application.creator.first_name %}
+                    {{ application.creator.first_name|first }}{{ application.creator.last_name|first }}
+                {% else %}
+                    {{ application.creator.username|first|upper }}
+                {% endif %}
+            </div>
+            <div class="flex-1">
+                <div class="flex items-center space-x-3 mb-2">
+                    <h4 class="text-lg font-semibold text-gray-900">
+                        {% if application.creator.first_name %}
+                            {{ application.creator.first_name }} {{ application.creator.last_name }}
+                        {% else %}
+                            {{ application.creator.username }}
+                        {% endif %}
+                    </h4>
+                    <span class="status-badge status-{{ application.status|lower }}">{{ application.get_status_display }}</span>
+                </div>
+                <div class="text-sm text-gray-600 mb-3">
+                    <div class="flex items-center space-x-4">
+                        <span>@{{ application.creator.username }}</span>
+                        <span>Applied: {{ application.applied_at|date:"M d, Y H:i" }}</span>
+                        {% if application.updated_at != application.applied_at %}
+                            <span>Updated: {{ application.updated_at|date:"M d, Y H:i" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if application.message %}
+                    <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                        <h5 class="text-sm font-medium text-gray-700 mb-1">Application Message:</h5>
+                        <p class="text-sm text-gray-600">{{ application.message }}</p>
+                    </div>
+                {% endif %}
+                <!-- Creator Profile Link -->
+                <div class="flex items-center space-x-4 text-sm">
+                    {% if application.creator.email %}
+                        <a href="mailto:{{ application.creator.email }}"
+                           class="text-blue-600 hover:text-blue-700 flex items-center">
+                            <i class="fas fa-envelope mr-1"></i>Email
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'website:user_detail' application.creator.pk %}"
+                       class="text-blue-600 hover:text-blue-700 flex items-center">
+                        <i class="fas fa-user mr-1"></i>View Profile
+                    </a>
+                    {% if application.creator.instagram_username %}
+                        <a href="https://instagram.com/{{ application.creator.instagram_username }}"
+                           target="_blank"
+                           class="text-purple-600 hover:text-purple-700 flex items-center">
+                            <i class="fab fa-instagram mr-1"></i>Instagram
+                        </a>
+                    {% endif %}
+                    {% if application.creator.tiktok_username %}
+                        <a href="https://tiktok.com/@{{ application.creator.tiktok_username }}"
+                           target="_blank"
+                           class="text-gray-900 hover:text-gray-700 flex items-center">
+                            <i class="fab fa-tiktok mr-1"></i>TikTok
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Action Buttons -->
+        <div class="flex flex-col space-y-2">
+            {% if show_actions or show_all_actions %}
+                {% if application.status == 'PENDING' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'accept')"
+                            class="action-btn btn-accept">
+                        <i class="fas fa-check mr-1"></i>Accept
+                    </button>
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'reject')"
+                            class="action-btn btn-reject">
+                        <i class="fas fa-times mr-1"></i>Reject
+                    </button>
+                {% endif %}
+            {% endif %}
+            {% if show_completion or show_all_actions %}
+                {% if application.status == 'ACCEPTED' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'complete')"
+                            class="action-btn btn-complete">
+                        <i class="fas fa-check-circle mr-1"></i>Mark Complete
+                    </button>
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'award_prize')"
+                            class="action-btn btn-award">
+                        <i class="fas fa-trophy mr-1"></i>Award Prize
+                    </button>
+                {% endif %}
+            {% endif %}
+            {% if show_reset or show_all_actions %}
+                {% if application.status in 'COMPLETED,REJECTED' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'reset_pending')"
+                            class="action-btn btn-reset">
+                        <i class="fas fa-undo mr-1"></i>Reset to Pending
+                    </button>
+                {% endif %}
+            {% endif %}
+            {% if show_all_actions %}
+                {% if application.status == 'PENDING' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'accept')"
+                            class="action-btn btn-accept">
+                        <i class="fas fa-check mr-1"></i>Accept
+                    </button>
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'reject')"
+                            class="action-btn btn-reject">
+                        <i class="fas fa-times mr-1"></i>Reject
+                    </button>
+                {% elif application.status == 'ACCEPTED' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'complete')"
+                            class="action-btn btn-complete">
+                        <i class="fas fa-check-circle mr-1"></i>Complete
+                    </button>
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'award_prize')"
+                            class="action-btn btn-award">
+                        <i class="fas fa-trophy mr-1"></i>Award Prize
+                    </button>
+                {% elif application.status in 'COMPLETED,REJECTED' %}
+                    <button onclick="updateApplicationStatus({{ application.pk }}, 'reset_pending')"
+                            class="action-btn btn-reset">
+                        <i class="fas fa-undo mr-1"></i>Reset
+                    </button>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    <!-- Creator Stats (if available) -->
+    {% if application.creator.follower_count or application.creator.following_count %}
+        <div class="border-t mt-4 pt-4">
+            <div class="grid grid-cols-3 gap-4 text-center text-sm">
+                {% if application.creator.follower_count %}
+                    <div>
+                        <div class="font-medium text-gray-900">{{ application.creator.follower_count|floatformat:0 }}</div>
+                        <div class="text-gray-500">Followers</div>
+                    </div>
+                {% endif %}
+                {% if application.creator.following_count %}
+                    <div>
+                        <div class="font-medium text-gray-900">{{ application.creator.following_count|floatformat:0 }}</div>
+                        <div class="text-gray-500">Following</div>
+                    </div>
+                {% endif %}
+                <div>
+                    <div class="font-medium text-gray-900">{{ application.creator.task_applications.count }}</div>
+                    <div class="text-gray-500">Total Apps</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>

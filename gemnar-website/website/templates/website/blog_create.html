@@ -1,0 +1,325 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Create Blog Post - Gemnar{% endblock %}
+{% block description %}Create and publish new blog posts on the Gemnar platform{% endblock %}
+{% block extra_head %}
+    <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
+    <style>
+    .ck-editor__editable {
+        min-height: 300px;
+    }
+    .tag-input {
+        background: #f3f4f6;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        min-height: 2.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        align-items: center;
+    }
+    .tag {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    .tag button {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 1rem;
+        line-height: 1;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50 py-8">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="mb-8">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-3xl font-bold text-gray-800">Create Blog Post</h1>
+                        <a href="{% url 'website:blog_my_posts' %}"
+                           class="text-pink-600 hover:text-pink-700 font-medium">← Back to My Posts</a>
+                    </div>
+                    <p class="text-gray-600 mt-2">Share your insights with the Gemnar community</p>
+                </div>
+                <!-- Blog Post Form -->
+                <div class="bg-white rounded-lg shadow-md p-8">
+                    <form id="blog-form" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <!-- Title -->
+                        <div class="mb-6">
+                            <label for="title" class="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                            <input type="text"
+                                   id="title"
+                                   name="title"
+                                   required
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                   placeholder="Enter your blog post title...">
+                        </div>
+                        <!-- Featured Image -->
+                        <div class="mb-6">
+                            <label for="featured_image"
+                                   class="block text-sm font-medium text-gray-700 mb-2">Featured Image</label>
+                            <input type="file"
+                                   id="featured_image"
+                                   name="featured_image"
+                                   accept="image/*"
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                            <p class="text-sm text-gray-500 mt-1">Upload an image for your blog post (optional)</p>
+                        </div>
+                        <!-- Category -->
+                        <div class="mb-6">
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                            <select id="category"
+                                    name="category"
+                                    required
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                                {% for value, label in categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <!-- Excerpt -->
+                        <div class="mb-6">
+                            <label for="excerpt" class="block text-sm font-medium text-gray-700 mb-2">Excerpt</label>
+                            <textarea id="excerpt"
+                                      name="excerpt"
+                                      rows="3"
+                                      maxlength="500"
+                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                      placeholder="Brief description of your post (optional - will be auto-generated if empty)"></textarea>
+                            <div class="text-right text-sm text-gray-500 mt-1">
+                                <span id="excerpt-count">0</span>/500 characters
+                            </div>
+                        </div>
+                        <!-- Content -->
+                        <div class="mb-6">
+                            <label for="content" class="block text-sm font-medium text-gray-700 mb-2">Content *</label>
+                            <textarea id="content"
+                                      name="content"
+                                      required
+                                      class="w-full border border-gray-300 rounded-lg"></textarea>
+                        </div>
+                        <!-- Tags -->
+                        <div class="mb-6">
+                            <label for="tag-input" class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                            <div class="tag-input" id="tag-container">
+                                <input type="text"
+                                       id="tag-input"
+                                       placeholder="Add a tag and press Enter..."
+                                       class="flex-1 border-none outline-none bg-transparent">
+                            </div>
+                            <p class="text-sm text-gray-500 mt-1">Add relevant tags to help readers find your content</p>
+                        </div>
+                        <!-- SEO Settings -->
+                        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">SEO Settings</h3>
+                            <!-- Meta Description -->
+                            <div class="mb-4">
+                                <label for="meta_description"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
+                                <textarea id="meta_description"
+                                          name="meta_description"
+                                          rows="2"
+                                          maxlength="160"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                          placeholder="SEO description for search engines"></textarea>
+                                <div class="text-right text-sm text-gray-500 mt-1">
+                                    <span id="meta-count">0</span>/160 characters
+                                </div>
+                            </div>
+                            <!-- Meta Keywords -->
+                            <div>
+                                <label for="meta_keywords"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Meta Keywords</label>
+                                <input type="text"
+                                       id="meta_keywords"
+                                       name="meta_keywords"
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="keyword1, keyword2, keyword3">
+                                <p class="text-sm text-gray-500 mt-1">Comma-separated keywords for SEO</p>
+                            </div>
+                        </div>
+                        <!-- Publishing Options -->
+                        <div class="mb-8 p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Publishing Options</h3>
+                            <div class="space-y-4">
+                                <!-- Status -->
+                                <div>
+                                    <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                    <select id="status"
+                                            name="status"
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent">
+                                        <option value="draft">Save as Draft</option>
+                                        <option value="published">Publish Now</option>
+                                    </select>
+                                </div>
+                                <!-- Featured Post -->
+                                <div class="flex items-center space-x-3">
+                                    <input type="checkbox"
+                                           id="is_featured"
+                                           name="is_featured"
+                                           class="w-4 h-4 text-pink-600 bg-gray-100 border-gray-300 rounded focus:ring-pink-500">
+                                    <label for="is_featured" class="text-sm font-medium text-gray-700">Mark as featured post</label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Form Actions -->
+                        <div class="flex justify-end gap-4">
+                            <a href="{% url 'website:blog_my_posts' %}"
+                               class="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50">
+                                Cancel
+                            </a>
+                            <button type="submit"
+                                    id="submit-btn"
+                                    class="px-8 py-3 bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold rounded-lg hover:from-pink-600 hover:to-orange-500">
+                                Create Post
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Success/Error Messages -->
+    <div id="message-container" class="fixed top-4 right-4 z-50"></div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+// Initialize CKEditor
+let editor;
+ClassicEditor
+    .create(document.querySelector('#content'))
+    .then(editorInstance => {
+        editor = editorInstance;
+    })
+    .catch(error => {
+        console.error(error);
+    });
+
+// Character counters
+document.getElementById('excerpt').addEventListener('input', function() {
+    const count = this.value.length;
+    document.getElementById('excerpt-count').textContent = count;
+});
+
+document.getElementById('meta_description').addEventListener('input', function() {
+    const count = this.value.length;
+    document.getElementById('meta-count').textContent = count;
+});
+
+// Tag management
+let tags = [];
+const tagContainer = document.getElementById('tag-container');
+const tagInput = document.getElementById('tag-input');
+
+tagInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        addTag(this.value.trim());
+    }
+});
+
+function addTag(tagText) {
+    if (tagText && !tags.includes(tagText)) {
+        tags.push(tagText);
+        renderTags();
+        tagInput.value = '';
+    }
+}
+
+function removeTag(tagText) {
+    tags = tags.filter(tag => tag !== tagText);
+    renderTags();
+}
+
+function renderTags() {
+    const existingTags = tagContainer.querySelectorAll('.tag');
+    existingTags.forEach(tag => tag.remove());
+
+    tags.forEach(tag => {
+        const tagElement = document.createElement('div');
+        tagElement.className = 'tag';
+        tagElement.innerHTML = `
+            ${tag}
+            <button type="button" onclick="removeTag('${tag}')">×</button>
+            <input type="hidden" name="tags" value="${tag}">
+        `;
+        tagContainer.insertBefore(tagElement, tagInput);
+    });
+}
+
+// Form submission
+document.getElementById('blog-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get content from CKEditor
+    const content = editor.getData();
+    if (!content.trim()) {
+        showMessage('Please enter some content for your blog post.', 'error');
+        return;
+    }
+    
+    // Create form data
+    const formData = new FormData(this);
+    formData.set('content', content);
+    
+    const submitBtn = document.getElementById('submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creating...';
+    
+    fetch("{% url 'website:blog_create' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage(data.message, 'success');
+            setTimeout(() => {
+                window.location.href = data.post_url || "{% url 'website:blog_my_posts' %}";
+            }, 2000);
+        } else {
+            showMessage(data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('An error occurred. Please try again.', 'error');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Post';
+    });
+});
+
+function showMessage(message, type) {
+    const container = document.getElementById('message-container');
+    const messageEl = document.createElement('div');
+    
+    messageEl.className = `p-4 rounded-lg shadow-lg mb-4 ${
+        type === 'success' 
+            ? 'bg-green-500 text-white' 
+            : 'bg-red-500 text-white'
+    }`;
+    messageEl.textContent = message;
+    
+    container.appendChild(messageEl);
+    
+    setTimeout(() => {
+        messageEl.remove();
+    }, 5000);
+}
+    </script>
+{% endblock %}

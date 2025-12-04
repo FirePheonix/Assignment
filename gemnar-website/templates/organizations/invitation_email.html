@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Invitation to join {{ organization.name }} on Gemnar for brand management and marketing collaboration">
+        <meta name="keywords"
+              content="Gemnar, organization invitation, brand management, marketing, collaboration">
+        <title>You're invited to join {{ organization.name }} on Gemnar</title>
+        <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .organization-info {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+        .invitation-details {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .invitation-details table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .invitation-details td {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .invitation-details td:first-child {
+            font-weight: 600;
+            color: #495057;
+            width: 120px;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .cta-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .admin-notice {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px 30px;
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .expiry-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+                 .email-hr {
+             border: none;
+             border-top: 1px solid #dee2e6;
+             margin: 30px 0;
+         }
+         .small-text {
+             font-size: 14px;
+             color: #6c757d;
+         }
+         .link-text {
+             color: #667eea;
+             word-break: break-all;
+         }
+         @media (max-width: 600px) {
+             body {
+                 padding: 10px;
+             }
+             .header {
+                 padding: 20px;
+             }
+             .content {
+                 padding: 20px;
+             }
+             .cta-button {
+                 display: block;
+                 text-align: center;
+             }
+         }
+        </style>
+    </head>
+    <body>
+        <div class="email-container">
+            <div class="header">
+                <h1>You're Invited!</h1>
+                <p>Join {{ organization.name }} on Gemnar</p>
+            </div>
+            <div class="content">
+                <h2>Hello!</h2>
+                <p>
+                    <strong>{{ inviter.get_full_name|default:inviter.username }}</strong> has invited you to join
+                    <strong>{{ organization.name }}</strong> on Gemnar.
+                </p>
+                <div class="organization-info">
+                    <h3>About {{ organization.name }}</h3>
+                    <p>
+                        You're being invited to join this organization on Gemnar, where you can collaborate on brand management, Twitter automation, and marketing campaigns.
+                    </p>
+                </div>
+                <div class="invitation-details">
+                    <h3>Invitation Details</h3>
+                    <table>
+                        <tr>
+                            <td>Organization:</td>
+                            <td>{{ organization.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Your Role:</td>
+                            <td>
+                                {% if invitation.is_admin %}
+                                    Administrator
+                                {% else %}
+                                    Member
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Invited By:</td>
+                            <td>{{ inviter.get_full_name|default:inviter.username }}</td>
+                        </tr>
+                        <tr>
+                            <td>Expires:</td>
+                            <td>{{ invitation.expires_at|date:"F j, Y" }}</td>
+                        </tr>
+                    </table>
+                </div>
+                {% if invitation.is_admin %}
+                    <div class="admin-notice">
+                        <h4>👑 Administrator Role</h4>
+                        <p>You're being invited as an administrator, which means you'll have full access to:</p>
+                        <ul>
+                            <li>Manage organization brands and Twitter accounts</li>
+                            <li>Send invitations to new members</li>
+                            <li>Configure organization settings</li>
+                            <li>View analytics and reports</li>
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="cta-container">
+                    <a href="{{ invitation_url }}" class="cta-button">Accept Invitation</a>
+                </div>
+                <div class="expiry-notice">
+                    <p>
+                        <strong>⏰ Time Sensitive:</strong> This invitation expires on {{ invitation.expires_at|date:"F j, Y" }}. Please accept it before then to join the organization.
+                    </p>
+                </div>
+                <hr class="email-hr">
+                <p class="small-text">
+                    If you can't click the button above, copy and paste this link into your browser:
+                    <br>
+                    <a href="{{ invitation_url }}" class="link-text">{{ invitation_url }}</a>
+                </p>
+                <p class="small-text">
+                    If you didn't expect this invitation or believe it was sent by mistake, you can safely ignore this email.
+                </p>
+            </div>
+            <div class="footer">
+                <p>
+                    This invitation was sent by <strong>{{ inviter.get_full_name|default:inviter.username }}</strong> on behalf of {{ organization.name }}.
+                </p>
+                <p>
+                    <a href="https://gemnar.com">Gemnar</a> • AI-Powered Marketing Platform
+                </p>
+            </div>
+        </div>
+    </body>
+</html>

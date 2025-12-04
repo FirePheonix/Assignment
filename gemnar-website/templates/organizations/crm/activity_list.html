@@ -1,0 +1,349 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Activities - {{ organization.name }}{% endblock %}
+{% block org_content %}
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'organization_detail' organization.pk %}"
+                   class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-building mr-2"></i>
+                    {{ organization.name }}
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a href="{% url 'crm_dashboard' organization.pk %}"
+                       class="text-sm font-medium text-gray-700 hover:text-blue-600">CRM Dashboard</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-sm font-medium text-gray-500">Activities</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Activity Management</h1>
+                <p class="text-gray-600">Track interactions, tasks, and follow-ups</p>
+            </div>
+            <div class="flex space-x-2">
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                        onclick="alert('Activity creation functionality coming soon!')">
+                    <i class="fas fa-plus mr-2"></i>Add Activity
+                </button>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Overdue Activities Alert -->
+    {% if overdue_activities > 0 %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Overdue Activities</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>You have {{ overdue_activities }} overdue activit{{ overdue_activities|pluralize:"y,ies" }} that need attention.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <form method="get"
+              class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-6 lg:gap-4 lg:items-end">
+            <!-- Activity Type Filter -->
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Activity Type</label>
+                <select id="type"
+                        name="type"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Types</option>
+                    {% for value, label in activity_types %}
+                        <option value="{{ value }}"
+                                {% if current_filters.type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Status Filter -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="status"
+                        name="status"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Statuses</option>
+                    {% for value, label in activity_statuses %}
+                        <option value="{{ value }}"
+                                {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Assigned To Filter -->
+            <div>
+                <label for="assigned" class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                <select id="assigned"
+                        name="assigned"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Team Members</option>
+                    {% for member in team_members %}
+                        <option value="{{ member.id }}"
+                                {% if current_filters.assigned|add:0 == member.id %}selected{% endif %}>
+                            {{ member.first_name }} {{ member.last_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Date From -->
+            <div>
+                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input type="date"
+                       id="date_from"
+                       name="date_from"
+                       value="{{ current_filters.date_from|default:'' }}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <!-- Date To -->
+            <div>
+                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input type="date"
+                       id="date_to"
+                       name="date_to"
+                       value="{{ current_filters.date_to|default:'' }}"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            </div>
+            <!-- Filter Buttons -->
+            <div>
+                <div class="flex space-x-2">
+                    <button type="submit"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-search mr-2"></i>Filter
+                    </button>
+                    <a href="{% url 'crm_activity_list' organization.pk %}"
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- Activity List -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% if page_obj.object_list %}
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Activities ({{ page_obj.paginator.count }})</h3>
+                    <div class="text-sm text-gray-500">
+                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                    </div>
+                </div>
+            </div>
+            <!-- Activity Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Deal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for activity in page_obj %}
+                            <tr class="hover:bg-gray-50 {% if activity.is_overdue %}bg-red-50{% endif %}">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 mr-3">
+                                            <!-- Activity Type Icon -->
+                                            {% if activity.activity_type == 'call' %}
+                                                <i class="fas fa-phone text-blue-500"></i>
+                                            {% elif activity.activity_type == 'email' %}
+                                                <i class="fas fa-envelope text-green-500"></i>
+                                            {% elif activity.activity_type == 'meeting' %}
+                                                <i class="fas fa-users text-purple-500"></i>
+                                            {% elif activity.activity_type == 'task' %}
+                                                <i class="fas fa-tasks text-orange-500"></i>
+                                            {% elif activity.activity_type == 'demo' %}
+                                                <i class="fas fa-presentation text-indigo-500"></i>
+                                            {% elif activity.activity_type == 'proposal' %}
+                                                <i class="fas fa-file-contract text-yellow-500"></i>
+                                            {% elif activity.activity_type == 'follow_up' %}
+                                                <i class="fas fa-redo text-teal-500"></i>
+                                            {% elif activity.activity_type == 'note' %}
+                                                <i class="fas fa-sticky-note text-pink-500"></i>
+                                            {% else %}
+                                                <i class="fas fa-clipboard text-gray-500"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900">{{ activity.subject }}</div>
+                                            <div class="text-sm text-gray-500">
+                                                {{ activity.get_activity_type_display }}
+                                                {% if activity.duration_minutes %}• {{ activity.duration_minutes }} min{% endif %}
+                                            </div>
+                                            {% if activity.description %}
+                                                <div class="text-sm text-gray-600 mt-1 truncate">{{ activity.description|truncatechars:100 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                                <span class="text-xs font-medium text-gray-700">
+                                                    {{ activity.contact.first_name|first }}{{ activity.contact.last_name|first }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm font-medium text-gray-900">{{ activity.contact.full_name }}</div>
+                                        </div>
+                                        {% if activity.contact.company %}
+                                            <div class="text-sm text-gray-500 ml-8">{{ activity.contact.company }}</div>
+                                        {% endif %}
+                                        {% if activity.deal %}
+                                            <div class="text-sm text-blue-600 ml-8">
+                                                <i class="fas fa-handshake mr-1"></i>{{ activity.deal.name }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if activity.status == 'planned' %} {% if activity.is_overdue %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %} {% elif activity.status == 'completed' %}bg-green-100 text-green-800 {% elif activity.status == 'cancelled' %}bg-gray-100 text-gray-800 {% elif activity.status == 'overdue' %}bg-red-100 text-red-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if activity.is_overdue and activity.status == 'planned' %}
+                                            Overdue
+                                        {% else %}
+                                            {{ activity.get_status_display }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if activity.scheduled_at %}
+                                        <div>{{ activity.scheduled_at|date:"M d, Y" }}</div>
+                                        <div class="text-gray-500">{{ activity.scheduled_at|time:"g:i A" }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">Not scheduled</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if activity.assigned_to %}
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                                <span class="text-xs font-medium text-gray-700">
+                                                    {{ activity.assigned_to.first_name|first }}{{ activity.assigned_to.last_name|first }}
+                                                </span>
+                                            </div>
+                                            {{ activity.assigned_to.first_name }} {{ activity.assigned_to.last_name }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-gray-400">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3"
+                                            onclick="alert('View activity details coming soon!')">View</button>
+                                    {% if activity.status == 'planned' %}
+                                        <button class="text-green-600 hover:text-green-900 mr-3"
+                                                onclick="alert('Mark as completed functionality coming soon!')">
+                                            Complete
+                                        </button>
+                                    {% endif %}
+                                    <button class="text-purple-600 hover:text-purple-900 mr-3"
+                                            onclick="alert('Edit functionality coming soon!')">Edit</button>
+                                    <button class="text-red-600 hover:text-red-900"
+                                            onclick="alert('Delete functionality coming soon!')">Delete</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+                        <nav class="flex space-x-2">
+                            {% if page_obj.has_previous %}
+                                <a href="?{% if current_filters.type %}type={{ current_filters.type }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.date_from %}date_from={{ current_filters.date_from }}&{% endif %}{% if current_filters.date_to %}date_to={{ current_filters.date_to }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                                   class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                    Previous
+                                </a>
+                            {% endif %}
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <span class="px-3 py-2 text-sm bg-blue-600 text-white border border-blue-600 rounded-md">{{ num }}</span>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <a href="?{% if current_filters.type %}type={{ current_filters.type }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.date_from %}date_from={{ current_filters.date_from }}&{% endif %}{% if current_filters.date_to %}date_to={{ current_filters.date_to }}&{% endif %}page={{ num }}"
+                                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                        {{ num }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            {% if page_obj.has_next %}
+                                <a href="?{% if current_filters.type %}type={{ current_filters.type }}&{% endif %}{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.date_from %}date_from={{ current_filters.date_from }}&{% endif %}{% if current_filters.date_to %}date_to={{ current_filters.date_to }}&{% endif %}page={{ page_obj.next_page_number }}"
+                                   class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                    Next
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <i class="fas fa-tasks text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No activities found</h3>
+                {% if current_filters.type or current_filters.status or current_filters.assigned or current_filters.date_from or current_filters.date_to %}
+                    <p class="text-gray-500 mb-4">No activities match your current filters. Try adjusting your search criteria.</p>
+                    <a href="{% url 'crm_activity_list' organization.pk %}"
+                       class="text-blue-600 hover:text-blue-800 underline">Clear all filters</a>
+                {% else %}
+                    <p class="text-gray-500 mb-4">Start tracking your customer interactions by creating your first activity.</p>
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
+                            onclick="alert('Activity creation functionality coming soon!')">
+                        <i class="fas fa-plus mr-2"></i>Create Your First Activity
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    <!-- Activity Summary Stats -->
+    {% if page_obj.object_list %}
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-2xl font-bold text-blue-600">{{ page_obj.paginator.count }}</div>
+                <div class="text-sm text-gray-600">Total Activities</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-2xl font-bold text-green-600">
+                    {% with completed=page_obj.object_list|length %}{{ completed }}{% endwith %}
+                </div>
+                <div class="text-sm text-gray-600">Showing Now</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-2xl font-bold text-red-600">{{ overdue_activities }}</div>
+                <div class="text-sm text-gray-600">Overdue</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4">
+                <div class="text-2xl font-bold text-purple-600">{{ page_obj.paginator.num_pages }}</div>
+                <div class="text-sm text-gray-600">Total Pages</div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

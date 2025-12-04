@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Gemnar — Coming Soon</title>
+        <meta name="description"
+              content="Automate your social media and go viral with AI. Join the waitlist to get notified when we launch." />
+        <meta name="keywords"
+              content="Gemnar, AI marketing, social media automation, content generation, Instagram, LinkedIn, Twitter, brand growth, viral content, waitlist, AI tools, marketing automation" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Gemnar — Coming Soon" />
+        <meta property="og:description"
+              content="Automate your social media and go viral with AI. Join the waitlist to get notified when we launch." />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Gemnar — Coming Soon" />
+        <meta name="twitter:description"
+              content="Automate your social media and go viral with AI." />
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Instrument+Serif:ital@1&display=swap"
+              rel="stylesheet">
+        <style>
+    :root {
+      --bg: #000000;
+      --text: #fafafa;
+      --muted: rgba(255,255,255,0.66);
+      --panel: rgba(255,255,255,0.06);
+      --panel-border: rgba(255,255,255,0.12);
+      --btn: #ffffff;
+      --btn-text: #0a0a0a;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    .page {
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Top logo */
+    .logo {
+      text-align: center;
+      padding: 56px 16px 0;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      font-size: 30px;
+      z-index: 2;
+      text-shadow: 0 1px 12px rgba(255,255,255,0.04);
+    }
+
+    /* Hero */
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 16px 160px;
+      position: relative;
+      z-index: 2;
+      width: 100%;
+    }
+    .hero-inner {
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto;
+      /* element-level animations will handle reveal */
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-10px) scale(0.98); filter: blur(2px); }
+      to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .headline {
+      font-size: clamp(34px, 6.4vw, 58px);
+      line-height: 1.08;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 18px 0 14px;
+      animation: fadeUp 820ms ease-out both;
+      animation-delay: 160ms;
+    }
+    .headline .italic {
+      font-family: "Instrument Serif", serif;
+      font-style: italic;
+      font-weight: 400;
+    }
+    .subhead {
+      color: var(--muted);
+      letter-spacing: -0.01em;
+      line-height: 1.6;
+      margin: 8px 0 26px;
+      font-size: 14px;
+      animation: fadeUp 900ms ease-out both;
+      animation-delay: 260ms;
+    }
+
+    /* Form */
+    .form {
+      display: inline-flex;
+      gap: 8px;
+      align-items: stretch;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 6px;
+      width: 100%;
+      max-width: 560px;
+      backdrop-filter: saturate(120%) blur(6px);
+      -webkit-backdrop-filter: saturate(120%) blur(6px);
+      box-shadow: 0 10px 32px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 1000ms cubic-bezier(.2,.8,.2,1) both;
+      animation-delay: 380ms;
+    }
+    /* reflection overlay for occasional glint */
+    .form::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, rgba(255,255,255,0) 10%, rgba(255,255,255,0.22) 35%, rgba(255,255,255,0) 60%);
+      transform: translateX(-140%);
+      opacity: 0;
+      pointer-events: none;
+      filter: blur(2px);
+      transition: opacity 260ms ease, transform 620ms ease;
+    }
+    .form.glint::after { opacity: 0.25; transform: translateX(20%); }
+    .form input[type="email"] {
+      flex: 1 1 auto;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 0;
+      outline: 0;
+      padding: 14px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      letter-spacing: -0.01em;
+    }
+    .form input[type="email"]::placeholder { color: rgba(255,255,255,0.7); }
+    .form button[type="submit"] {
+      flex: 0 0 auto;
+      background: var(--btn);
+      color: var(--btn-text);
+      border: 0;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(255,255,255,0.08);
+      transition: transform 120ms ease, filter 120ms ease;
+    }
+    .form button[type="submit"]:hover { filter: brightness(0.96); }
+    .form button[type="submit"]:active { transform: translateY(1px); }
+
+    /* Background FX */
+    .stars-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* (moon removed) */
+    .vignette:before, .vignette:after {
+      content: "";
+      position: fixed;
+      left: 0; right: 0;
+      height: 26vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .vignette:before { top: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent); }
+    .vignette:after { bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent); }
+
+    /* Footer */
+    footer { color: #8a8a8a; font-size: 12px; text-align: center; padding: 24px; z-index: 2; position: relative; }
+
+    @media (max-width: 520px) {
+      .logo { padding-top: 40px; font-size: 24px; }
+      .headline { font-size: clamp(28px, 8.5vw, 40px); }
+      .hero { padding-bottom: 120px; }
+      .form { padding: 6px; }
+    }
+    /* page-load animations */
+    .logo { animation: fadeDown 900ms ease-out both; animation-delay: 80ms; }
+        </style>
+    </head>
+    <body>
+        <div class="page vignette">
+            <canvas id="stars" class="stars-canvas" aria-hidden="true"></canvas>
+            <header class="logo">
+                gemnar
+            </header>
+            <main class="hero">
+                <div class="hero-inner">
+                    <h1 class="headline">
+                        Good things come
+                        <br />
+                        to those <span class="italic">who wait.</span>
+                    </h1>
+                    <p class="subhead">
+                        Automate your social media,
+                        <br />
+                        go viral with AI
+                    </p>
+                    <form id="waitlist-form" class="form" method="post" action="/waitlist/">
+                        {% csrf_token %}
+                        <input type="email"
+                               name="email"
+                               placeholder="Your Email Address"
+                               autocomplete="email"
+                               required />
+                        <button type="submit">Get Notified</button>
+                    </form>
+                </div>
+            </main>
+            <footer>
+                • Gemnar •
+            </footer>
+        </div>
+        <script>
+    (function(){
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const canvas = document.getElementById('stars');
+      const ctx = canvas.getContext('2d');
+  let dpr = Math.max(1, window.devicePixelRatio || 1);
+      let stars = [];
+      let meteors = [];
+      let last = 0;
+      const formEl = document.getElementById('waitlist-form');
+      let lastGlintAt = 0;
+
+      function rand(min, max){ return Math.random() * (max - min) + min; }
+
+      function makeStars(count, speedMin, speedMax, sizeMin, sizeMax){
+        const arr = [];
+        for(let i=0;i<count;i++){
+          arr.push({
+            x: Math.random(),
+            y: Math.random(),
+            r: rand(sizeMin, sizeMax),
+            s: rand(speedMin, speedMax), // vertical speed (near still)
+            px: rand(-0.0000005, 0.0000005), // near-still horizontal parallax
+            b: rand(0.5, 1),
+            p: rand(0, Math.PI*2),
+          });
+        }
+        return arr;
+      }
+
+      function resize(){
+        const {clientWidth:w, clientHeight:h} = canvas;
+        dpr = Math.max(1, window.devicePixelRatio || 1);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function init(){
+        resize();
+        // total stars scaled by area for consistency
+        const area = (canvas.clientWidth * canvas.clientHeight) / (1280*720);
+        const base = Math.max(160, Math.round(240 * area));
+        stars = [
+          // almost still
+          ...makeStars(Math.round(base*0.6), 2e-7, 9e-7, 0.6, 1.1),
+          ...makeStars(Math.round(base*0.4), 9e-7, 2.4e-6, 0.9, 1.6)
+        ];
+        draw(0);
+      }
+
+      function spawnMeteor(){
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        // start somewhere near top-left quadrant heading diagonally down-right
+        const startX = rand(-0.1*w, 0.3*w);
+        const startY = rand(-0.05*h, 0.25*h);
+        const len = rand(140, 240);
+        const speed = rand(0.7, 1.2); // px per ms (slightly slower)
+        const angle = rand(Math.PI*0.15, Math.PI*0.35); // 27° to 63°
+        const life = rand(800, 1500);
+        meteors.push({
+          x: startX, y: startY, len, speed, angle, life, age: 0,
+          width: rand(1.2, 2.2),
+          hue: rand(200, 230) // cool bluish-white
+        });
+      }
+
+      function draw(ts){
+        if(!last) last = ts;
+        const dt = Math.min(40, ts - last);
+        last = ts;
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        ctx.clearRect(0,0,w,h);
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for(const st of stars){
+          if(!prefersReduced){
+            st.y += st.s * dt;
+            st.x += st.px * dt;
+            if(st.y > 1) st.y -= 1;
+            if(st.x > 1) st.x -= 1; else if(st.x < 0) st.x += 1;
+          }
+          const x = st.x * w, y = st.y * h;
+          const a = prefersReduced ? st.b*0.6 : (0.5 + 0.5*Math.sin(ts*0.001 + st.p)) * st.b * 0.45 + 0.12;
+          ctx.beginPath();
+          ctx.fillStyle = 'rgba(255,255,255,' + a.toFixed(3) + ')';
+          ctx.arc(x, y, st.r, 0, Math.PI*2);
+          ctx.fill();
+        }
+        // meteors
+        if(!prefersReduced){
+          // rarer spawns
+          if(Math.random() < 0.001 && meteors.length < 1) spawnMeteor();
+          for(let i=meteors.length-1;i>=0;i--){
+            const m = meteors[i];
+            m.age += dt;
+            const vx = Math.cos(m.angle) * m.speed;
+            const vy = Math.sin(m.angle) * m.speed;
+            m.x += vx * dt;
+            m.y += vy * dt;
+            const t = Math.min(1, m.age / m.life);
+            const alpha = (1 - t) * 0.9;
+            // draw streak
+            const tx = m.x - Math.cos(m.angle) * m.len;
+            const ty = m.y - Math.sin(m.angle) * m.len;
+            const grad = ctx.createLinearGradient(m.x, m.y, tx, ty);
+            grad.addColorStop(0, `hsla(${m.hue},100%,95%,${alpha})`);
+            grad.addColorStop(1, `hsla(${m.hue},100%,60%,0)`);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = m.width;
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(tx, ty);
+            ctx.stroke();
+            // trigger form reflection when meteor passes near the form
+            if(formEl && (performance.now() - lastGlintAt > 1200)){
+              const r = formEl.getBoundingClientRect();
+              const pad = 120; // expanded hit area around the form
+              const nearX = (m.x >= r.left - pad && m.x <= r.right + pad) || (tx >= r.left - pad && tx <= r.right + pad);
+              const nearY = (m.y >= r.top - pad && m.y <= r.bottom + pad) || (ty >= r.top - pad && ty <= r.bottom + pad);
+              if(nearX && nearY){
+                lastGlintAt = performance.now();
+                formEl.classList.add('glint');
+                setTimeout(()=>formEl.classList.remove('glint'), 650);
+              }
+            }
+            if(m.age > m.life || m.x > w+200 || m.y > h+200){
+              meteors.splice(i,1);
+            }
+          }
+        }
+        ctx.restore();
+        if(!prefersReduced) requestAnimationFrame(draw);
+      }
+
+      window.addEventListener('resize', ()=>{ resize(); draw(performance.now()); });
+      init();
+      if(!prefersReduced) requestAnimationFrame(draw);
+      // tiny success state if redirected with ?waitlist=ok
+      try{
+        const params = new URLSearchParams(location.search);
+        if(params.get('waitlist') === 'ok'){
+          const form = document.getElementById('waitlist-form');
+          if(form){
+            form.querySelector('button[type="submit"]').textContent = 'Thanks! ✅';
+          }
+        }
+      }catch(e){}
+    })();
+        </script>
+    </body>
+</html>

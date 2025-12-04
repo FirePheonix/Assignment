@@ -1,0 +1,138 @@
+# Gemnar Django Project - Cursor Rules
+
+## 🚨 CRITICAL: Poetry Environment Required
+**ALL Django management commands MUST be run within poetry:**
+```bash
+# ✅ CORRECT - Use poetry run or poetry shell first
+poetry run python manage.py runserver
+poetry run python manage.py migrate
+poetry run python manage.py collectstatic
+
+# Or activate poetry shell first:
+poetry shell
+python manage.py runserver
+
+# ❌ WRONG - Will fail with dependency errors
+python manage.py runserver
+```
+
+## 🏗️ Project Structure
+- **Django Backend**: `gemnar-website/`
+- **Flutter Mobile**: `gemnar-app/`
+- **Main Django app**: `website/`
+- **Additional apps**: `chat/`, `organizations/`
+
+## 🔧 Development Commands
+```bash
+# Start development server (PREFERRED - ASGI with uvicorn)
+poetry run uvicorn gemnar.asgi:application --host 0.0.0.0 --port 8000 --reload
+
+# Alternative - Django development server (for debugging only)
+poetry run python manage.py runserver 0.0.0.0:8000
+
+# Database operations
+poetry run python manage.py makemigrations
+poetry run python manage.py migrate
+
+# Create superuser
+poetry run python manage.py createsuperuser
+
+# Collect static files
+poetry run python manage.py collectstatic --noinput
+```
+
+## 📝 Code Style & Standards
+- **Line length**: 79 characters max (enforced by linter)
+- **Import order**: Django imports first, then third-party, then local
+- **Use type hints** where appropriate
+- **Follow Django naming conventions**
+- **Minimal changes only**: Keep all code modifications as small and focused as possible
+- **DRY principle**: Don't repeat yourself - reuse existing code when possible
+- **Clean code**: No unnecessary files, functions, or complexity
+
+## 📄 File Creation Guidelines
+- **NO .md files**: Do not create documentation files unless explicitly requested
+- **NO test files**: Do not create additional test files unless specifically asked
+- **NO example files**: Do not create sample or demo files
+- **Minimal file structure**: Only create files that are absolutely necessary for functionality
+- **Reuse existing**: Modify existing files rather than creating new ones when possible
+
+## 🗄️ Database
+- **Development**: SQLite (`db.sqlite3`)
+- **Production**: PostgreSQL
+- **Migrations**: Always create and commit migrations
+
+## 🔐 Environment Variables
+- **Required for development**: Create `.env` file with:
+  ```
+  DEBUG=True
+  ENVIRONMENT=development
+  SECRET_KEY=your-secret-key
+  ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+  ```
+
+## 🚀 Key Features
+- **ASGI application** with uvicorn for async support
+- **Real-time chat** using Django Channels and WebSockets
+- **Referral system** with dashboard and company invitations
+- **Twitter automation** for scheduled tweets
+- **AI image generation** integration
+- **Organization management** for multi-user accounts
+- **Blog system** with user posts
+
+## 🔗 Navigation Structure
+- **Referrals**: Dashboard, Company Invitations, Leaderboard
+- **Tools**: AI Image Generator, Twitter Automation
+- **Content**: Blog, My Posts, Chat
+- **User Menu**: Organizations, Admin (if superuser), Logout
+
+## ⚠️ Common Issues
+1. **Static files not loading**: Ensure `DEBUG=True` in development
+2. **400 Bad Request**: Check `ALLOWED_HOSTS` includes your server address
+3. **Import errors**: Always use `poetry run` or activate poetry shell
+4. **Migration conflicts**: Run `poetry run python manage.py migrate` after pulling changes
+
+## 📦 Key Dependencies
+- **Django 5.x**: Main framework
+- **django-allauth**: Authentication
+- **dj-rest-auth**: API authentication
+- **django-organizations**: Multi-tenant organizations
+- **channels**: WebSocket support for chat
+- **celery**: Background tasks
+- **openai**: AI integrations
+
+## 🧪 Testing
+```bash
+# Run all tests
+poetry run python manage.py test
+
+# Run specific app tests
+poetry run python manage.py test website
+poetry run python manage.py test chat
+
+# Run with coverage
+poetry run coverage run --source='.' manage.py test
+poetry run coverage report
+```
+
+## 🔄 Git Workflow
+- **Main branch**: `main`
+- **Feature branches**: `feature/description`
+- **Always run tests** before committing
+- **Include migrations** in commits when models change
+
+## 📱 Flutter Integration
+- **API endpoints**: `/api/` prefix
+- **Authentication**: Token-based via dj-rest-auth
+- **CORS configured** for mobile app requests
+
+## ⚡ Performance Notes
+- **ASGI server**: uvicorn for production, supports async and WebSocket connections
+- **Static files**: Served by Django in development, nginx in production
+- **Media files**: User uploads stored in `media/` directory
+- **Caching**: Redis recommended for production
+- **Database queries**: Use `select_related()` and `prefetch_related()` for optimization
+- **WebSocket support**: Built-in via Django Channels for real-time features
+
+Remember: When in doubt about Django commands, always prefix with `poetry run`! 
+use a todo.md to keep track of tasks and check them off as we go

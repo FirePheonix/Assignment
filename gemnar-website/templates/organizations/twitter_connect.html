@@ -1,0 +1,175 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Connect Twitter - {{ brand.name }}{% endblock %}
+{% block org_content %}
+    <div class="mb-6">
+        <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+           class="text-blue-600 hover:underline mb-2 inline-block">← Back to {{ brand.name }} Dashboard</a>
+        <h1 class="text-2xl font-bold text-gray-900">Connect Twitter Account</h1>
+        <p class="text-gray-600">Connect {{ brand.name }}'s Twitter account to enable automated posting</p>
+    </div>
+    <div class="max-w-2xl">
+        <!-- Instructions -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-blue-900 mb-3">📋 Before you start</h3>
+            <ol class="space-y-2 text-blue-800 text-sm">
+                <li>
+                    <strong>1.</strong> Go to <a href="https://developer.twitter.com/en/apps"
+    target="_blank"
+    class="underline">Twitter Developer Portal</a>
+                </li>
+                <li>
+                    <strong>2.</strong> Create a new app or use an existing one
+                </li>
+                <li>
+                    <strong>3.</strong> <strong>Important:</strong> Upgrade to <strong>Basic access</strong> or higher for your X app at
+                    <a href="https://developer.x.com/en/portal/dashboard"
+                       target="_blank"
+                       class="underline">https://developer.x.com/en/portal/dashboard</a>
+                </li>
+                <li>
+                    <strong>4.</strong> Generate API keys and access tokens
+                </li>
+                <li>
+                    <strong>5.</strong> Make sure your app has "Read and Write" permissions
+                </li>
+                <li>
+                    <strong>6.</strong> Copy the credentials below
+                </li>
+            </ol>
+        </div>
+        <!-- Access Level Warning -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-semibold text-yellow-900 mb-3">⚠️ API Access Level Required</h3>
+            <p class="text-yellow-800 text-sm mb-3">
+                To post tweets, your Twitter app needs <strong>Elevated access</strong> or higher.
+                The default Essential access level doesn't support posting tweets.
+            </p>
+            <div class="text-yellow-800 text-sm space-y-1">
+                <p>
+                    <strong>Essential access</strong>: Can only read tweets and user data
+                </p>
+                <p>
+                    <strong>Elevated access</strong>: Can post tweets, retweet, and follow users
+                </p>
+                <p>
+                    <strong>Academic Research</strong>: Full access to Twitter API v2
+                </p>
+            </div>
+            <p class="text-yellow-800 text-sm mt-3">
+                If you get a "403 Forbidden" error when testing, you likely need to upgrade your access level.
+            </p>
+        </div>
+        <!-- Connection Form -->
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            <div>
+                <label for="api_key" class="block text-sm font-medium text-gray-700 mb-2">API Key (Consumer Key) *</label>
+                <input type="text"
+                       id="api_key"
+                       name="api_key"
+                       required
+                       value="{{ brand.twitter_api_key|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                       placeholder="Enter your Twitter API Key">
+                <p class="text-xs text-gray-500 mt-1">Found in your Twitter app dashboard under "Keys and tokens"</p>
+            </div>
+            <div>
+                <label for="api_secret" class="block text-sm font-medium text-gray-700 mb-2">API Secret Key (Consumer Secret) *</label>
+                <input type="text"
+                       id="api_secret"
+                       name="api_secret"
+                       required
+                       value="{{ brand.twitter_api_secret|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                       placeholder="Enter your Twitter API Secret Key">
+                <p class="text-xs text-gray-500 mt-1">Keep this secret and never share it publicly</p>
+            </div>
+            <div>
+                <label for="access_token"
+                       class="block text-sm font-medium text-gray-700 mb-2">Access Token *</label>
+                <input type="text"
+                       id="access_token"
+                       name="access_token"
+                       required
+                       value="{{ brand.twitter_access_token|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                       placeholder="Enter your Access Token">
+                <p class="text-xs text-gray-500 mt-1">Allows posting on behalf of your Twitter account</p>
+            </div>
+            <div>
+                <label for="access_token_secret"
+                       class="block text-sm font-medium text-gray-700 mb-2">Access Token Secret *</label>
+                <input type="text"
+                       id="access_token_secret"
+                       name="access_token_secret"
+                       required
+                       value="{{ brand.twitter_access_token_secret|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                       placeholder="Enter your Access Token Secret">
+                <p class="text-xs text-gray-500 mt-1">Keep this secret and never share it publicly</p>
+            </div>
+            <div>
+                <label for="bearer_token"
+                       class="block text-sm font-medium text-gray-700 mb-2">Bearer Token *</label>
+                <input type="text"
+                       id="bearer_token"
+                       name="bearer_token"
+                       required
+                       value="{{ brand.twitter_bearer_token|default:'' }}"
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+                       placeholder="Enter your Bearer Token">
+                <p class="text-xs text-gray-500 mt-1">Required for Twitter API v2 - keep this secret and never share it publicly</p>
+            </div>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400"
+                             viewBox="0 0 20 20"
+                             fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Security Notice</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>These credentials will be encrypted and stored securely. Only organization admins can view them.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex space-x-4">
+                <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+                    {% if brand.has_twitter_config %}
+                        Update Twitter Connection
+                    {% else %}
+                        Connect Twitter Account
+                    {% endif %}
+                </button>
+                <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+                   class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition">
+                    Cancel
+                </a>
+            </div>
+        </form>
+        <!-- Help Section -->
+        <div class="mt-8 bg-gray-50 border rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Need help?</h3>
+            <div class="space-y-3 text-sm text-gray-600">
+                <p>
+                    <strong>Can't find your API keys?</strong> Make sure you're logged into the correct Twitter account and have created a developer app.
+                </p>
+                <p>
+                    <strong>Getting authentication errors?</strong> Double-check that your app has "Read and Write" permissions enabled.
+                </p>
+                <p>
+                    <strong>App not working?</strong> Ensure your Twitter app is approved and not in "restricted" mode.
+                </p>
+                <p>
+                    <strong>Still having trouble?</strong> Contact our support team for assistance.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

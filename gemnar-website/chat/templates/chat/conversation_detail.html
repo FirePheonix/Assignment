@@ -1,0 +1,486 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}{{ conversation_title }}{% endblock %}
+{% block extra_head %}
+    <style>
+.chat-container {
+    height: calc(100vh - 300px);
+    min-height: 400px;
+}
+
+.messages-container {
+    scroll-behavior: smooth;
+}
+
+.typing-indicator-hidden {
+    display: none;
+}
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-t-lg shadow-sm p-4 border-b">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'chat:chat_list' %}"
+                       class="text-gray-500 hover:text-gray-700 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </a>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-pink-500 to-orange-400 rounded-full flex items-center justify-center">
+                            <span class="text-white font-semibold text-sm">{{ other_participant.username|first|upper }}</span>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-semibold">{{ conversation_title }}</h1>
+                            <p class="text-sm text-gray-600">
+                                {% if is_brand_conversation %}
+                                    <span class="text-blue-600">Brand Chat</span>
+                                {% else %}
+                                    <span class="text-green-600">Direct Chat</span>
+                                {% endif %}
+                                •
+                                <span id="connectionStatus" class="text-gray-500">Connecting...</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Conversation info -->
+                <div class="text-right">
+                    <p class="text-sm text-gray-600">{{ other_participant.email }}</p>
+                    <p class="text-xs text-gray-500 typing-indicator-hidden"
+                       id="typingIndicator">Typing...</p>
+                </div>
+            </div>
+        </div>
+        <!-- Messages Container -->
+        <div class="bg-white rounded-none shadow-sm chat-container">
+            <div id="messages"
+                 class="p-4 h-full overflow-y-auto space-y-4 messages-container">
+                {% for message in chat_messages %}
+                    <div class="message {% if message.sender == user %}sent{% else %}received{% endif %} mb-4">
+                        <div class="flex {% if message.sender == user %}justify-end{% else %}justify-start{% endif %}">
+                            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg {% if message.sender == user %}bg-pink-500 text-white{% else %}bg-gray-200 text-gray-800{% endif %}">
+                                {% if message.sender != user %}<p class="text-xs font-semibold mb-1">{{ message.sender.username }}</p>{% endif %}
+                                {% if message.image %}
+                                    <a href="{{ message.image.url }}" target="_blank" class="block mb-2">
+                                        <img src="{{ message.image.url }}"
+                                             alt="Attachment"
+                                             width="auto"
+                                             height="auto"
+                                             class="rounded-md max-h-48 object-cover"
+                                             loading="lazy" />
+                                    </a>
+                                {% endif %}
+                                {% if message.get_decrypted_content %}<p class="text-sm">{{ message.get_decrypted_content }}</p>{% endif %}
+                                <p class="text-xs mt-1 {% if message.sender == user %}text-pink-100{% else %}text-gray-500{% endif %}">
+                                    {{ message.timestamp|date:"M d, Y H:i" }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <!-- Message Input -->
+        <div class="bg-white rounded-b-lg shadow-sm p-4 border-t">
+            <form id="chat-form" class="flex gap-4">
+                <input type="text"
+                       id="chat-message-input"
+                       class="flex-1 border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                       placeholder="Type your message..."
+                       maxlength="1000"
+                       autocomplete="off">
+                <button type="submit"
+                        id="send-button"
+                        class="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Send
+                </button>
+            </form>
+        </div>
+        <!-- Connection Status Banner -->
+        <div id="disconnectedBanner"
+             class="hidden fixed top-0 left-0 right-0 bg-red-500 text-white text-center py-2 z-50">
+            <p>Connection lost. Attempting to reconnect...</p>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Chat page loaded - initializing WebSocket connection');
+    
+    const conversationId = {{ conversation.id }};
+    const userId = {{ user.id }};
+    const otherUserId = {{ other_participant.id }};
+    
+    console.log('🔧 Chat configuration:', {
+        conversationId: conversationId,
+        userId: userId,
+        otherUserId: otherUserId,
+        currentUrl: window.location.href,
+        userAgent: navigator.userAgent
+    });
+    
+    // WebSocket connection
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    let chatSocket = null;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    
+    // DOM elements
+    const messagesContainer = document.getElementById('messages');
+    const messageInput = document.getElementById('chat-message-input');
+    const chatForm = document.getElementById('chat-form');
+    const sendButton = document.getElementById('send-button');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const disconnectedBanner = document.getElementById('disconnectedBanner');
+    
+    // Typing indicator state
+    let isTyping = false;
+    let typingTimeout = null;
+    
+    function connectWebSocket() {
+        try {
+            const wsUrl = wsProtocol + '//' + window.location.host + '/ws/conversation/' + conversationId + '/';
+            console.log('🔌 Connecting to WebSocket:', wsUrl);
+            console.log('📝 Connection details:', {
+                conversationId: conversationId,
+                userId: userId,
+                otherUserId: otherUserId,
+                protocol: wsProtocol,
+                host: window.location.host
+            });
+            
+            chatSocket = new WebSocket(wsUrl);
+            
+            chatSocket.onopen = function(e) {
+                console.log('✅ WebSocket connected successfully to:', wsUrl);
+                console.log('🔗 Connection event:', e);
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.className = 'text-green-600';
+                disconnectedBanner.classList.add('hidden');
+                reconnectAttempts = 0;
+                enableMessageInput();
+            };
+            
+            chatSocket.onmessage = function(e) {
+                console.log('📨 Raw WebSocket message received:', e.data);
+                try {
+                    const data = JSON.parse(e.data);
+                    console.log('📦 Parsed message data:', data);
+                    console.log('🔍 Message details:', {
+                        type: data.type,
+                        messageId: data.message_id,
+                        userId: data.user_id,
+                        username: data.username,
+                        timestamp: data.timestamp,
+                        messageLength: data.message ? data.message.length : 0,
+                        messagePreview: data.message ? data.message.substring(0, 50) + '...' : 'N/A'
+                    });
+                    
+                    if (data.type === 'chat_message') {
+                        console.log('💬 Handling chat message from user:', data.username);
+                        handleIncomingMessage(data);
+                    } else if (data.type === 'typing_indicator') {
+                        console.log('⌨️ Handling typing indicator:', data.is_typing ? 'started' : 'stopped');
+                        handleTypingIndicator(data);
+                    } else if (data.type === 'error') {
+                        console.error('❌ WebSocket error message:', data.message);
+                        showNotification('Error: ' + data.message, 'error');
+                    } else {
+                        console.warn('⚠️ Unknown message type received:', data.type);
+                    }
+                } catch (parseError) {
+                    console.error('❌ Failed to parse WebSocket message:', parseError);
+                    console.error('📄 Raw message that failed to parse:', e.data);
+                }
+            };
+            
+            chatSocket.onclose = function(e) {
+                console.log('🔌 WebSocket closed');
+                console.log('🔍 Close event details:', {
+                    code: e.code,
+                    reason: e.reason,
+                    wasClean: e.wasClean
+                });
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.className = 'text-red-600';
+                disableMessageInput();
+                
+                if (e.code !== 1000) { // Not a normal closure
+                    console.warn('⚠️ WebSocket closed unexpectedly, attempting reconnect');
+                    disconnectedBanner.classList.remove('hidden');
+                    attemptReconnect();
+                }
+            };
+            
+            chatSocket.onerror = function(e) {
+                console.error('❌ WebSocket error event:', e);
+                connectionStatus.textContent = 'Error';
+                connectionStatus.className = 'text-red-600';
+            };
+            
+        } catch (error) {
+            console.error('❌ Failed to create WebSocket:', error);
+            attemptReconnect();
+        }
+    }
+    
+    function attemptReconnect() {
+        if (reconnectAttempts < maxReconnectAttempts) {
+            reconnectAttempts++;
+            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            
+            console.log(`🔄 Attempting reconnection ${reconnectAttempts}/${maxReconnectAttempts}`, {
+                delay: delay,
+                currentReadyState: chatSocket.readyState
+            });
+            
+            connectionStatus.textContent = `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`;
+            connectionStatus.className = 'text-yellow-600';
+            
+            setTimeout(() => {
+                if (chatSocket.readyState === WebSocket.CLOSED) {
+                    console.log('🔄 Executing reconnection attempt');
+                    connectWebSocket();
+                } else {
+                    console.log('🔄 Skipping reconnection - WebSocket not in CLOSED state');
+                }
+            }, delay);
+        } else {
+            console.error('❌ Maximum reconnection attempts reached');
+            connectionStatus.textContent = 'Connection failed';
+            connectionStatus.className = 'text-red-600';
+            showNotification('Connection failed. Please refresh the page.', 'error');
+        }
+    }
+    
+    function handleIncomingMessage(data) {
+        console.log('🎯 Processing incoming message:', {
+            from: data.username,
+            messageId: data.message_id,
+            timestamp: data.timestamp,
+            messageLength: data.message ? data.message.length : 0,
+            isFromCurrentUser: data.user_id === userId
+        });
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message received mb-4`;
+        let imageHtml = '';
+        if (data.image_url) {
+            imageHtml = `
+                <a href="${data.image_url}" target="_blank" class="block mb-2">
+                    <img src="${data.image_url}" alt="Attachment" class="rounded-md max-h-48 object-cover" loading="lazy" />
+                </a>`;
+        }
+        const textHtml = data.message ? `<p class="text-sm">${escapeHtml(data.message)}</p>` : '';
+        messageDiv.innerHTML = `
+            <div class="flex justify-start">
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 text-gray-800">
+                    <p class="text-xs font-semibold mb-1">${data.username}</p>
+                    ${imageHtml}
+                    ${textHtml}
+                    <p class="text-xs mt-1 text-gray-500">${formatTime(new Date(data.timestamp))}</p>
+                </div>
+            </div>`;
+        
+        console.log('🎨 Adding received message to UI');
+        messagesContainer.appendChild(messageDiv);
+        scrollToBottom();
+        
+        // Send delivery confirmation
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            const confirmationData = {
+                'type': 'delivery_confirmation',
+                'message_id': data.message_id
+            };
+            console.log('✅ Sending delivery confirmation:', confirmationData);
+            chatSocket.send(JSON.stringify(confirmationData));
+        } else {
+            console.warn('⚠️ Cannot send delivery confirmation - WebSocket not ready');
+        }
+    }
+    
+    function handleTypingIndicator(data) {
+        if (data.user_id !== userId) {
+            if (data.is_typing) {
+                typingIndicator.textContent = `${data.username} is typing...`;
+                typingIndicator.classList.remove('typing-indicator-hidden');
+            } else {
+                typingIndicator.classList.add('typing-indicator-hidden');
+            }
+        }
+    }
+    
+    function sendMessage(message) {
+        console.log('📤 Attempting to send message:', message);
+        console.log('🔍 WebSocket state:', {
+            readyState: chatSocket.readyState,
+            CONNECTING: WebSocket.CONNECTING,
+            OPEN: WebSocket.OPEN,
+            CLOSING: WebSocket.CLOSING,
+            CLOSED: WebSocket.CLOSED
+        });
+        
+        if (chatSocket.readyState === WebSocket.OPEN && message.trim()) {
+            const messageData = {
+                'type': 'chat_message',
+                'message': message.trim()
+            };
+            
+            console.log('📨 Sending message data:', messageData);
+            chatSocket.send(JSON.stringify(messageData));
+            
+            // Add message to UI immediately
+            console.log('🎨 Adding sent message to UI');
+            addSentMessage(message.trim());
+            messageInput.value = '';
+            scrollToBottom();
+        } else {
+            console.warn('⚠️ Cannot send message:', {
+                websocketReady: chatSocket.readyState === WebSocket.OPEN,
+                messageNotEmpty: message.trim().length > 0,
+                readyState: chatSocket.readyState
+            });
+        }
+    }
+    
+    function addSentMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message sent mb-4`;
+        messageDiv.innerHTML = `
+            <div class="flex justify-end">
+                <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-pink-500 text-white">
+                    <p class="text-sm">${escapeHtml(message)}</p>
+                    <p class="text-xs mt-1 text-pink-100">${formatTime(new Date())}</p>
+                </div>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+    }
+    
+    function sendTypingIndicator(typing) {
+        if (chatSocket.readyState === WebSocket.OPEN) {
+            chatSocket.send(JSON.stringify({
+                'type': 'typing',
+                'is_typing': typing
+            }));
+        }
+    }
+    
+    function enableMessageInput() {
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        messageInput.placeholder = 'Type your message...';
+    }
+    
+    function disableMessageInput() {
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+        messageInput.placeholder = 'Connecting...';
+    }
+    
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function formatTime(date) {
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric',
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Simple notification - could be enhanced with a proper notification system
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+            type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+        }`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+    
+    // Event listeners
+    chatForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const message = messageInput.value;
+        sendMessage(message);
+        
+        // Stop typing indicator
+        if (isTyping) {
+            sendTypingIndicator(false);
+            isTyping = false;
+        }
+    });
+    
+    messageInput.addEventListener('input', function() {
+        if (!isTyping && this.value.trim()) {
+            isTyping = true;
+            sendTypingIndicator(true);
+        }
+        
+        // Clear existing timeout
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+        
+        // Set new timeout to stop typing indicator
+        typingTimeout = setTimeout(() => {
+            if (isTyping) {
+                sendTypingIndicator(false);
+                isTyping = false;
+            }
+        }, 2000);
+    });
+    
+    messageInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    // Focus on message input
+    messageInput.focus();
+    
+    // Scroll to bottom on load
+    scrollToBottom();
+    
+    // Connect WebSocket
+    console.log('🔌 Initiating WebSocket connection...');
+    connectWebSocket();
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+        console.log('🔄 Page unloading - cleaning up WebSocket connection');
+        if (isTyping) {
+            sendTypingIndicator(false);
+        }
+        if (chatSocket) {
+            chatSocket.close();
+        }
+    });
+    
+    console.log('✅ Chat page initialization complete');
+});
+    </script>
+{% endblock %}

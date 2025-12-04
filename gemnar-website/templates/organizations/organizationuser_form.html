@@ -1,0 +1,44 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}
+    {% if object %}
+        {% trans "Update Member" %}
+    {% else %}
+        {% trans "Add Member" %}
+    {% endif %}
+{% endblock %}
+{% block org_content %}
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% if not object %}
+            <div>
+                <label for="email_or_username"
+                       class="block text-sm font-medium text-gray-700">Email or Username</label>
+                <input type="text"
+                       id="email_or_username"
+                       name="email_or_username"
+                       required
+                       class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                       placeholder="Enter email address or username">
+                <p class="mt-1 text-sm text-gray-500">You can enter either an email address or username to add a member</p>
+            </div>
+        {% endif %}
+        <div>
+            <label class="flex items-center">
+                <input type="checkbox"
+                       name="is_admin"
+                       {% if object.is_admin %}checked{% endif %}
+                       class="mr-2">
+                <span class="text-sm font-medium text-gray-700">Is Admin</span>
+            </label>
+        </div>
+        <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            {% if object %}
+                {% trans "Update" %}
+            {% else %}
+                {% trans "Add" %}
+            {% endif %}
+        </button>
+    </form>
+{% endblock %}

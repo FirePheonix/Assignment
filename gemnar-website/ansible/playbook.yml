@@ -1,0 +1,744 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    github_token: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+  tasks:
+    - name: Debug GitHub token availability
+      debug:
+        msg: "GitHub token is {{ 'set' if github_token else 'NOT SET' }}"
+      
+    - name: Fail if GitHub token is not provided
+      fail:
+        msg: "GITHUB_TOKEN environment variable is required for deployment"
+      when: github_token == ""
+      
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install system dependencies
+      apt:
+        name:
+          - python3
+          - git
+          - postgresql
+          - postgresql-contrib
+          - python3-psycopg2
+          - libpq-dev
+          - certbot
+          - python3-certbot-nginx
+          - nginx
+          - libapache2-mod-security2
+          - whois
+        state: present
+        install_recommends: no 
+
+    - name: Stop and disable time synchronization services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+      loop:
+        - ntpd
+        - ntp
+        - chrony
+        - systemd-timesyncd
+
+    - name: Stop and disable unattended-upgrades service
+      systemd:
+        name: unattended-upgrades
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+
+    - name: Remove unnecessary packages
+      apt:
+        name:
+          - unattended-upgrades
+          - ntp
+          - ntpd
+          - chrony
+          - update-notifier-common
+        state: absent
+        purge: yes
+
+    - name: Remove unattended-upgrades configuration
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/apt.conf.d/20auto-upgrades
+        - /etc/apt/apt.conf.d/50unattended-upgrades
+        - /etc/apt/apt.conf.d/10periodic
+
+    - name: Disable automatic package updates
+      lineinfile:
+        path: /etc/apt/apt.conf.d/20auto-upgrades
+        line: "{{ item }}"
+        create: yes
+      loop:
+        - 'APT::Periodic::Update-Package-Lists "0";'
+        - 'APT::Periodic::Unattended-Upgrade "0";'
+        - 'APT::Periodic::Download-Upgradeable-Packages "0";'
+        - 'APT::Periodic::AutocleanInterval "0";'
+
+    - name: Kill any remaining ntpd processes
+      shell: "pkill -f ntpd || true"
+      ignore_errors: yes
+
+    - name: Kill any remaining unattended-upgrades processes
+      shell: "pkill -f unattended-upgr || true"
+      ignore_errors: yes
+
+    - name: Ensure django user exists
+      user:
+        name: django
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        state: present
+
+    - name: Copy .env file to server
+      copy:
+        src: ../.env
+        dest: /home/django/gemnar-website/.env
+        owner: django
+        group: django
+        mode: '0600'
+
+    - name: Remove old .env_exported file if it exists
+      file:
+        path: /home/django/.env_exported
+        state: absent
+      become_user: django
+
+    - name: Remove old .env_exported reference from .bashrc
+      lineinfile:
+        path: /home/django/.bashrc
+        line: 'source $HOME/.env_exported'
+        state: absent
+      become_user: django
+
+    - name: Ensure .env is sourced in .bashrc
+      lineinfile:
+        path: /home/django/.bashrc
+        line: 'set -a; source $HOME/gemnar-website/.env; set +a'
+        state: present
+      become_user: django
+
+    - name: Clone the private repo using GITHUB_TOKEN
+      git:
+        repo: "https://{{ github_token }}@github.com/gemnar/gemnar-website.git"
+        dest: /home/django/gemnar-website
+        version: main
+        update: yes
+        force: yes
+        accept_hostkey: yes
+      become_user: django
+      environment:
+        GIT_TERMINAL_PROMPT: "0"
+        GIT_ASKPASS: "/bin/false"
+      notify: restart uvicorn
+
+    - name: Install Poetry using the official installer
+      shell: curl -sSL https://install.python-poetry.org | python3 -
+      args:
+        creates: /home/django/.local/bin/poetry
+      become_user: django
+
+    - name: Add Poetry to PATH
+      lineinfile:
+        path: "/home/django/.bashrc"
+        line: 'export PATH="$HOME/.local/bin:$PATH"'
+        state: present
+      become_user: django
+
+    - name: Create a virtual environment
+      command: "/home/django/.local/bin/poetry env use python3"
+      args:
+        chdir: "/home/django/gemnar-website"
+        creates: "/home/django/.cache/pypoetry/virtualenvs"
+      become_user: django
+
+    - name: Install dependencies with Poetry
+      command: "/home/django/.local/bin/poetry install --no-interaction"
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+
+    - name: Verify WebSocket libraries are installed
+      shell: |
+        cd /home/django/gemnar-website
+        /home/django/.local/bin/poetry run python -c "
+        try:
+            import uvicorn
+            import websockets
+            from uvicorn.protocols.websockets.websockets_impl import WebSocketProtocol
+            print('✅ WebSocket libraries verified successfully')
+        except ImportError as e:
+            print(f'❌ WebSocket library missing: {e}')
+            exit(1)
+        "
+      args:
+        executable: /bin/bash
+      become_user: django
+      register: websocket_check
+
+    - name: Display WebSocket verification result
+      debug:
+        msg: "{{ websocket_check.stdout }}"
+
+    - name: Start and enable PostgreSQL service
+      systemd:
+        name: postgresql
+        state: started
+        enabled: yes
+
+    - name: Create PostgreSQL database
+      postgresql_db:
+        name: gemnar_db
+        state: present
+      become_user: postgres
+
+    - name: Create PostgreSQL user
+      postgresql_user:
+        name: gemnar_user
+        password: "{{ lookup('env', 'DB_PASSWORD') | default('gemnar_password_change_me', true) }}"
+        db: gemnar_db
+        priv: ALL
+        state: present
+      become_user: postgres
+
+    - name: Grant all privileges to gemnar_user on gemnar_db
+      postgresql_privs:
+        db: gemnar_db
+        privs: ALL
+        type: database
+        obj: gemnar_db
+        role: gemnar_user
+        state: present
+      become_user: postgres
+
+    - name: Find PostgreSQL version
+      shell: "ls /etc/postgresql/ | head -1"
+      register: pg_version
+      changed_when: false
+
+    - name: Configure PostgreSQL to allow local connections
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version.stdout }}/main/pg_hba.conf"
+        regexp: '^local\s+all\s+all\s+peer$'
+        line: 'local   all             all                                     md5'
+        backup: yes
+      notify: restart postgresql
+
+    - name: Ensure PostgreSQL is listening on localhost
+      lineinfile:
+        path: "/etc/postgresql/{{ pg_version.stdout }}/main/postgresql.conf"
+        regexp: "^#?listen_addresses"
+        line: "listen_addresses = 'localhost'"
+        backup: yes
+      notify: restart postgresql
+
+    - name: Add PostgreSQL configuration to .env file
+      blockinfile:
+        path: /home/django/gemnar-website/.env
+        block: |
+          DB_NAME=gemnar_db
+          DB_USER=gemnar_user
+          DB_PASSWORD={{ lookup('env', 'DB_PASSWORD') | default('gemnar_password_change_me', true) }}
+          DB_HOST=localhost
+          DB_PORT=5432
+        marker: "# {mark} ANSIBLE MANAGED POSTGRESQL CONFIG"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Set ENVIRONMENT to production
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "ENVIRONMENT=production"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Set ALLOWED_HOSTS for production
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "ALLOWED_HOSTS=gemnar.com,www.gemnar.com,localhost,127.0.0.1,45.77.103.30"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Set DJANGO_SETTINGS_MODULE
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "DJANGO_SETTINGS_MODULE=gemnar.settings"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Add Mailgun SMTP configuration to .env file
+      blockinfile:
+        path: /home/django/gemnar-website/.env
+        block: |
+          SMTP_USERNAME={{ lookup('env', 'SMTP_USERNAME') }}
+          SMTP_PASSWORD={{ lookup('env', 'SMTP_PASSWORD') }}
+          DEFAULT_FROM_EMAIL={{ lookup('env', 'DEFAULT_FROM_EMAIL') | default('support@gemnar.com', true) }}
+        marker: "# {mark} ANSIBLE MANAGED MAILGUN CONFIG"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Add Sentry configuration to .env file
+      blockinfile:
+        path: /home/django/gemnar-website/.env
+        block: |
+          SENTRY_DSN={{ lookup('env', 'SENTRY_DSN') }}
+          SENTRY_ENVIRONMENT=production
+        marker: "# {mark} ANSIBLE MANAGED SENTRY CONFIG"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Remove SQLite database file if it exists
+      file:
+        path: /home/django/gemnar-website/db.sqlite3
+        state: absent
+      become_user: django
+      ignore_errors: yes
+
+    - name: Run Django migrations with environment variables
+      shell: |
+        set -a; source /home/django/gemnar-website/.env; set +a
+        cd /home/django/gemnar-website
+        /home/django/.local/bin/poetry run python manage.py migrate --run-syncdb
+      args:
+        executable: /bin/bash
+      become_user: django
+
+    - name: Ensure staticfiles directory exists
+      file:
+        path: /home/django/gemnar-website/staticfiles
+        state: directory
+        owner: django
+        group: django
+        mode: '0755'
+
+    - name: Add STATIC_ROOT to .env file
+      lineinfile:
+        path: /home/django/gemnar-website/.env
+        line: "STATIC_ROOT=/home/django/gemnar-website/staticfiles"
+        create: yes
+        owner: django
+        group: django
+        mode: '0600'
+      become_user: django
+
+    - name: Run Django collectstatic with environment variables
+      shell: |
+        set -a; source /home/django/gemnar-website/.env; set +a
+        cd /home/django/gemnar-website
+        /home/django/.local/bin/poetry run python manage.py collectstatic --noinput
+      args:
+        executable: /bin/bash
+      become_user: django
+
+    - name: Create /var/www/html for certbot challenge
+      file:
+        path: /var/www/html
+        state: directory
+        mode: '0755'
+
+    - name: Configure Nginx for Certbot Challenge
+      template:
+        src: nginx-http.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: restart nginx
+
+    - name: Flush handlers to restart Nginx
+      meta: flush_handlers
+
+    - name: Remove old Nginx site directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /etc/nginx/sites-available
+        - /etc/nginx/sites-enabled
+
+    - name: Obtain Let's Encrypt SSL certificate
+      command: certbot certonly --webroot -w /var/www/html --agree-tos -d gemnar.com -d www.gemnar.com --email dev@gemnar.com --non-interactive
+      args:
+        creates: /etc/letsencrypt/live/gemnar.com/fullchain.pem
+
+    - name: Configure Nginx for Django
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify:
+        - restart nginx
+        - restart uvicorn
+
+    - name: Template uvicorn service file
+      template:
+        src: uvicorn.service.j2
+        dest: /etc/systemd/system/uvicorn.service
+      notify: restart uvicorn
+
+    - name: Reset failed uvicorn service
+      systemd:
+        name: uvicorn
+        state: stopped
+        daemon_reload: yes
+      failed_when: false
+
+    - name: Enable and start uvicorn service
+      systemd:
+        name: uvicorn
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Allow Nginx through firewall
+      ufw:
+        rule: allow
+        port: 80
+        proto: tcp
+
+    - name: Allow HTTPS through firewall
+      ufw:
+        rule: allow
+        port: 443
+        proto: tcp
+
+    # Configure nginx log permissions for admin dashboard
+    - name: Add django user to adm group for log access
+      user:
+        name: django
+        groups: adm
+        append: yes
+        state: present
+
+    - name: Ensure nginx log directory exists
+      file:
+        path: /var/log/nginx
+        state: directory
+        owner: www-data
+        group: adm
+        mode: '0755'
+
+    - name: Set proper permissions for nginx access log
+      file:
+        path: /var/log/nginx/access.log
+        owner: www-data
+        group: adm
+        mode: '0640'
+        state: touch
+
+    - name: Set proper permissions for nginx error log
+      file:
+        path: /var/log/nginx/error.log
+        owner: www-data
+        group: adm
+        mode: '0640'
+        state: touch
+
+    - name: Configure logrotate for nginx logs to maintain permissions
+      copy:
+        content: |
+          /var/log/nginx/*.log {
+              daily
+              missingok
+              rotate 52
+              compress
+              delaycompress
+              notifempty
+              create 0640 www-data adm
+              sharedscripts
+              prerotate
+                  if [ -d /etc/logrotate.d/httpd-prerotate ]; then \
+                      run-parts /etc/logrotate.d/httpd-prerotate; \
+                  fi
+              endscript
+              postrotate
+                  invoke-rc.d nginx rotate >/dev/null 2>&1 || true
+              endscript
+          }
+        dest: /etc/logrotate.d/nginx
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Set proper permissions for fail2ban log (if exists)
+      file:
+        path: /var/log/fail2ban.log
+        owner: root
+        group: adm
+        mode: '0640'
+        state: touch
+      ignore_errors: yes
+
+    - name: Add django user to systemd-journal group for journalctl access
+      user:
+        name: django
+        groups: systemd-journal
+        append: yes
+        state: present
+      ignore_errors: yes
+
+    - name: Create logs directory for Django application
+      file:
+        path: /home/django/gemnar-website/logs
+        state: directory
+        owner: django
+        group: django
+        mode: '0755'
+
+    - name: Create Django log files with proper permissions
+      file:
+        path: "{{ item }}"
+        owner: django
+        group: django
+        mode: '0644'
+        state: touch
+      loop:
+        - /home/django/gemnar-website/logs/django.log
+        - /home/django/gemnar-website/logs/errors.log
+        - /home/django/gemnar-website/logs/requests.log
+
+    - name: Create systemd override directory for uvicorn service
+      file:
+        path: /etc/systemd/system/uvicorn.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Create systemd override file to allow django user to control service
+      copy:
+        dest: /etc/systemd/system/uvicorn.service.d/override.conf
+        content: |
+          [Service]
+          NoNewPrivileges=true
+          Restart=always
+          RestartSec=1
+        mode: '0644'
+      notify: daemon-reload
+
+    - name: Configure sudo permissions for django user to restart uvicorn
+      lineinfile:
+        path: /etc/sudoers.d/django-uvicorn
+        line: "django ALL=(ALL) NOPASSWD: /bin/systemctl restart uvicorn.service, /bin/systemctl reload uvicorn.service, /bin/systemctl status uvicorn.service, /bin/systemctl stop uvicorn.service, /bin/systemctl start uvicorn.service"
+        create: yes
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    - name: Create webhook restart script
+      copy:
+        dest: /home/django/restart_uvicorn.sh
+        content: |
+          #!/bin/bash
+          # Script to restart uvicorn service for GitHub webhook
+          # This script can be called by the django user without sudo
+          
+          set -e
+          
+          # Log the restart attempt
+          echo "$(date): GitHub webhook triggered uvicorn restart" >> /home/django/gemnar-website/logs/webhook.log
+          
+          # Method 1: Try using sudo with NOPASSWD
+          if sudo -n systemctl restart uvicorn.service 2>/dev/null; then
+              echo "$(date): uvicorn service restarted successfully via sudo" >> /home/django/gemnar-website/logs/webhook.log
+              exit 0
+          fi
+
+          # Method 2: Try using systemctl user commands
+          if systemctl --user restart uvicorn.service 2>/dev/null; then
+              echo "$(date): uvicorn service restarted successfully via user systemctl" >> /home/django/gemnar-website/logs/webhook.log
+              exit 0
+          fi
+
+          # Method 3: Try using pkill and restart
+          if pkill -f "uvicorn.*gemnar.asgi:application" 2>/dev/null; then
+              sleep 2
+              if sudo -n systemctl start uvicorn.service 2>/dev/null; then
+                  echo "$(date): uvicorn service restarted successfully via pkill + start" >> /home/django/gemnar-website/logs/webhook.log
+                  exit 0
+              fi
+          fi
+
+          # Method 4: Try using systemctl directly (fallback)
+          if systemctl restart uvicorn.service 2>/dev/null; then
+              echo "$(date): uvicorn service restarted successfully via direct systemctl" >> /home/django/gemnar-website/logs/webhook.log
+              exit 0
+          fi
+
+          echo "$(date): Failed to restart uvicorn service with all methods" >> /home/django/gemnar-website/logs/webhook.log
+          exit 1
+        owner: django
+        group: django
+        mode: '0755'
+
+    - name: Create webhook log file
+      file:
+        path: /home/django/gemnar-website/logs/webhook.log
+        state: touch
+        owner: django
+        group: django
+        mode: '0644'
+
+    - name: Create automation cron job
+      cron:
+        name: "Run automation tasks"
+        minute: "*"
+        hour: "*"
+        day: "*"
+        month: "*"
+        weekday: "*"
+        job: "cd /home/django/gemnar-website && /home/django/.local/bin/poetry run python manage.py run_every_minute >> /home/django/gemnar-website/logs/automation.log 2>&1"
+        user: django
+        state: present
+
+    - name: Create automation log file
+      file:
+        path: /home/django/gemnar-website/logs/automation.log
+        state: touch
+        owner: django
+        group: django
+        mode: '0644'
+
+    - name: Install monitoring dependencies
+      apt:
+        name:
+          - inotify-tools
+          - curl
+        state: present
+
+    - name: Create 502 error monitoring script
+      copy:
+        dest: /home/django/monitor_502_errors.sh
+        content: |
+          #!/bin/bash
+          # Monitor nginx error log for 502 errors and send Slack alerts
+          
+          SLACK_WEBHOOK="{{ slack_webhook_url | default('') }}"
+          ERROR_LOG="/var/log/nginx/error.log"
+          LAST_ALERT_FILE="/tmp/last_502_alert"
+          COOLDOWN_MINUTES=5
+          
+          # Function to send Slack notification
+          send_slack_alert() {
+              local error_line="$1"
+              local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+              
+              # Check cooldown period to avoid spam
+              if [ -f "$LAST_ALERT_FILE" ]; then
+                  last_alert=$(cat "$LAST_ALERT_FILE")
+                  current_time=$(date +%s)
+                  time_diff=$((current_time - last_alert))
+                  cooldown_seconds=$((COOLDOWN_MINUTES * 60))
+                  
+                  if [ $time_diff -lt $cooldown_seconds ]; then
+                      echo "[$timestamp] Skipping alert (cooldown active)"
+                      return
+                  fi
+              fi
+              
+              # Create Slack message payload
+              local message="🚨 *502 Error Detected on Gemnar.com*\n\n*Time:* $timestamp\n*Error:* \`$error_line\`\n\n*Server:* $(hostname)\n*Log:* $ERROR_LOG"
+              
+              # Send to Slack
+              curl -X POST -H 'Content-type: application/json' \
+                  --data "{\"text\":\"$message\"}" \
+                  "$SLACK_WEBHOOK" \
+                  --silent --show-error
+              
+              if [ $? -eq 0 ]; then
+                  echo "[$timestamp] Slack alert sent successfully"
+                  echo $(date +%s) > "$LAST_ALERT_FILE"
+              else
+                  echo "[$timestamp] Failed to send Slack alert"
+              fi
+          }
+          
+          # Main monitoring loop
+          echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting 502 error monitoring..."
+          
+          # Monitor the error log file for new entries
+          tail -F "$ERROR_LOG" 2>/dev/null | while read line; do
+              # Check if line contains 502 error
+              if echo "$line" | grep -q "502"; then
+                  echo "[$(date '+%Y-%m-%d %H:%M:%S')] 502 error detected: $line"
+                  send_slack_alert "$line"
+              fi
+          done
+        owner: django
+        group: django
+        mode: '0755'
+
+    - name: Create systemd service for 502 error monitoring
+      copy:
+        dest: /etc/systemd/system/nginx-502-monitor.service
+        content: |
+          [Unit]
+          Description=Nginx 502 Error Monitor
+          After=nginx.service
+          Requires=nginx.service
+          
+          [Service]
+          Type=simple
+          User=django
+          Group=django
+          ExecStart=/home/django/monitor_502_errors.sh
+          Restart=always
+          RestartSec=10
+          StandardOutput=journal
+          StandardError=journal
+          
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+      notify: daemon-reload
+
+    - name: Enable and start 502 error monitoring service
+      systemd:
+        name: nginx-502-monitor
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: restart uvicorn
+      service:
+        name: uvicorn
+        state: restarted
+
+    - name: restart postgresql
+      service:
+        name: postgresql
+        state: restarted
+
+    - name: daemon-reload
+      systemd:
+        daemon_reload: yes
+
+    # Add more deployment tasks here

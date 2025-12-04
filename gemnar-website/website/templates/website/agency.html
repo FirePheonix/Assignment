@@ -1,0 +1,231 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}Agency Control Center - Gemnar{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <!-- Header -->
+        <div class="bg-white shadow-sm sticky top-0 z-10">
+            <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="py-4">
+                    <h1 class="text-2xl font-bold text-gray-900">AI Prompt Control Center</h1>
+                    <p class="mt-1 text-sm text-gray-600">Send prompts to AI agents across all your connected platforms</p>
+                </div>
+            </div>
+        </div>
+        <!-- Services Grid -->
+        <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                {% for service in services %}
+                    <div class="bg-white rounded-lg shadow-md">
+                        <!-- Service Header -->
+                        <div class="p-4 border-b border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-{{ service.color }}-100 rounded-full flex items-center justify-center">
+                                        <img src="{{ service.logo }}"
+                                             alt="{{ service.name }}"
+                                             width="20"
+                                             height="20"
+                                             class="w-5 h-5 filter invert">
+                                    </div>
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">{{ service.name }}</h3>
+                                        <div class="flex items-center space-x-2">
+                                            {% if service.connection.is_connected %}
+                                                <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                                                    <span class="w-2 h-2 bg-green-400 rounded-full mr-1"></span>
+                                                    Connected
+                                                </span>
+                                            {% else %}
+                                                <div class="flex items-center space-x-2">
+                                                    <span class="inline-flex items-center px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                                                        <span class="w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                                                        Disconnected
+                                                    </span>
+                                                    <button class="inline-flex items-center px-2 py-1 text-xs font-medium bg-{{ service.color }}-100 text-{{ service.color }}-700 rounded-full hover:bg-{{ service.color }}-200 transition-colors">
+                                                        <i class="fas fa-plug text-xs mr-1"></i>
+                                                        Connect
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <a href="{{ service.external_url }}"
+                                   target="_blank"
+                                   class="text-{{ service.color }}-600 hover:text-{{ service.color }}-800">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Service Stats -->
+                        <div class="p-4 bg-gray-50 border-b border-gray-200">
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="text-center">
+                                    <div class="font-semibold text-{{ service.color }}-600">{{ service.stats.total_prompts }}</div>
+                                    <div class="text-gray-600">Prompts</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-green-600">{{ service.stats.successful_posts }}</div>
+                                    <div class="text-gray-600">Posted</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-yellow-600">{{ service.stats.pending_posts }}</div>
+                                    <div class="text-gray-600">Pending</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="font-semibold text-red-600">{{ service.stats.failed_posts }}</div>
+                                    <div class="text-gray-600">Failed</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prompt Input -->
+                        <div class="p-4 border-b border-gray-200">
+                            <form method="post" action="{% url 'website:agency' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="service" value="{{ service.slug }}">
+                                <div class="space-y-3">
+                                    <textarea name="prompt"
+                                              rows="3"
+                                              class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-{{ service.color }}-500 focus:border-transparent resize-none"
+                                              placeholder="Enter your prompt for {{ service.name }}..."></textarea>
+                                    <button type="submit"
+                                            class="w-full bg-{{ service.color }}-600 hover:bg-{{ service.color }}-700 text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                        <i class="fas fa-paper-plane mr-2"></i>
+                                        Send Prompt
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <!-- Recent Prompts -->
+                        <div class="p-4">
+                            <h4 class="font-medium text-gray-900 mb-3 text-sm">Recent Activity</h4>
+                            <div class="space-y-3 max-h-96 overflow-y-auto">
+                                {% for prompt in service.recent_prompts %}
+                                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                                        <div class="flex items-start justify-between mb-2">
+                                            <p class="text-xs text-gray-800 line-clamp-2">{{ prompt.prompt|truncatewords:10 }}</p>
+                                            <span class="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full {% if prompt.status == 'completed' %}bg-green-100 text-green-800 {% elif prompt.status == 'pending' %}bg-yellow-100 text-yellow-800 {% elif prompt.status == 'processing' %}bg-blue-100 text-blue-800 {% elif prompt.status == 'failed' %}bg-red-100 text-red-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ prompt.status|title }}
+                                            </span>
+                                        </div>
+                                        {% if prompt.generated_image %}
+                                            <div class="mb-2">
+                                                <img src="{{ prompt.generated_image.url }}"
+                                                     alt="Generated content"
+                                                     width="100%"
+                                                     height="64"
+                                                     class="w-full h-16 object-cover rounded">
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <span>{{ prompt.created_at|date:"M j, H:i" }}</span>
+                                            {% if prompt.external_url %}
+                                                <a href="{{ prompt.external_url }}"
+                                                   target="_blank"
+                                                   class="text-{{ service.color }}-600 hover:text-{{ service.color }}-800">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        {% if prompt.status == 'completed' and prompt.likes > 0 %}
+                                            <div class="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
+                                                <span><i class="fas fa-heart text-red-500 mr-1"></i>{{ prompt.likes }}</span>
+                                                <span><i class="fas fa-share text-blue-500 mr-1"></i>{{ prompt.shares }}</span>
+                                                <span><i class="fas fa-comment text-green-500 mr-1"></i>{{ prompt.comments }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center py-8 text-gray-500">
+                                        <i class="fas fa-inbox text-2xl mb-2"></i>
+                                        <p class="text-sm">No prompts yet</p>
+                                        <p class="text-xs">Send your first prompt above</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- Custom CSS for dynamic colors -->
+    <style>
+{% for service in services %}
+.bg-{{ service.color }}-600 { background-color: 
+    {% if service.color == 'blue' %}#2563eb
+    {% elif service.color == 'pink' %}#db2777
+    {% elif service.color == 'orange' %}#ea580c
+    {% elif service.color == 'green' %}#16a34a
+    {% elif service.color == 'purple' %}#9333ea
+    {% endif %} !important;
+}
+.bg-{{ service.color }}-700 { background-color: 
+    {% if service.color == 'blue' %}#1d4ed8
+    {% elif service.color == 'pink' %}#be185d
+    {% elif service.color == 'orange' %}#c2410c
+    {% elif service.color == 'green' %}#15803d
+    {% elif service.color == 'purple' %}#7c3aed
+    {% endif %} !important;
+}
+.text-{{ service.color }}-600 { color: 
+    {% if service.color == 'blue' %}#2563eb
+    {% elif service.color == 'pink' %}#db2777
+    {% elif service.color == 'orange' %}#ea580c
+    {% elif service.color == 'green' %}#16a34a
+    {% elif service.color == 'purple' %}#9333ea
+    {% endif %} !important;
+}
+.text-{{ service.color }}-800 { color: 
+    {% if service.color == 'blue' %}#1e40af
+    {% elif service.color == 'pink' %}#9d174d
+    {% elif service.color == 'orange' %}#9a3412
+    {% elif service.color == 'green' %}#14532d
+    {% elif service.color == 'purple' %}#6b21a8
+    {% endif %} !important;
+}
+.focus\:ring-{{ service.color }}-500:focus { 
+    --tw-ring-color: 
+    {% if service.color == 'blue' %}#3b82f6
+    {% elif service.color == 'pink' %}#ec4899
+    {% elif service.color == 'orange' %}#f97316
+    {% elif service.color == 'green' %}#22c55e
+    {% elif service.color == 'purple' %}#a855f7
+    {% endif %} !important;
+}
+.bg-{{ service.color }}-100 { background-color: 
+    {% if service.color == 'blue' %}#dbeafe
+    {% elif service.color == 'pink' %}#fce7f3
+    {% elif service.color == 'orange' %}#fed7aa
+    {% elif service.color == 'green' %}#dcfce7
+    {% elif service.color == 'purple' %}#e9d5ff
+    {% endif %} !important;
+}
+.bg-{{ service.color }}-200 { background-color: 
+    {% if service.color == 'blue' %}#bfdbfe
+    {% elif service.color == 'pink' %}#f9a8d4
+    {% elif service.color == 'orange' %}#fed7aa
+    {% elif service.color == 'green' %}#bbf7d0
+    {% elif service.color == 'purple' %}#ddd6fe
+    {% endif %} !important;
+}
+.text-{{ service.color }}-700 { color: 
+    {% if service.color == 'blue' %}#1d4ed8
+    {% elif service.color == 'pink' %}#be185d
+    {% elif service.color == 'orange' %}#c2410c
+    {% elif service.color == 'green' %}#15803d
+    {% elif service.color == 'purple' %}#7c3aed
+    {% endif %} !important;
+}
+.hover\:bg-{{ service.color }}-200:hover { background-color: 
+    {% if service.color == 'blue' %}#bfdbfe
+    {% elif service.color == 'pink' %}#f9a8d4
+    {% elif service.color == 'orange' %}#fed7aa
+    {% elif service.color == 'green' %}#bbf7d0
+    {% elif service.color == 'purple' %}#ddd6fe
+    {% endif %} !important;
+}
+{% endfor %}
+    </style>
+{% endblock %}

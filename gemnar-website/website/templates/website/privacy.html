@@ -1,0 +1,92 @@
+{% extends 'website/base.html' %}
+{% block title %}Privacy Policy - Gemnar{% endblock %}
+{% block description %}
+    Privacy Policy explaining how Gemnar collects, uses, and protects your personal information.
+{% endblock %}
+{% block keywords %}privacy policy, data protection, gemnar, personal information{% endblock %}
+{% block content %}
+    <div class="pb-12">
+        <div class="container mx-auto px-6">
+            <div class="text-center text-white">
+                <h1 class="text-4xl lg:text-6xl font-bold text-white mb-6">Privacy Policy</h1>
+                <p class="text-xl text-white opacity-90 max-w-3xl mx-auto">
+                    How we collect, use, and protect your personal information.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Wave Section -->
+    <div class="relative -mt-12 lg:-mt-24">
+        <svg viewBox="0 0 1428 174"
+             version="1.1"
+             xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+            <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
+            <path d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496" opacity="0.100000001">
+            </path>
+            </g>
+            </g>
+        </svg>
+    </div>
+    <section class="bg-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <div class="mb-8">
+                    <p class="text-sm text-gray-500 mb-4">Last updated: {{ current_date|default:"June 14, 2025" }}</p>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">1. Information We Collect</h2>
+                    <p class="text-gray-600 mb-4">We collect information you provide directly to us, such as:</p>
+                    <ul class="list-disc pl-6 text-gray-600 mb-6">
+                        <li>Account information (name, email, company details)</li>
+                        <li>Payment information (processed securely through Stripe)</li>
+                        <li>Marketing data and analytics from your campaigns</li>
+                        <li>Communications with our support team</li>
+                    </ul>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">2. How We Use Your Information</h2>
+                    <p class="text-gray-600 mb-4">We use your information to:</p>
+                    <ul class="list-disc pl-6 text-gray-600 mb-6">
+                        <li>Provide and improve our services</li>
+                        <li>Process payments and manage your account</li>
+                        <li>Send important service updates and notifications</li>
+                        <li>Provide customer support</li>
+                        <li>Analyze service usage to enhance user experience</li>
+                    </ul>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">3. Information Sharing</h2>
+                    <p class="text-gray-600 mb-6">
+                        We do not sell, trade, or rent your personal information to third parties. We may share
+                        your information only in the following circumstances: with your consent, to comply with
+                        legal obligations, or to protect our rights and the safety of our users.
+                    </p>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">4. Data Security</h2>
+                    <p class="text-gray-600 mb-6">
+                        We implement appropriate technical and organizational measures to protect your personal
+                        information against unauthorized access, alteration, disclosure, or destruction. This
+                        includes encryption, secure servers, and regular security audits.
+                    </p>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">5. Data Retention</h2>
+                    <p class="text-gray-600 mb-6">
+                        We retain your personal information for as long as necessary to provide our services
+                        and comply with legal obligations. You may request deletion of your data at any time.
+                    </p>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">6. Your Rights</h2>
+                    <p class="text-gray-600 mb-4">You have the right to:</p>
+                    <ul class="list-disc pl-6 text-gray-600 mb-6">
+                        <li>Access your personal information</li>
+                        <li>Correct inaccurate data</li>
+                        <li>Request deletion of your data</li>
+                        <li>Object to processing of your data</li>
+                        <li>Export your data in a portable format</li>
+                    </ul>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">7. Cookies and Tracking</h2>
+                    <p class="text-gray-600 mb-6">
+                        We use cookies and similar technologies to improve your experience, analyze usage,
+                        and provide personalized content. You can control cookies through your browser settings.
+                    </p>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">8. Contact Us</h2>
+                    <p class="text-gray-600 mb-6">
+                        If you have questions about this Privacy Policy, please contact us at support@gemnar.com
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+{% endblock %}

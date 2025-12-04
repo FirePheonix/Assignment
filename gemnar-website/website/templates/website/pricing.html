@@ -1,0 +1,182 @@
+{% extends 'website/base.html' %}
+{% block title %}{{ config.page_title }} - Gemnar{% endblock %}
+{% block description %}{{ config.page_description }}{% endblock %}
+{% block keywords %}pricing, AI services, image generation, marketing automation{% endblock %}
+
+{% block content %}
+    <div class="pb-12">
+        <div class="container mx-auto px-6">
+            <div class="text-center text-white">
+                <h1 class="text-4xl lg:text-6xl font-bold text-white mb-6">{{ config.page_title }}</h1>
+                <p class="text-xl text-white opacity-90 max-w-3xl mx-auto">
+                    {{ config.page_description }}
+                </p>
+                {% if config.show_comparison %}
+                <div class="mt-6 inline-flex items-center bg-white bg-opacity-20 rounded-full px-6 py-3">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="text-sm font-medium">Transparent pay-as-you-go pricing</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Wave Section -->
+    <div class="relative -mt-12 lg:-mt-24">
+        <svg viewBox="0 0 1428 174" version="1.1" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                <g transform="translate(-2.000000, 44.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                    <path d="M0,0 C90.7283404,0.927527913 147.912752,27.187927 291.910178,59.9119003 C387.908462,81.7278826 543.605069,89.334785 759,82.7326078 C469.336065,156.254352 216.336065,153.6679 0,74.9732496" opacity="0.100000001"></path>
+                </g>
+            </g>
+        </svg>
+    </div>
+
+    <section class="bg-white py-16">
+        <div class="container mx-auto px-6">
+            <div class="max-w-6xl mx-auto">
+                
+                <!-- Pricing Summary -->
+                <div class="text-center mb-16">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-gradient-to-br from-pink-50 to-orange-50 rounded-lg p-6">
+                            <div class="text-3xl font-bold text-pink-600 mb-2">{{ total_services }}</div>
+                            <div class="text-gray-600">AI Services Available</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-green-50 to-teal-50 rounded-lg p-6">
+                            <div class="text-3xl font-bold text-green-600 mb-2">Pay as Go</div>
+                            <div class="text-gray-600">No Monthly Fees</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Featured Services -->
+                {% if featured_services %}
+                <div class="mb-16">
+                    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Popular Services</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        {% for service in featured_services %}
+                        <div class="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+                            <div class="bg-gradient-to-r from-pink-500 to-orange-400 px-6 py-4">
+                                <h3 class="text-xl font-bold text-white">{{ service.service_name }}</h3>
+                            </div>
+                            <div class="p-6">
+                                <p class="text-gray-600 mb-4">{{ service.service_description }}</p>
+                                
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-lg font-semibold text-gray-800">Price:</span>
+                                    <div class="text-right">
+                                        <span class="text-2xl font-bold text-pink-600">${{ service.gemnar_price }}</span>
+                                        <div class="text-sm text-gray-500">{{ service.runware_unit }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- All Services Table -->
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 bg-gradient-to-r from-pink-500 to-orange-400">
+                        <h2 class="text-2xl font-bold text-white">Complete Pricing List</h2>
+                        <p class="text-pink-100 mt-1">All available AI services and their pricing</p>
+                    </div>
+
+                    {% if pricing_data %}
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for service in pricing_data %}
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-900">{{ service.service_name }}</div>
+                                            {% if service.service_description %}
+                                            <div class="text-sm text-gray-500">{{ service.service_description|truncatechars:60 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-lg font-semibold text-pink-600">${{ service.gemnar_price }}</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ service.runware_unit }}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="px-6 py-12 text-center">
+                        <div class="text-gray-400 mb-4">
+                            <svg class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No Pricing Data Available</h3>
+                        <p class="text-gray-500">Pricing data will be available soon. Please check back later.</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- CTA Section -->
+                <div class="mt-16 text-center">
+                    <div class="bg-gradient-to-r from-pink-500 to-orange-400 rounded-lg p-8 text-white">
+                        <h2 class="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+                        <p class="text-xl opacity-90 mb-6">Join thousands of businesses using Gemnar's AI services to boost their marketing.</p>
+                        <div class="space-x-4">
+                            <a href="{% url 'website:signup' %}" class="inline-block bg-white text-pink-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                                Start Free Trial
+                            </a>
+                            <a href="{% url 'website:contact' %}" class="inline-block border-2 border-white text-white font-bold py-3 px-8 rounded-lg hover:bg-white hover:text-pink-600 transition-colors duration-200">
+                                Contact Sales
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FAQ Section -->
+                <div class="mt-16">
+                    <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Frequently Asked Questions</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">What AI services do you offer?</h3>
+                            <p class="text-gray-600">We provide a comprehensive suite of AI-powered services including image generation, text processing, and marketing automation tools.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">How does pricing work?</h3>
+                            <p class="text-gray-600">Our pricing is transparent and pay-as-you-go. You only pay for the services you use, with no monthly subscriptions or hidden fees.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Any hidden fees?</h3>
+                            <p class="text-gray-600">No hidden fees! You only pay for what you use. No monthly subscriptions or setup fees required.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">How often are prices updated?</h3>
+                            <p class="text-gray-600">Prices are updated regularly to ensure competitive rates and reflect any changes in our service costs.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Last Updated Info -->
+                {% if config.last_updated %}
+                <div class="mt-8 text-center text-sm text-gray-500">
+                    Pricing last updated: {{ config.last_updated|date:"F j, Y g:i A" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

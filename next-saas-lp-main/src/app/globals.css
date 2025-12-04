@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-background: #E4E1DB;
+  --color-foreground: #707070;
+  --color-primary: #6ECE9D;
+  --color-secondary: #F8F5ED;
+  --color-accent: #FFDA6E;
+  --color-muted: #F0F0F0;
+  --color-border: rgba(0, 0, 0, 0.1);
+
+  --text-base: 18px;
+  --text-link: 16px;
+  --text-header: 64px;
+  --text-title: 28px;
+  --text-hero: 96px;
+}
+
+:root {
+  color: var(--color-foreground);
+  background: #E4E1DB;
+  font-size: var(--text-base);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Dark mode styles */
+.dark {
+  --color-background: #0a0a0a;
+  --color-foreground: #e0e0e0;
+  --color-primary: #6ECE9D;
+  --color-secondary: #1a1a1a;
+  --color-accent: #FFDA6E;
+  --color-muted: #2a2a2a;
+  --color-border: rgba(255, 255, 255, 0.1);
+}
+
+.dark {
+  color: var(--color-foreground);
+  background: #0a0a0a;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Grain texture background using CSS */
+body {
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+  background-color: #E4E1DB;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+}
+
+.dark body::before {
+  background-color: #0a0a0a;
+  opacity: 0.2;
+  background-blend-mode: normal;
+}
+
+/* Custom scrollbar utilities */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-show {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Firefox */
+}
+
+.scrollbar-show::-webkit-scrollbar {
+  width: 4px; /* Chrome, Safari, Opera */
+}
+
+.scrollbar-show::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-show::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.scrollbar-show::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+

@@ -1,0 +1,21 @@
+[Unit]
+Description=uvicorn daemon
+After=network.target
+
+[Service]
+User=django
+Group=django
+WorkingDirectory=/home/django/gemnar-website
+EnvironmentFile=/home/django/gemnar-website/.env
+ExecStart=/home/django/.local/bin/poetry run uvicorn gemnar.asgi:application --workers 1 --uds /home/django/gemnar-website/gemnar.sock --log-level info --access-log
+Restart=always
+RestartSec=3
+KillMode=mixed
+TimeoutStopSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=uvicorn
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target 

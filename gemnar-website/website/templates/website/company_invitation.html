@@ -1,0 +1,200 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Company Invitation - Gemnar{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-12">
+        <div class="container mx-auto px-4">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-bold text-gray-900 mb-4">🤝 Invite Companies to Join Gemnar</h1>
+                    <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                        Generate a personalized invitation email for companies you'd like to work with.
+                        Share your referral code and earn rewards when they sign up!
+                    </p>
+                </div>
+                {% if not show_invitation %}
+                    <!-- Form Section -->
+                    <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Company Information</h2>
+                        {% if error %}
+                            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                                <strong>Error:</strong> {{ error }}
+                            </div>
+                        {% endif %}
+                        <form method="post" class="space-y-6">
+                            {% csrf_token %}
+                            <div>
+                                <label for="company_name"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Company Name *</label>
+                                <input type="text"
+                                       id="company_name"
+                                       name="company_name"
+                                       required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="e.g., Nike, Apple, Tesla">
+                            </div>
+                            <div>
+                                <label for="domain_name"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Company Website *</label>
+                                <input type="url"
+                                       id="domain_name"
+                                       name="domain_name"
+                                       required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="https://example.com">
+                            </div>
+                            <div>
+                                <label for="contact_email"
+                                       class="block text-sm font-medium text-gray-700 mb-2">Contact Email *</label>
+                                <input type="email"
+                                       id="contact_email"
+                                       name="contact_email"
+                                       required
+                                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="marketing@company.com">
+                            </div>
+                            <button type="submit"
+                                    class="w-full bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold py-4 px-8 rounded-lg shadow-lg hover:from-pink-600 hover:to-purple-700 transform transition hover:scale-105 duration-300">
+                                📧 Generate Invitation Email
+                            </button>
+                        </form>
+                    </div>
+                    <!-- Info Section -->
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-blue-900 mb-3">📋 What happens next?</h3>
+                        <ul class="space-y-2 text-blue-800">
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">✓</span>
+                                We'll generate a personalized email template for you
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">✓</span>
+                                Your unique referral code will be included
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">✓</span>
+                                You can copy and send from your personal email
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-500 mr-2">✓</span>
+                                Earn rewards when companies sign up through your link
+                            </li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <!-- Generated Invitation Section -->
+                    <div class="bg-white rounded-lg shadow-lg p-8">
+                        <div class="text-center mb-8">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-4">🎉 Your Invitation is Ready!</h2>
+                            <p class="text-gray-600">Copy the email below and send it from your personal email to {{ contact_email }}</p>
+                        </div>
+                        <!-- Email Preview -->
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Subject Line:</label>
+                                <div class="bg-white p-3 rounded border">
+                                    <span class="font-medium">Partnership Opportunity - Content Creation for {{ company_name }}</span>
+                                    <button onclick="copyToClipboard('subject')"
+                                            class="ml-2 text-blue-500 hover:text-blue-700">
+                                        <svg class="w-4 h-4 inline"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email Body:</label>
+                                <div class="bg-white p-6 rounded border">
+                                    <div id="email-body" class="whitespace-pre-line">
+                                        Subject: Partnership Opportunity - Content Creation for {{ company_name }}
+                                        Hi {{ company_name }} Team,
+                                        I hope this email finds you well! I'm reaching out because I'm genuinely excited about the possibility of creating content for {{ company_name }}.
+                                        I'm a content creator who specializes in helping brands like yours build authentic connections with their audience through engaging social media content. After exploring {{ domain_name }}, I'm impressed by your brand's vision and would love to discuss how we can work together.
+                                        **What I Can Offer:**
+                                        • Daily tweets or Instagram posts starting at just $99/month
+                                        • Authentic, brand-aligned content that resonates with your target audience
+                                        • Consistent posting schedule to keep your brand top-of-mind
+                                        • Professional content creation with measurable results
+                                        I'd love to showcase what we can achieve together. To get started, I recommend checking out Gemnar - it's an incredible platform that connects creators like me with forward-thinking brands like {{ company_name }}.
+                                        **🎯 Special Invitation:**
+                                        I'd like to invite you to join Gemnar through my referral link: {{ referral_url }}
+                                        By joining through my link, you'll get access to:
+                                        ✓ Professional content creators (like me!)
+                                        ✓ Streamlined collaboration tools
+                                        ✓ Competitive pricing starting at $99/month
+                                        ✓ Quality content that drives engagement
+                                        I believe {{ company_name }} would be a perfect fit for the platform, and I'd be thrilled to be your first content creator partner.
+                                        Would you be open to a brief call this week to discuss how we can elevate {{ company_name }}'s social media presence? I'm confident we can create something amazing together.
+                                        Looking forward to hearing from you!
+                                        Best regards,
+                                        {{ user.first_name|default:user.username }}
+                                        P.S. Feel free to check out my previous work and let me know if you'd like to see some sample content ideas specifically for {{ company_name }}!
+                                        ---
+                                        🔗 Join Gemnar: {{ referral_url }}
+                                        💰 Pricing starts at $99/month
+                                        📧 Questions? Just reply to this email!
+                                    </div>
+                                    <button onclick="copyToClipboard('email-body')"
+                                            class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                        📋 Copy Email
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Your Referral Info -->
+                        <div class="bg-pink-50 rounded-lg p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-pink-900 mb-3">📈 Your Referral Info</h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-pink-700 mb-1">Referral Code:</p>
+                                    <p class="font-bold text-pink-900">{{ referral_code.code }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-pink-700 mb-1">Referral Link:</p>
+                                    <p class="font-mono text-xs text-pink-900 break-all">{{ referral_url }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <a href="{% url 'website:company_invitation' %}"
+                               class="flex-1 bg-gray-500 text-white font-bold py-3 px-6 rounded-lg text-center hover:bg-gray-600 transition">
+                                ← Create Another Invitation
+                            </a>
+                            <a href="{% url 'website:referral_dashboard' %}"
+                               class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold py-3 px-6 rounded-lg text-center hover:from-purple-600 hover:to-pink-600 transition">
+                                📊 View Referral Dashboard
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <script>
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
+    const text = elementId === 'subject' ? 
+        'Partnership Opportunity - Content Creation for {{ company_name }}' : 
+        element.textContent;
+    
+    navigator.clipboard.writeText(text).then(function() {
+        // Show success message
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+        button.innerHTML = '✓ Copied!';
+        button.className = button.className.replace('blue-500', 'green-500').replace('blue-600', 'green-600');
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.className = button.className.replace('green-500', 'blue-500').replace('green-600', 'blue-600');
+        }, 2000);
+    });
+}
+    </script>
+{% endblock %}

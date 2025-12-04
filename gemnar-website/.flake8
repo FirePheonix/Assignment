@@ -1,0 +1,19 @@
+[flake8]
+max-line-length = 120
+exclude = 
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    migrations,
+    staticfiles,
+    node_modules,
+    .tox,
+    .coverage,
+    .coverage.*,
+    .cache,
+    .pytest_cache
+ignore = 
+    E203,  # whitespace before ':'
+    W503,  # line break before binary operator
+    W504,  # line break after binary operator

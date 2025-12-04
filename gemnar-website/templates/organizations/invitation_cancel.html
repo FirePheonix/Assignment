@@ -1,0 +1,77 @@
+{% extends "organizations/base.html" %}
+{% block title %}Cancel Invitation - {{ organization.name }}{% endblock %}
+{% block content %}
+    <div class="max-w-2xl mx-auto py-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="border-b pb-4 mb-6">
+                <h1 class="text-2xl font-bold text-gray-900">Cancel Invitation</h1>
+                <p class="text-gray-600 mt-2">Are you sure you want to cancel this invitation to join {{ organization.name }}?</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 class="font-medium text-gray-900 mb-2">Invitation Details</h3>
+                <dl class="space-y-1">
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Email:</dt>
+                        <dd class="text-sm text-gray-900">
+                            {{ invitation.email }}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Role:</dt>
+                        <dd class="text-sm text-gray-900">
+                            {% if invitation.is_admin %}
+                                Admin
+                            {% else %}
+                                Member
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Status:</dt>
+                        <dd class="text-sm text-gray-900">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if invitation.status == 'pending' %}bg-yellow-100 text-yellow-800 {% elif invitation.status == 'accepted' %}bg-green-100 text-green-800 {% elif invitation.status == 'declined' %}bg-red-100 text-red-800 {% elif invitation.status == 'expired' %}bg-gray-100 text-gray-800 {% endif %}">
+                                {{ invitation.get_status_display }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Sent:</dt>
+                        <dd class="text-sm text-gray-900">
+                            {{ invitation.created_at|date:"M d, Y" }}
+                        </dd>
+                    </div>
+                    <div class="flex justify-between">
+                        <dt class="text-sm text-gray-500">Expires:</dt>
+                        <dd class="text-sm text-gray-900">
+                            {{ invitation.expires_at|date:"M d, Y" }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                <div class="flex">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">Warning</h3>
+                        <p class="text-sm text-red-700 mt-1">
+                            This action cannot be undone. The invitation will be permanently deleted and the recipient will no longer be able to join the organization using this invitation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <form method="post" class="flex items-center justify-between">
+                {% csrf_token %}
+                <a href="{% url 'organization_invitation_list' organization_pk=organization.pk %}"
+                   class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                    ← Back to Invitations
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    Cancel Invitation
+                </button>
+            </form>
+        </div>
+    </div>
+{% endblock %}

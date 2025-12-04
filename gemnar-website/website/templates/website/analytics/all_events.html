@@ -1,0 +1,409 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}All Events - {{ brand.name }} Analytics{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+    <style>
+        .pulse-blue {
+            animation: pulse-blue 2s infinite;
+        }
+        @keyframes pulse-blue {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .new-event {
+            background-color: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            animation: fadeInNew 0.5s ease-in;
+        }
+        @keyframes fadeInNew {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        .event-type-click { color: #dc2626; }
+        .event-type-form_submit { color: #059669; }
+        .event-type-form_focus { color: #0891b2; }
+        .event-type-scroll { color: #7c3aed; }
+        .event-type-error { color: #dc2626; background-color: #fef2f2; }
+        .event-type-custom { color: #6b7280; }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <!-- Connection Status -->
+        <div id="connection-status" class="connection-status">
+            <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 pulse-blue"></div>
+                <span class="text-sm font-medium">Live Events</span>
+            </div>
+        </div>
+        <!-- Breadcrumb Navigation -->
+        {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">All Events - Live View</h1>
+                        <p class="text-gray-600">{{ brand.name }} - Real-time user interactions</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-mouse-pointer mr-1"></i>
+                            <span id="total-count">{{ recent_events|length }}</span> events in last 24h
+                        </div>
+                        <select id="event-filter"
+                                class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                            <option value="">All Events</option>
+                            <option value="click">Clicks</option>
+                            <option value="form_submit">Form Submits</option>
+                            <option value="form_focus">Form Focus</option>
+                            <option value="scroll">Scroll</option>
+                            <option value="error">Errors</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <button id="pause-btn"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            <i class="fas fa-pause mr-1"></i>Pause
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-900">Real-time Events</h2>
+                        <div class="flex items-center space-x-4">
+                            <button id="clear-btn" class="text-gray-500 hover:text-gray-700 text-sm">
+                                <i class="fas fa-trash mr-1"></i>Clear List
+                            </button>
+                            <div class="text-sm text-gray-500">
+                                Auto-refresh: <span class="font-medium text-blue-600">ON</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-hidden">
+                    <div id="events-container"
+                         class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        {% for event in recent_events %}
+                            <div class="p-4 hover:bg-gray-50 event-entry event-type-{{ event.event_type }}"
+                                 data-id="{{ event.id }}"
+                                 data-type="{{ event.event_type }}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                                    {% if event.event_type == 'click' %}
+                                                        <i class="fas fa-mouse-pointer text-red-600 text-sm"></i>
+                                                    {% elif event.event_type == 'form_submit' %}
+                                                        <i class="fas fa-paper-plane text-green-600 text-sm"></i>
+                                                    {% elif event.event_type == 'form_focus' %}
+                                                        <i class="fas fa-edit text-blue-600 text-sm"></i>
+                                                    {% elif event.event_type == 'scroll' %}
+                                                        <i class="fas fa-arrows-alt-v text-purple-600 text-sm"></i>
+                                                    {% elif event.event_type == 'error' %}
+                                                        <i class="fas fa-exclamation-triangle text-red-600 text-sm"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-star text-gray-600 text-sm"></i>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center space-x-2">
+                                                    <p class="text-sm font-medium text-gray-900">
+                                                        {{ event.event_type|capfirst }}
+                                                        {% if event.element_tag %}on {{ event.element_tag|upper }}{% endif %}
+                                                    </p>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                        {{ event.pageview.session.device_type|capfirst }}
+                                                    </span>
+                                                </div>
+                                                <div class="flex items-center space-x-4 mt-1">
+                                                    {% if event.element_text %}
+                                                        <p class="text-sm text-gray-500 truncate">"{{ event.element_text|truncatechars:30 }}"</p>
+                                                    {% endif %}
+                                                    {% if event.element_id %}<span class="text-xs text-blue-600">#{{ event.element_id }}</span>{% endif %}
+                                                    {% if event.x_coordinate and event.y_coordinate %}
+                                                        <span class="text-xs text-gray-400">({{ event.x_coordinate }}, {{ event.y_coordinate }})</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex items-center space-x-4 mt-1">
+                                                    <p class="text-xs text-gray-500 truncate">{{ event.pageview.path }}</p>
+                                                    <span class="text-xs text-gray-400">{{ event.pageview.session.ip_address }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="text-right">
+                                            <p class="text-sm text-gray-900 timestamp"
+                                               data-timestamp="{{ event.timestamp.isoformat }}">
+                                                {{ event.timestamp|timesince }} ago
+                                            </p>
+                                            <p class="text-xs text-gray-500">{{ event.timestamp|date:"H:i:s" }}</p>
+                                        </div>
+                                        <a href="{% url 'website:analytics_session_replay' brand.id event.pageview.session.id %}"
+                                           class="text-blue-600 hover:text-blue-700">
+                                            <i class="fas fa-play text-sm"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fas fa-mouse-pointer text-4xl mb-4"></i>
+                                <p>No events yet. Waiting for real-time data...</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        class EventsMonitor {
+            constructor() {
+                this.eventSource = null;
+                this.isPaused = false;
+                this.currentFilter = '';
+                this.container = document.getElementById('events-container');
+                this.totalCount = document.getElementById('total-count');
+                this.connectionStatus = document.getElementById('connection-status');
+                this.pauseBtn = document.getElementById('pause-btn');
+                this.clearBtn = document.getElementById('clear-btn');
+                this.filterSelect = document.getElementById('event-filter');
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventSource();
+                this.setupEventListeners();
+                this.updateTimestamps();
+                
+                // Update timestamps every minute
+                setInterval(() => this.updateTimestamps(), 60000);
+            }
+
+            setupEventSource() {
+                if (this.eventSource) {
+                    this.eventSource.close();
+                }
+
+                this.eventSource = new EventSource('{% url "website:analytics_events_stream" brand.id %}');
+                
+                this.eventSource.onmessage = (event) => {
+                    if (!this.isPaused) {
+                        const data = JSON.parse(event.data);
+                        this.addNewEvent(data);
+                    }
+                };
+
+                this.eventSource.onerror = () => {
+                    this.updateConnectionStatus(false);
+                    // Reconnect after 5 seconds
+                    setTimeout(() => this.setupEventSource(), 5000);
+                };
+
+                this.eventSource.onopen = () => {
+                    this.updateConnectionStatus(true);
+                };
+            }
+
+            addNewEvent(data) {
+                // Check if this entry already exists
+                if (document.querySelector(`[data-id="${data.id}"]`)) {
+                    return;
+                }
+
+                // Apply filter
+                if (this.currentFilter && data.event_type !== this.currentFilter) {
+                    return;
+                }
+
+                const getEventIcon = (eventType) => {
+                    switch(eventType) {
+                        case 'click': return 'fas fa-mouse-pointer text-red-600';
+                        case 'form_submit': return 'fas fa-paper-plane text-green-600';
+                        case 'form_focus': return 'fas fa-edit text-blue-600';
+                        case 'scroll': return 'fas fa-arrows-alt-v text-purple-600';
+                        case 'error': return 'fas fa-exclamation-triangle text-red-600';
+                        default: return 'fas fa-star text-gray-600';
+                    }
+                };
+
+                const entryHtml = `
+                    <div class="p-4 hover:bg-gray-50 event-entry new-event event-type-${data.event_type}" data-id="${data.id}" data-type="${data.event_type}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                                            <i class="${getEventIcon(data.event_type)} text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2">
+                                            <p class="text-sm font-medium text-gray-900">
+                                                ${data.event_type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                ${data.element_tag ? `on ${data.element_tag.toUpperCase()}` : ''}
+                                            </p>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                Mobile
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center space-x-4 mt-1">
+                                            ${data.element_text ? `<p class="text-sm text-gray-500 truncate">"${data.element_text}"</p>` : ''}
+                                            ${data.element_id ? `<span class="text-xs text-blue-600">#${data.element_id}</span>` : ''}
+                                            ${data.x_coordinate && data.y_coordinate ? `<span class="text-xs text-gray-400">(${data.x_coordinate}, ${data.y_coordinate})</span>` : ''}
+                                        </div>
+                                        <div class="flex items-center space-x-4 mt-1">
+                                            <p class="text-xs text-gray-500 truncate">${data.page_path}</p>
+                                            <span class="text-xs text-gray-400">${data.ip_address}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-900 timestamp" data-timestamp="${data.timestamp}">
+                                        Just now
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        ${new Date(data.timestamp).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                                <a href="/brand/{{ brand.id }}/analytics/sessions/${data.session_id}/replay/" class="text-blue-600 hover:text-blue-700">
+                                    <i class="fas fa-play text-sm"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                this.container.insertAdjacentHTML('afterbegin', entryHtml);
+                
+                // Remove the new-event class after animation
+                setTimeout(() => {
+                    const newEntry = this.container.querySelector('.new-event');
+                    if (newEntry) {
+                        newEntry.classList.remove('new-event');
+                    }
+                }, 500);
+
+                // Update total count
+                const currentCount = parseInt(this.totalCount.textContent);
+                this.totalCount.textContent = currentCount + 1;
+
+                // Keep only the latest 100 entries
+                const entries = this.container.querySelectorAll('.event-entry');
+                if (entries.length > 100) {
+                    entries[entries.length - 1].remove();
+                }
+            }
+
+            applyFilter() {
+                const entries = this.container.querySelectorAll('.event-entry');
+                entries.forEach(entry => {
+                    const eventType = entry.getAttribute('data-type');
+                    if (!this.currentFilter || eventType === this.currentFilter) {
+                        entry.style.display = '';
+                    } else {
+                        entry.style.display = 'none';
+                    }
+                });
+            }
+
+            updateConnectionStatus(connected) {
+                if (connected) {
+                    this.connectionStatus.innerHTML = `
+                        <div class="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 pulse-blue"></div>
+                            <span class="text-sm font-medium">Live Events</span>
+                        </div>
+                    `;
+                } else {
+                    this.connectionStatus.innerHTML = `
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Disconnected</span>
+                        </div>
+                    `;
+                }
+            }
+
+            updateTimestamps() {
+                const timestamps = document.querySelectorAll('.timestamp[data-timestamp]');
+                timestamps.forEach(element => {
+                    const timestamp = new Date(element.getAttribute('data-timestamp'));
+                    const now = new Date();
+                    const diffMs = now - timestamp;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMins / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+
+                    let timeText;
+                    if (diffDays > 0) {
+                        timeText = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+                    } else if (diffHours > 0) {
+                        timeText = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+                    } else if (diffMins > 0) {
+                        timeText = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+                    } else {
+                        timeText = 'Just now';
+                    }
+                    
+                    element.textContent = timeText;
+                });
+            }
+
+            setupEventListeners() {
+                this.pauseBtn.addEventListener('click', () => {
+                    this.isPaused = !this.isPaused;
+                    if (this.isPaused) {
+                        this.pauseBtn.innerHTML = '<i class="fas fa-play mr-1"></i>Resume';
+                        this.pauseBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        this.pauseBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    } else {
+                        this.pauseBtn.innerHTML = '<i class="fas fa-pause mr-1"></i>Pause';
+                        this.pauseBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        this.pauseBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                });
+
+                this.clearBtn.addEventListener('click', () => {
+                    if (confirm('Clear all events from the list?')) {
+                        this.container.innerHTML = `
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fas fa-mouse-pointer text-4xl mb-4"></i>
+                                <p>List cleared. Waiting for new events...</p>
+                            </div>
+                        `;
+                        this.totalCount.textContent = '0';
+                    }
+                });
+
+                this.filterSelect.addEventListener('change', (e) => {
+                    this.currentFilter = e.target.value;
+                    this.applyFilter();
+                });
+            }
+        }
+
+        // Initialize the monitor when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new EventsMonitor();
+        });
+    </script>
+{% endblock %}

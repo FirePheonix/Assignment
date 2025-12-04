@@ -1,0 +1,191 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Creator Sign Up - Gemnar{% endblock %}
+{% block description %}
+    Join Gemnar as a creator and start earning by helping brands with their marketing campaigns.
+{% endblock %}
+{% block content %}
+    <div class="pt-32 pb-16 bg-gray-50 min-h-screen">
+        <div class="container mx-auto px-4">
+            <div class="max-w-2xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4">Join as a Creator</h1>
+                    <p class="text-xl text-gray-600">Get paid to help brands grow their marketing reach</p>
+                </div>
+                <!-- Benefits Section -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Why Join Gemnar?</h2>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                <svg class="w-6 h-6 text-green-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 mb-2">Earn Money</h3>
+                                <p class="text-gray-600">Get paid for participating in marketing campaigns and providing feedback</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                <svg class="w-6 h-6 text-blue-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 mb-2">Flexible Work</h3>
+                                <p class="text-gray-600">Work on your own schedule and choose campaigns that interest you</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                <svg class="w-6 h-6 text-purple-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 mb-2">Build Network</h3>
+                                <p class="text-gray-600">Connect with brands and other creators in the marketing community</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                                <svg class="w-6 h-6 text-orange-600"
+                                     fill="none"
+                                     stroke="currentColor"
+                                     viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 mb-2">Learn Skills</h3>
+                                <p class="text-gray-600">Develop marketing insights and skills through real campaigns</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Registration Form -->
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">Create Your Account</h3>
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first_name" class="block text-gray-700 text-sm font-bold mb-2">First Name</label>
+                                <input type="text"
+                                       id="first_name"
+                                       name="first_name"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="Enter your first name">
+                            </div>
+                            <div>
+                                <label for="last_name" class="block text-gray-700 text-sm font-bold mb-2">Last Name</label>
+                                <input type="text"
+                                       id="last_name"
+                                       name="last_name"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="Enter your last name">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="username" class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                            <input type="text"
+                                   id="username"
+                                   name="username"
+                                   required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                   placeholder="Choose a unique username">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-gray-700 text-sm font-bold mb-2">Email Address</label>
+                            <input type="email"
+                                   id="email"
+                                   name="email"
+                                   required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                   placeholder="Enter your email address">
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="password1" class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                                <input type="password"
+                                       id="password1"
+                                       name="password1"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="Create a password">
+                            </div>
+                            <div>
+                                <label for="password2" class="block text-gray-700 text-sm font-bold mb-2">Confirm Password</label>
+                                <input type="password"
+                                       id="password2"
+                                       name="password2"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                       placeholder="Confirm your password">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="bio" class="block text-gray-700 text-sm font-bold mb-2">Bio (Optional)</label>
+                            <textarea id="bio"
+                                      name="bio"
+                                      rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                                      placeholder="Tell us a little about yourself..."></textarea>
+                        </div>
+                        <div>
+                            <label class="flex items-start">
+                                <input type="checkbox" required class="mr-3 mt-1">
+                                <span class="text-sm text-gray-700">
+                                    I agree to the <a href="{% url 'website:terms' %}"
+    class="text-pink-600 hover:underline">Terms of Service</a> and <a href="{% url 'website:privacy' %}"
+    class="text-pink-600 hover:underline">Privacy Policy</a>
+                                </span>
+                            </label>
+                        </div>
+                        <div>
+                            <label class="flex items-start">
+                                <input type="checkbox" class="mr-3 mt-1">
+                                <span class="text-sm text-gray-700">I want to receive email updates about new campaigns and opportunities</span>
+                            </label>
+                        </div>
+                        <button type="submit"
+                                class="w-full bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg focus:outline-none focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out">
+                            Create Account
+                        </button>
+                    </form>
+                    <div class="mt-6 text-center">
+                        <p class="text-gray-600 text-sm">
+                            Already have an account?
+                            <a href="{% url 'account_login' %}"
+                               class="text-pink-600 hover:underline font-medium">Sign in here</a>
+                        </p>
+                    </div>
+                </div>
+                <!-- Additional Info -->
+                <div class="mt-8 text-center">
+                    <p class="text-gray-500 text-sm">
+                        Questions? <a href="{% url 'website:contact' %}"
+    class="text-pink-600 hover:underline">Contact our support team</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

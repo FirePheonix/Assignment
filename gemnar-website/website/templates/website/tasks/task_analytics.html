@@ -1,0 +1,379 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}Task Analytics: {{ task.title }} - Gemnar{% endblock %}
+{% block extra_css %}
+    <style>
+    .analytics-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .metric-card {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+        transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .progress-bar {
+        background-color: #f3f4f6;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        height: 0.75rem;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        transition: width 0.8s ease;
+        border-radius: 0.5rem;
+        width: 0%;
+    }
+    
+    .task-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .status-distribution {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .status-item {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        text-align: center;
+    }
+    
+    .status-pending { background-color: #fef3c7; }
+    .status-accepted { background-color: #d1fae5; }
+    .status-completed { background-color: #ddd6fe; }
+    .status-rejected { background-color: #fee2e2; }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{% url 'website:task_detail_management' task.pk %}"
+               class="inline-flex items-center text-blue-600 hover:text-blue-700">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Task Management
+            </a>
+        </div>
+        <!-- Task Header -->
+        <div class="task-header">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">{{ task.title }} - Analytics</h1>
+                    <p class="text-blue-100 mb-4">{{ task.description|truncatewords:20 }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <span class="block text-blue-200">Category</span>
+                            <span class="font-medium">{{ task.get_category_display }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-blue-200">Genre</span>
+                            <span class="font-medium">{{ task.get_genre_display }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-blue-200">Created</span>
+                            <span class="font-medium">{{ task.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    {% if task.pay_amount %}
+                        <div class="text-sm text-blue-200">Payment Offered</div>
+                        <div class="text-2xl font-bold">${{ task.pay_amount }}</div>
+                    {% else %}
+                        <div class="text-sm text-blue-200">Incentive Type</div>
+                        <div class="text-lg font-medium">{{ task.get_incentive_type_display }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Key Metrics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="metric-card">
+                <div class="metric-value text-blue-600">{{ analytics_data.total_applications }}</div>
+                <div class="metric-label">Total Applications</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value text-green-600">{{ analytics_data.conversion_rate|floatformat:1 }}%</div>
+                <div class="metric-label">Acceptance Rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value text-purple-600">{{ analytics_data.completion_rate|floatformat:1 }}%</div>
+                <div class="metric-label">Completion Rate</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value text-orange-600">{{ analytics_data.accepted_count }}</div>
+                <div class="metric-label">Accepted Applications</div>
+            </div>
+        </div>
+        <!-- Application Status Breakdown -->
+        <div class="analytics-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Application Status Distribution</h2>
+            <div class="status-distribution">
+                <div class="status-item status-pending">
+                    <div class="text-2xl font-bold text-yellow-700 mb-1">{{ analytics_data.pending_count }}</div>
+                    <div class="text-sm font-medium text-yellow-600">Pending Review</div>
+                    {% if analytics_data.total_applications > 0 %}
+                        <div class="text-xs text-yellow-500 mt-1">
+                            {% widthratio analytics_data.pending_count analytics_data.total_applications 100 %}%
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="status-item status-accepted">
+                    <div class="text-2xl font-bold text-green-700 mb-1">{{ analytics_data.accepted_count }}</div>
+                    <div class="text-sm font-medium text-green-600">Accepted</div>
+                    {% if analytics_data.total_applications > 0 %}
+                        <div class="text-xs text-green-500 mt-1">
+                            {% widthratio analytics_data.accepted_count analytics_data.total_applications 100 %}%
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="status-item status-completed">
+                    <div class="text-2xl font-bold text-purple-700 mb-1">{{ analytics_data.completed_count }}</div>
+                    <div class="text-sm font-medium text-purple-600">Completed</div>
+                    {% if analytics_data.total_applications > 0 %}
+                        <div class="text-xs text-purple-500 mt-1">
+                            {% widthratio analytics_data.completed_count analytics_data.total_applications 100 %}%
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="status-item status-rejected">
+                    <div class="text-2xl font-bold text-red-700 mb-1">{{ analytics_data.rejected_count }}</div>
+                    <div class="text-sm font-medium text-red-600">Rejected</div>
+                    {% if analytics_data.total_applications > 0 %}
+                        <div class="text-xs text-red-500 mt-1">
+                            {% widthratio analytics_data.rejected_count analytics_data.total_applications 100 %}%
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Progress Tracking -->
+        <div class="analytics-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Task Progress</h2>
+            <div class="space-y-4">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Applications Received</span>
+                        <span class="text-sm text-gray-500">{{ analytics_data.total_applications }} total</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bg-blue-500 w-full"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Acceptance Rate</span>
+                        <span class="text-sm text-gray-500">{{ analytics_data.conversion_rate|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bg-green-500"
+                             data-width="{{ analytics_data.conversion_rate }}"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-gray-700">Completion Rate</span>
+                        <span class="text-sm text-gray-500">{{ analytics_data.completion_rate|floatformat:1 }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill bg-purple-500"
+                             data-width="{{ analytics_data.completion_rate }}"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Applications Timeline -->
+        {% if applications_by_day %}
+            <div class="analytics-card">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Applications Over Time (Last 30 Days)</h2>
+                <div class="chart-container">
+                    <canvas id="applicationsChart" width="800" height="300"></canvas>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-7 gap-2 mt-4">
+                    {% for date, count in applications_by_day.items %}
+                        <div class="text-center p-2 bg-gray-50 rounded">
+                            <div class="text-sm font-medium text-gray-900">{{ count }}</div>
+                            <div class="text-xs text-gray-500">{{ date|date:"M d" }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Task Performance Summary -->
+        <div class="analytics-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Performance Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Key Insights</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mr-2 mt-0.5"></i>
+                            {% if analytics_data.total_applications > 0 %}
+                                Your task has received {{ analytics_data.total_applications }} application{{ analytics_data.total_applications|pluralize }}.
+                            {% else %}
+                                No applications received yet.
+                            {% endif %}
+                        </li>
+                        {% if analytics_data.conversion_rate > 0 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-chart-line text-blue-500 mr-2 mt-0.5"></i>
+                                {{ analytics_data.conversion_rate|floatformat:1 }}% of applications have been accepted.
+                            </li>
+                        {% endif %}
+                        {% if analytics_data.completion_rate > 0 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-trophy text-purple-500 mr-2 mt-0.5"></i>
+                                {{ analytics_data.completion_rate|floatformat:1 }}% of accepted applications have been completed.
+                            </li>
+                        {% endif %}
+                        {% if analytics_data.pending_count > 0 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-clock text-yellow-500 mr-2 mt-0.5"></i>
+                                {{ analytics_data.pending_count }} application{{ analytics_data.pending_count|pluralize }} pending your review.
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Recommendations</h3>
+                    <ul class="space-y-2 text-sm text-gray-600">
+                        {% if analytics_data.pending_count > 0 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-lightbulb text-yellow-500 mr-2 mt-0.5"></i>
+                                Review pending applications to keep creators engaged.
+                            </li>
+                        {% endif %}
+                        {% if analytics_data.accepted_count > 0 and analytics_data.completion_rate < 50 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-users text-blue-500 mr-2 mt-0.5"></i>
+                                Follow up with accepted creators to encourage completion.
+                            </li>
+                        {% endif %}
+                        {% if analytics_data.total_applications == 0 %}
+                            <li class="flex items-start">
+                                <i class="fas fa-bullhorn text-green-500 mr-2 mt-0.5"></i>
+                                Consider promoting your task to attract more creators.
+                            </li>
+                        {% endif %}
+                        <li class="flex items-start">
+                            <i class="fas fa-star text-purple-500 mr-2 mt-0.5"></i>
+                            Provide clear feedback to improve future applications.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- Action Panel -->
+        <div class="analytics-card">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div class="flex flex-wrap gap-4">
+                <a href="{% url 'website:task_detail_management' task.pk %}"
+                   class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-cog mr-2"></i>Manage Applications
+                </a>
+                <a href="{% url 'website:api_task_detail' task.pk %}"
+                   class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                    <i class="fas fa-eye mr-2"></i>View Task Details
+                </a>
+                <a href="{% url 'website:active_tasks_dashboard' %}"
+                   class="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+                    <i class="fas fa-list mr-2"></i>All Tasks
+                </a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+{% if applications_by_day %}
+// Applications timeline chart
+const ctx = document.getElementById('applicationsChart').getContext('2d');
+const applicationsData = {
+    labels: [{% for date, count in applications_by_day.items %}'{{ date|date:"M d" }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Applications',
+        data: [{% for date, count in applications_by_day.items %}{{ count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.1,
+        fill: true
+    }]
+};
+
+const config = {
+    type: 'line',
+    data: applicationsData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+};
+
+new Chart(ctx, config);
+{% endif %}
+
+// Set progress bar widths based on data attributes
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBars = document.querySelectorAll('.progress-fill[data-width]');
+    progressBars.forEach(function(bar) {
+        const width = bar.getAttribute('data-width');
+        setTimeout(function() {
+            bar.style.width = width + '%';
+        }, 100);
+    });
+});
+    </script>
+{% endblock %}

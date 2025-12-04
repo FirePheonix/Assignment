@@ -1,0 +1,341 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% block title %}Manage Task: {{ task.title }} - Gemnar{% endblock %}
+{% block extra_css %}
+    <style>
+    .application-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e5e7eb;
+    }
+    
+    .application-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-pending { background-color: #fef3c7; color: #92400e; }
+    .status-accepted { background-color: #d1fae5; color: #065f46; }
+    .status-completed { background-color: #ddd6fe; color: #5b21b6; }
+    .status-rejected { background-color: #fee2e2; color: #991b1b; }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .btn-accept { background-color: #10b981; color: white; }
+    .btn-accept:hover { background-color: #059669; }
+    
+    .btn-reject { background-color: #ef4444; color: white; }
+    .btn-reject:hover { background-color: #dc2626; }
+    
+    .btn-complete { background-color: #8b5cf6; color: white; }
+    .btn-complete:hover { background-color: #7c3aed; }
+    
+    .btn-award { background-color: #f59e0b; color: white; }
+    .btn-award:hover { background-color: #d97706; }
+    
+    .btn-reset { background-color: #6b7280; color: white; }
+    .btn-reset:hover { background-color: #4b5563; }
+    
+    .task-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 0.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .section-header {
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .tab-container {
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 2rem;
+    }
+    
+    .tab-button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        color: #6b7280;
+        transition: all 0.2s;
+    }
+    
+    .tab-button.active {
+        color: #2563eb;
+        border-bottom-color: #2563eb;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .creator-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Back Button -->
+        <div class="mb-6">
+            <a href="{% url 'website:active_tasks_dashboard' %}"
+               class="inline-flex items-center text-blue-600 hover:text-blue-700">
+                <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </a>
+        </div>
+        <!-- Task Header -->
+        <div class="task-header">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold mb-2">{{ task.title }}</h1>
+                    <p class="text-blue-100 mb-4">{{ task.description }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="block text-blue-200">Category</span>
+                            <span class="font-medium">{{ task.get_category_display }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-blue-200">Genre</span>
+                            <span class="font-medium">{{ task.get_genre_display }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-blue-200">Incentive</span>
+                            <span class="font-medium">{{ task.get_incentive_type_display }}</span>
+                        </div>
+                        {% if task.pay_amount %}
+                            <div>
+                                <span class="block text-blue-200">Payment</span>
+                                <span class="font-medium">${{ task.pay_amount }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="flex flex-col items-end space-y-2">
+                    <a href="{% url 'website:task_analytics' task.pk %}"
+                       class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition-colors">
+                        <i class="fas fa-chart-bar mr-2"></i>View Analytics
+                    </a>
+                    <span class="text-blue-200 text-sm">Created: {{ task.created_at|date:"M d, Y" }}</span>
+                    {% if task.deadline %}
+                        <span class="text-blue-200 text-sm">Deadline: {{ task.deadline|date:"M d, Y" }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <!-- Applications Summary -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">Applications Overview</h2>
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <div class="text-2xl font-bold text-gray-900">{{ total_applications }}</div>
+                    <div class="text-sm text-gray-600">Total Applications</div>
+                </div>
+                <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-2xl font-bold text-yellow-700">{{ applications_by_status.PENDING.count }}</div>
+                    <div class="text-sm text-yellow-600">Pending Review</div>
+                </div>
+                <div class="text-center p-4 bg-green-50 rounded-lg">
+                    <div class="text-2xl font-bold text-green-700">{{ applications_by_status.ACCEPTED.count }}</div>
+                    <div class="text-sm text-green-600">Accepted</div>
+                </div>
+                <div class="text-center p-4 bg-purple-50 rounded-lg">
+                    <div class="text-2xl font-bold text-purple-700">{{ applications_by_status.COMPLETED.count }}</div>
+                    <div class="text-sm text-purple-600">Completed</div>
+                </div>
+                <div class="text-center p-4 bg-red-50 rounded-lg">
+                    <div class="text-2xl font-bold text-red-700">{{ applications_by_status.REJECTED.count }}</div>
+                    <div class="text-sm text-red-600">Rejected</div>
+                </div>
+            </div>
+        </div>
+        <!-- Tab Navigation -->
+        <div class="tab-container">
+            <div class="flex space-x-4">
+                <button class="tab-button active" onclick="showTab('pending')">
+                    Pending ({{ applications_by_status.PENDING.count }})
+                </button>
+                <button class="tab-button" onclick="showTab('accepted')">
+                    Accepted ({{ applications_by_status.ACCEPTED.count }})
+                </button>
+                <button class="tab-button" onclick="showTab('completed')">
+                    Completed ({{ applications_by_status.COMPLETED.count }})
+                </button>
+                <button class="tab-button" onclick="showTab('rejected')">
+                    Rejected ({{ applications_by_status.REJECTED.count }})
+                </button>
+                <button class="tab-button" onclick="showTab('all')">All Applications ({{ total_applications }})</button>
+            </div>
+        </div>
+        <!-- Pending Applications Tab -->
+        <div id="pending-tab" class="tab-content active">
+            <h3 class="text-lg font-semibold text-gray-900 section-header">Pending Applications</h3>
+            {% if applications_by_status.PENDING %}
+                <div class="space-y-4">
+                    {% for application in applications_by_status.PENDING %}
+                        {% include 'website/tasks/partials/application_card.html' with application=application show_actions=True %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-4"></i>
+                    <p>No pending applications</p>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Accepted Applications Tab -->
+        <div id="accepted-tab" class="tab-content">
+            <h3 class="text-lg font-semibold text-gray-900 section-header">Accepted Applications</h3>
+            {% if applications_by_status.ACCEPTED %}
+                <div class="space-y-4">
+                    {% for application in applications_by_status.ACCEPTED %}
+                        {% include 'website/tasks/partials/application_card.html' with application=application show_completion=True %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-check-circle text-4xl mb-4"></i>
+                    <p>No accepted applications</p>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Completed Applications Tab -->
+        <div id="completed-tab" class="tab-content">
+            <h3 class="text-lg font-semibold text-gray-900 section-header">Completed Applications</h3>
+            {% if applications_by_status.COMPLETED %}
+                <div class="space-y-4">
+                    {% for application in applications_by_status.COMPLETED %}
+                        {% include 'website/tasks/partials/application_card.html' with application=application show_reset=True %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-star text-4xl mb-4"></i>
+                    <p>No completed applications</p>
+                </div>
+            {% endif %}
+        </div>
+        <!-- Rejected Applications Tab -->
+        <div id="rejected-tab" class="tab-content">
+            <h3 class="text-lg font-semibold text-gray-900 section-header">Rejected Applications</h3>
+            {% if applications_by_status.REJECTED %}
+                <div class="space-y-4">
+                    {% for application in applications_by_status.REJECTED %}
+                        {% include 'website/tasks/partials/application_card.html' with application=application show_reset=True %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-times-circle text-4xl mb-4"></i>
+                    <p>No rejected applications</p>
+                </div>
+            {% endif %}
+        </div>
+        <!-- All Applications Tab -->
+        <div id="all-tab" class="tab-content">
+            <h3 class="text-lg font-semibold text-gray-900 section-header">All Applications</h3>
+            {% if applications %}
+                <div class="space-y-4">
+                    {% for application in applications %}
+                        {% include 'website/tasks/partials/application_card.html' with application=application show_all_actions=True %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8 text-gray-500">
+                    <i class="fas fa-users text-4xl mb-4"></i>
+                    <p>No applications received yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+function showTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+
+function updateApplicationStatus(applicationId, action) {
+    if (confirm(`Are you sure you want to ${action} this application?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.style.display = 'none';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+            <input type="hidden" name="action" value="${action}">
+            <input type="hidden" name="application_id" value="${applicationId}">
+        `;
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Add CSRF token for AJAX requests
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+    </script>
+    <!-- CSRF Token for form submissions -->
+    {% csrf_token %}
+{% endblock %}

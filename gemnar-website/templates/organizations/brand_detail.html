@@ -1,0 +1,668 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}{{ brand.name }} Dashboard{% endblock %}
+{% block org_content %}
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <a href="{% url 'organization_detail' organization.pk %}"
+                   class="text-blue-600 hover:underline mb-2 inline-block">← Back to {{ organization.name }}</a>
+                <h1 class="text-3xl font-bold text-gray-900">{{ brand.name }}</h1>
+                <p class="text-gray-600">{{ brand.description }}</p>
+                <a href="{{ brand.url }}"
+                   target="_blank"
+                   class="text-blue-600 hover:underline">{{ brand.url }}</a>
+            </div>
+            <div class="text-right">
+                <a href="{{ brand.url }}"
+                   target="_blank"
+                   class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg inline-block">Visit Website</a>
+            </div>
+        </div>
+    </div>
+    <!-- Social Media Connections -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Twitter Connection -->
+        <div class="bg-white border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-blue-400"
+                     fill="currentColor"
+                     viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                </svg>
+                Twitter
+            </h2>
+            {% if brand.has_twitter_config %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">✓ Connected</span>
+                    </div>
+                    {% if brand.twitter_username %}
+                        <p class="text-gray-600 text-sm">
+                            <a href="https://twitter.com/{{ brand.twitter_username }}"
+                               target="_blank"
+                               class="text-blue-600 hover:underline">@{{ brand.twitter_username }}</a>
+                        </p>
+                    {% endif %}
+                    {% if is_admin %}
+                        <div class="space-y-2">
+                            <button onclick="showTestTweetModal()"
+                                    class="w-full bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                                Test Tweet
+                            </button>
+                            <a href="{% url 'organization_brand_connect_twitter' organization.pk brand.pk %}"
+                               class="block w-full text-center bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                                Update
+                            </a>
+                            <a href="{% url 'brand_tweet_queue' organization.pk brand.pk %}"
+                               class="block w-full text-center bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                                Queue
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">✗ Not Connected</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">Connect Twitter to enable automated posting.</p>
+                    {% if is_admin %}
+                        <a href="{% url 'organization_brand_connect_twitter' organization.pk brand.pk %}"
+                           class="block w-full text-center bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm">
+                            Connect Twitter
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <!-- Instagram Connection -->
+        <div class="bg-white border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-purple-400"
+                     fill="currentColor"
+                     viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                </svg>
+                Instagram
+            </h2>
+            {% if brand.has_instagram_config %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">✓ Connected</span>
+                    </div>
+                    {% if brand.instagram_username %}
+                        <p class="text-gray-600 text-sm">
+                            <a href="https://instagram.com/{{ brand.instagram_username }}"
+                               target="_blank"
+                               class="text-purple-600 hover:underline">@{{ brand.instagram_username }}</a>
+                        </p>
+                    {% endif %}
+                    {% if is_admin %}
+                        <div class="space-y-2">
+                            <button onclick="showTestInstagramModal()"
+                                    class="w-full bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                                Test Post
+                            </button>
+                            <a href="{% url 'organization_brand_connect_instagram' organization.pk brand.pk %}"
+                               class="block w-full text-center bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                                Update
+                            </a>
+                            <a href="{% url 'brand_instagram_queue' organization.pk brand.pk %}"
+                               class="block w-full text-center bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                                Queue
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">✗ Not Connected</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">Connect Instagram to enable automated posting.</p>
+                    {% if is_admin %}
+                        <a href="{% url 'organization_brand_connect_instagram' organization.pk brand.pk %}"
+                           class="block w-full text-center bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm">
+                            Connect Instagram
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <!-- Slack Integration -->
+        <div class="bg-white border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-green-400"
+                     fill="currentColor"
+                     viewBox="0 0 24 24">
+                    <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.521-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.523 2.521h-2.521V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.521A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.523v-2.521h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
+                </svg>
+                Slack Notifications
+            </h2>
+            {% if brand.has_slack_config %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">✓ Connected</span>
+                    </div>
+                    {% if brand.slack_channel %}<p class="text-gray-600 text-sm">Channel: #{{ brand.slack_channel }}</p>{% endif %}
+                    {% if is_admin %}
+                        <div class="space-y-2">
+                            <button onclick="testSlackNotification({{ brand.id }})"
+                                    class="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                                Test Notification
+                            </button>
+                            <button onclick="showSlackConfigModal()"
+                                    class="w-full bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded text-sm">
+                                Update
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">✗ Not Connected</span>
+                    </div>
+                    <p class="text-gray-600 text-sm">Get notified when your tweet queue is empty.</p>
+                    {% if is_admin %}
+                        <button onclick="showSlackConfigModal()"
+                                class="w-full bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm">
+                            Setup Slack
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+        <!-- Brand Stats -->
+        <div class="bg-white border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Brand Stats</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Created:</span>
+                    <span class="font-medium">{{ brand.created_at|date:"M d, Y" }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Organization:</span>
+                    <span class="font-medium">{{ organization.name }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Brand URL:</span>
+                    {% if brand.slug %}
+                        <a href="{% url 'website:brand_profile' brand.slug %}"
+                           target="_blank"
+                           class="text-blue-600 hover:underline">gemnar.com/{{ brand.slug }}</a>
+                    {% else %}
+                        <span class="text-gray-400">gemnar.com/no-slug (needs fixing)</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Brand Settings -->
+    {% if is_admin %}
+        <div class="bg-white border rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-bold mb-4 flex items-center">
+                <i class="fas fa-cog text-gray-600 mr-2"></i>
+                Brand Settings
+            </h3>
+            <div class="space-y-4">
+                <!-- Default Brand Setting -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <h4 class="font-medium text-gray-900">Default Brand</h4>
+                        <p class="text-sm text-gray-600">
+                            {% if brand.is_default %}
+                                This brand is currently set as the default for {{ organization.name }}
+                            {% else %}
+                                Set this brand as the default for {{ organization.name }}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="flex items-center">
+                        {% if brand.is_default %}
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                                <i class="fas fa-star text-green-600 mr-1"></i>
+                                Default
+                            </span>
+                        {% else %}
+                            <button onclick="setAsDefault({{ brand.pk }})"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                                <i class="fas fa-star mr-1"></i>
+                                Set as Default
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Additional settings can be added here -->
+                <div class="border-t pt-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-medium text-gray-900">Brand Information</h4>
+                            <p class="text-sm text-gray-600">Manage basic brand details and settings</p>
+                        </div>
+                        <button onclick="showEditBrandModal()"
+                                class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                            <i class="fas fa-edit mr-1"></i>
+                            Edit Brand
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Twitter API Keys (for admins) -->
+    {% if is_admin and brand.has_twitter_config %}
+        <div class="bg-gray-50 border rounded-lg p-6 mb-6">
+            <h3 class="text-lg font-bold mb-4">Twitter API Configuration</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <label class="block text-gray-600 mb-1">API Key:</label>
+                    <code class="bg-white px-3 py-2 rounded border block">{{ twitter_keys_status.api_key }}</code>
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">API Secret:</label>
+                    <code class="bg-white px-3 py-2 rounded border block">{{ twitter_keys_status.api_secret }}</code>
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">Access Token:</label>
+                    <code class="bg-white px-3 py-2 rounded border block">{{ twitter_keys_status.access_token }}</code>
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">Access Token Secret:</label>
+                    <code class="bg-white px-3 py-2 rounded border block">{{ twitter_keys_status.access_token_secret }}</code>
+                </div>
+                <div>
+                    <label class="block text-gray-600 mb-1">Bearer Token:</label>
+                    <code class="bg-white px-3 py-2 rounded border block">{{ twitter_keys_status.bearer_token }}</code>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Test Tweet Modal -->
+    <div id="testTweetModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Send Test Tweet</h3>
+                <form id="testTweetForm">
+                    {% csrf_token %}
+                    <textarea id="tweetContent"
+                              name="content"
+                              rows="4"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="What's happening?"
+                              maxlength="280">Test tweet from {{ brand.name }} via Gemnar! 🚀</textarea>
+                    <div class="flex justify-between items-center mt-3">
+                        <span id="charCount" class="text-sm text-gray-500">280 characters remaining</span>
+                        <div class="space-x-2">
+                            <button type="button"
+                                    onclick="hideTestTweetModal()"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel</button>
+                            <button type="submit"
+                                    class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                                Send Tweet
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Test Instagram Modal -->
+    <div id="testInstagramModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Send Test Instagram Post</h3>
+                <form id="testInstagramForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="instagramImage"
+                               class="block text-sm font-medium text-gray-700 mb-2">Image *</label>
+                        <input type="file"
+                               id="instagramImage"
+                               name="image"
+                               accept="image/*"
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                        <p class="text-xs text-gray-500 mt-1">Required for Instagram posts</p>
+                    </div>
+                    <textarea id="instagramContent"
+                              name="content"
+                              rows="4"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              placeholder="Write a caption..."
+                              maxlength="2200">Test post from {{ brand.name }} via Gemnar! 📸</textarea>
+                    <div class="flex justify-between items-center mt-3">
+                        <span id="instagramCharCount" class="text-sm text-gray-500">2200 characters remaining</span>
+                        <div class="space-x-2">
+                            <button type="button"
+                                    onclick="hideTestInstagramModal()"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel</button>
+                            <button type="submit"
+                                    class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                                Send Post
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Slack Configuration Modal -->
+    <div id="slackConfigModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Configure Slack Notifications</h3>
+                <form id="slackConfigForm">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label for="slackWebhookUrl"
+                               class="block text-sm font-medium text-gray-700 mb-2">Slack Webhook URL *</label>
+                        <input type="url"
+                               id="slackWebhookUrl"
+                               name="slack_webhook_url"
+                               value="{{ brand.slack_webhook_url|default:'' }}"
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                               placeholder="https://hooks.slack.com/services/...">
+                        <p class="text-xs text-gray-500 mt-1">
+                            <a href="https://slack.com/help/articles/115005265063-Incoming-webhooks-for-Slack"
+                               target="_blank"
+                               class="text-blue-600 hover:underline">Learn how to create a Slack webhook</a>
+                        </p>
+                    </div>
+                    <div class="mb-4">
+                        <label for="slackChannel"
+                               class="block text-sm font-medium text-gray-700 mb-2">Channel (optional)</label>
+                        <input type="text"
+                               id="slackChannel"
+                               name="slack_channel"
+                               value="{{ brand.slack_channel|default:'' }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                               placeholder="general">
+                        <p class="text-xs text-gray-500 mt-1">Leave empty to use webhook default</p>
+                    </div>
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox"
+                                   id="slackEnabled"
+                                   name="slack_notifications_enabled"
+                                   {% if brand.slack_notifications_enabled %}checked{% endif %}
+                                   class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                            <span class="ml-2 text-sm text-gray-700">Enable notifications</span>
+                        </label>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <div class="space-x-2">
+                            <button type="button"
+                                    onclick="hideSlackConfigModal()"
+                                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">Cancel</button>
+                            <button type="submit"
+                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                                Save Configuration
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function showTestTweetModal() {
+            document.getElementById('testTweetModal').classList.remove('hidden');
+        }
+
+        function hideTestTweetModal() {
+            document.getElementById('testTweetModal').classList.add('hidden');
+        }
+        
+        function showTestInstagramModal() {
+            document.getElementById('testInstagramModal').classList.remove('hidden');
+        }
+
+        function hideTestInstagramModal() {
+            document.getElementById('testInstagramModal').classList.add('hidden');
+        }
+
+        function showSlackConfigModal() {
+            document.getElementById('slackConfigModal').classList.remove('hidden');
+        }
+
+        function hideSlackConfigModal() {
+            document.getElementById('slackConfigModal').classList.add('hidden');
+        }
+
+        function testSlackNotification(brandId) {
+            fetch(`/api/brands/${brandId}/slack/test/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Test notification sent successfully! Check your Slack channel.');
+                } else {
+                    alert('❌ Failed to send test notification: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error: ' + error);
+            });
+        }
+
+        // Character counter
+        document.getElementById('tweetContent').addEventListener('input', function(e) {
+            const remaining = 280 - e.target.value.length;
+            document.getElementById('charCount').textContent = remaining + ' characters remaining';
+            document.getElementById('charCount').className = remaining < 0 ? 'text-sm text-red-500' : 'text-sm text-gray-500';
+        });
+
+        // Test tweet form submission
+        document.getElementById('testTweetForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const button = e.target.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+            
+            button.textContent = 'Sending...';
+            button.disabled = true;
+            
+            fetch('{% url "organization_brand_test_tweet" organization.pk brand.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Tweet sent successfully!\n\nTweet ID: ' + data.tweet_id + '\nView at: ' + data.tweet_url);
+                    hideTestTweetModal();
+                } else {
+                    let errorMessage = 'Error sending tweet: ' + data.error;
+                    
+                    if (data.error_type === 'access_level') {
+                        errorMessage += '\n\n🔧 How to fix this:\n';
+                        errorMessage += '1. Visit the X Developer Portal\n';
+                        errorMessage += '2. Upgrade to "Basic access" or higher\n';
+                        errorMessage += '3. Update your app configuration\n';
+                        errorMessage += '4. Regenerate your API keys after upgrade\n';
+                        errorMessage += '5. Update your credentials in Gemnar';
+                    } else if (data.error.includes('authorization failed') || data.error.includes('credentials are invalid')) {
+                        errorMessage += '\n\n🔧 How to fix this:\n';
+                        errorMessage += '1. Check your API keys are correct\n';
+                        errorMessage += '2. Ensure your app has "Read and Write" permissions\n';
+                        errorMessage += '3. Regenerate your access tokens if needed\n';
+                        errorMessage += '4. Make sure your app has Basic access level or higher';
+                    }
+                    
+                    alert(errorMessage);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Instagram character counter
+        document.getElementById('instagramContent').addEventListener('input', function(e) {
+            const remaining = 2200 - e.target.value.length;
+            document.getElementById('instagramCharCount').textContent = remaining + ' characters remaining';
+            document.getElementById('instagramCharCount').className = remaining < 0 ? 'text-sm text-red-500' : 'text-sm text-gray-500';
+        });
+
+        // Test Instagram form submission
+        document.getElementById('testInstagramForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const button = e.target.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+            
+            button.textContent = 'Posting...';
+            button.disabled = true;
+            
+            fetch('{% url "organization_brand_test_instagram" organization.pk brand.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Instagram post sent successfully!\n\nPost ID: ' + data.instagram_id + (data.instagram_url ? '\nView at: ' + data.instagram_url : ''));
+                    hideTestInstagramModal();
+                } else {
+                    let errorMessage = 'Error sending Instagram post: ' + data.error;
+                    
+                    if (data.error.includes('authorization failed') || data.error.includes('credentials are invalid')) {
+                        errorMessage += '\n\n🔧 How to fix this:\n';
+                        errorMessage += '1. Check your Instagram API credentials are correct\n';
+                        errorMessage += '2. Ensure your app has Instagram permissions\n';
+                        errorMessage += '3. Regenerate your access token if needed\n';
+                        errorMessage += '4. Make sure your Instagram account is connected to the Facebook app';
+                    }
+                    
+                    alert(errorMessage);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('testTweetModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideTestTweetModal();
+            }
+        });
+        
+        document.getElementById('testInstagramModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideTestInstagramModal();
+            }
+        });
+
+        // Slack configuration form submission
+        document.getElementById('slackConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const button = e.target.querySelector('button[type="submit"]');
+            const originalText = button.textContent;
+            
+            button.textContent = 'Saving...';
+            button.disabled = true;
+            
+            const payload = {
+                slack_webhook_url: formData.get('slack_webhook_url'),
+                slack_channel: formData.get('slack_channel'),
+                slack_notifications_enabled: formData.get('slack_notifications_enabled') === 'on'
+            };
+            
+            fetch(`/api/brands/{{ brand.id }}/slack/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Slack configuration saved successfully!');
+                    hideSlackConfigModal();
+                    // Reload page to show updated status
+                    window.location.reload();
+                } else {
+                    alert('❌ Failed to save Slack configuration: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error: ' + error);
+            })
+            .finally(() => {
+                button.textContent = originalText;
+                button.disabled = false;
+            });
+        });
+
+        // Close Slack modal when clicking outside
+        document.getElementById('slackConfigModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideSlackConfigModal();
+            }
+        });
+        
+        // Set brand as default
+        function setAsDefault(brandId) {
+            if (!confirm('Set this brand as the default for {{ organization.name }}?')) {
+                return;
+            }
+            
+            fetch(`/api/brands/${brandId}/set-default/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Refresh to show updated status
+                } else {
+                    alert('❌ Error setting brand as default: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('❌ Error: ' + error);
+            });
+        }
+        
+        // Placeholder for edit brand modal (can be implemented later)
+        function showEditBrandModal() {
+            alert('Edit brand functionality coming soon!');
+        }
+    </script>
+{% endblock %}

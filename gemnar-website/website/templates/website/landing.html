@@ -1,0 +1,1000 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Gemnar Dashboard{% endblock %}
+{% block description %}Welcome to Gemnar - Your personalized marketing dashboard{% endblock %}
+{% block keywords %}Gemnar, marketing, dashboard, creator, brand{% endblock %}
+{% block extra_head %}
+    <style>
+            body {
+                font-family: 'Source Sans Pro', sans-serif;
+            }
+            .custom-pink {
+                background-color: #D13B8F;
+            }
+            .gradient-bg {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            .stat-card {
+                transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            }
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            }
+            .integration-badge {
+                display: inline-flex;
+                align-items: center;
+                padding: 0.5rem 1rem;
+                border-radius: 9999px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                margin: 0.25rem;
+            }
+            .connected {
+                background-color: #10B981;
+                color: white;
+            }
+            .not-connected {
+                background-color: #EF4444;
+                color: white;
+            }
+            .coming-soon {
+                background-color: #F59E0B;
+                color: white;
+            }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="bg-gray-50 min-h-screen">
+        {% if not has_brand and not has_creator_profile %}
+            <!-- First time user - show choice -->
+            <div class="min-h-screen flex flex-col items-center justify-center px-6 py-8 gradient-bg">
+                <div class="mb-16">
+                    <img src="{% static 'images/logo.png' %}?v=1234567890"
+                         alt="Gemnar Logo"
+                         width="256"
+                         height="80"
+                         class="h-20 w-auto mx-auto" />
+                </div>
+                <div class="w-full max-w-xs space-y-8">
+                    <a href="{% url 'website:creator_step1' %}" class="block w-full">
+                        <div class="bg-white text-gray-800 rounded-2xl py-6 px-8 text-center shadow-lg transform transition hover:scale-105 duration-300 ease-in-out">
+                            <h2 class="text-xl font-bold">I'm a Creator</h2>
+                            <p class="text-sm text-gray-600 mt-2">Get paid to help brands grow</p>
+                        </div>
+                    </a>
+                    <a href="{% url 'website:brand_signup' %}" class="block w-full">
+                        <div class="bg-white text-gray-800 rounded-2xl py-6 px-8 text-center shadow-lg transform transition hover:scale-105 duration-300 ease-in-out">
+                            <h2 class="text-xl font-bold">I'm a Business</h2>
+                            <p class="text-sm text-gray-600 mt-2">Connect with creators & automate marketing</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        {% elif has_brand %}
+            <!-- Brand Dashboard -->
+            <div class="min-h-screen bg-gray-50">
+                <!-- Main Content -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Organization/Brand Selector -->
+                    {% if org_data %}
+                        <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-building text-blue-600 mr-2"></i>
+                                        <span class="text-sm font-medium text-gray-700">Organization:</span>
+                                    </div>
+                                    <select id="organization-selector"
+                                            class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        {% for org_info in org_data %}
+                                            <option value="{{ org_info.organization.pk }}"
+                                                    {% if forloop.first %}selected{% endif %}>
+                                                {{ org_info.organization.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <span class="text-sm font-medium text-gray-700">Brand:</span>
+                                    <select id="brand-selector"
+                                            class="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                        {% for org_info in org_data %}
+                                            {% if forloop.first %}
+                                                {% for brand_info in org_info.brands %}
+                                                    <option value="{{ brand_info.brand.pk }}"
+                                                            data-org="{{ org_info.organization.pk }}"
+                                                            {% if brand_info.brand.is_default or forloop.first %}selected{% endif %}>
+                                                        {{ brand_info.brand.name }}
+                                                        {% if brand_info.brand.is_default %}(Default){% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <!-- Server Time and Countdown -->
+                                <div class="flex items-center space-x-3">
+                                    <div class="text-right">
+                                        <div class="text-sm font-medium text-red-600" id="system-time">System Time: Loading...</div>
+                                    </div>
+                                    <div class="relative" title="Minute progress">
+                                        <!-- Minute Countdown Ring (fills as the current minute elapses) -->
+                                        <div class="w-6 h-6 relative" id="countdown-container">
+                                            <div id="pacman"
+                                                 class="w-6 h-6 rounded-full"
+                                                 aria-label="Minute progress indicator"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {# Moved per-card compact metrics into each card below to keep header clean #}
+                        </div>
+                    {% endif %}
+                    <!-- Stats Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8">
+                        <!-- Tweets Sent -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                        <i class="fab fa-twitter text-xl"></i>
+                                    </div>
+                                    <div class="ml-4 flex items-start space-x-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600 flex items-center space-x-2">
+                                                <span>Twitter (x)</span>
+                                                <a href="https://twitter.com"
+                                                   target="_blank"
+                                                   rel="noopener"
+                                                   class="inline-flex items-center px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[11px] font-medium hover:bg-blue-100 border border-blue-200"
+                                                   title="Open Twitter">
+                                                    Open
+                                                    <i class="fas fa-external-link-alt ml-1 text-[10px]"></i>
+                                                </a>
+                                            </p>
+                                            <p class="text-2xl font-bold text-gray-900">{{ twitter_stats.tweets_sent }} Tweets</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Compact Twitter aggregated metrics (top 3) -->
+                            <div class="mt-2 grid grid-cols-3 gap-2 text-[11px] leading-tight text-gray-600">
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ twitter_stats.likes|default:0 }}</span>
+                                    <div class="mt-0.5">Likes</div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ twitter_stats.retweets|default:0 }}</span>
+                                    <div class="mt-0.5">Retweets</div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ twitter_stats.replies|default:0 }}</span>
+                                    <div class="mt-0.5">Replies</div>
+                                </div>
+                            </div>
+                            <!-- Action Buttons: Live / Queue / Settings -->
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <a href="{% url 'website:tweet_dashboard' %}"
+                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300">
+                                    Live
+                                </a>
+                                {% if org_data and primary_brand %}
+                                    {% for org_info in org_data %}
+                                        {% for brand_info in org_info.brands %}
+                                            {% if brand_info.brand.pk == primary_brand.pk %}
+                                                <a href="{% url 'brand_tweet_queue' org_info.organization.pk primary_brand.pk %}"
+                                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700">
+                                                    Queue
+                                                </a>
+                                                <a href="{% url 'organization_brand_connect_twitter' org_info.organization.pk primary_brand.pk %}"
+                                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300">
+                                                    <i class="fas fa-cog mr-1 text-[10px]"></i>Settings
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                {% else %}
+                                    <a href="{% url 'website:tweet_dashboard' %}"
+                                       class="px-3 py-1 rounded-md text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700">
+                                        Queue
+                                    </a>
+                                    <a href="{% url 'website:tweet_dashboard' %}"
+                                       class="px-3 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300">
+                                        <i class="fas fa-cog mr-1 text-[10px]"></i>Settings
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Instagram Posts -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                        <i class="fab fa-instagram text-xl"></i>
+                                    </div>
+                                    <div class="ml-4 flex items-start space-x-2">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-600 flex items-center space-x-2">
+                                                <span>Instagram</span>
+                                                <a href="https://instagram.com"
+                                                   target="_blank"
+                                                   rel="noopener"
+                                                   class="inline-flex items-center px-2 py-0.5 bg-purple-50 text-purple-600 rounded text-[11px] font-medium hover:bg-purple-100 border border-purple-200"
+                                                   title="Open Instagram">
+                                                    Open
+                                                    <i class="fas fa-external-link-alt ml-1 text-[10px]"></i>
+                                                </a>
+                                            </p>
+                                            <p class="text-2xl font-bold text-gray-900">{{ instagram_stats.posts_sent }} Posts</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Compact Instagram aggregated metrics (top 3) -->
+                            <div class="mt-2 grid grid-cols-3 gap-2 text-[11px] leading-tight text-gray-600">
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ instagram_stats.likes|default:0 }}</span>
+                                    <div class="mt-0.5">Likes</div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ instagram_stats.comments|default:0 }}</span>
+                                    <div class="mt-0.5">Comments</div>
+                                </div>
+                                <div class="text-center">
+                                    <span class="font-semibold text-gray-800">{{ instagram_stats.reach|default:0 }}</span>
+                                    <div class="mt-0.5">Reach</div>
+                                </div>
+                            </div>
+                            <!-- Action Buttons: Live / Queue / Settings -->
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <a href="{% url 'website:analytics_dashboard' primary_brand.id %}?platform=instagram"
+                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300">
+                                    Live
+                                </a>
+                                {% if org_data and primary_brand %}
+                                    {% for org_info in org_data %}
+                                        {% for brand_info in org_info.brands %}
+                                            {% if brand_info.brand.pk == primary_brand.pk %}
+                                                <a href="{% url 'brand_instagram_queue' org_info.organization.pk primary_brand.pk %}"
+                                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700">
+                                                    Queue
+                                                </a>
+                                                <a href="{% url 'organization_brand_connect_instagram' org_info.organization.pk primary_brand.pk %}"
+                                                   class="px-3 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 border border-gray-300">
+                                                    <i class="fas fa-cog mr-1 text-[10px]"></i>Settings
+                                                </a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Active Tasks -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                        <i class="fas fa-tasks text-xl"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-gray-600">Active Tasks</p>
+                                        <p class="text-2xl font-bold text-gray-900">{{ task_stats.active_tasks }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'website:active_tasks_dashboard' %}"
+                               class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                View Tasks
+                            </a>
+                        </div>
+                        <!-- Analytics -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                                        <i class="fas fa-chart-line text-xl"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-gray-600">Sessions</p>
+                                        <p class="text-2xl font-bold text-gray-900">{{ analytics_stats.total_sessions }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <a href="{% url 'website:analytics_dashboard' primary_brand.id %}"
+                               class="block w-full bg-orange-600 text-white text-center py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium">
+                                View Insights
+                            </a>
+                        </div>
+                        <!-- CRM -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <div class="p-3 rounded-full bg-indigo-100 text-indigo-600">
+                                        <i class="fas fa-users-cog text-xl"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <p class="text-sm font-medium text-gray-600">Companies</p>
+                                        {% if org_data %}
+                                            <p class="text-2xl font-bold text-gray-900">{{ org_data.0.crm_summary.total_companies }}</p>
+                                        {% else %}
+                                            <p class="text-2xl font-bold text-gray-900">0</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if org_data %}
+                                <a href="{% url 'crm_dashboard' org_data.0.organization.pk %}"
+                                   class="block w-full bg-indigo-600 text-white text-center py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                                    Manage Customers
+                                </a>
+                            {% else %}
+                                <a href="{% url 'organization_add' %}"
+                                   class="block w-full bg-gray-400 text-white text-center py-2 rounded-lg hover:bg-gray-500 transition-colors text-sm font-medium">
+                                    Create Organization
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <!-- Analytics & Recent Activity Preview -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <!-- Analytics Preview -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-gray-900">
+                                    <i class="fas fa-chart-line text-green-600 mr-2"></i>Analytics Overview
+                                </h3>
+                                <a href="{% url 'website:analytics_dashboard' primary_brand.id %}"
+                                   class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                    View Full Analytics →
+                                </a>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-blue-50 rounded-lg p-3">
+                                        <div class="flex items-center">
+                                            <i class="fab fa-twitter text-blue-500 mr-2"></i>
+                                            <div>
+                                                <p class="text-xs text-gray-600">Twitter Engagement</p>
+                                                <p class="text-lg font-bold text-gray-900">{{ twitter_stats.total_clicks|default:0 }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-purple-50 rounded-lg p-3">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center">
+                                                <i class="fab fa-instagram text-purple-500 mr-2"></i>
+                                                <div>
+                                                    <p class="text-xs text-gray-600">Instagram Reach</p>
+                                                    <p class="text-lg font-bold text-gray-900">{{ instagram_stats.total_engagement|default:0 }}</p>
+                                                </div>
+                                            </div>
+                                            <a href="{% url 'website:analytics_dashboard' primary_brand.id %}?platform=instagram"
+                                               class="text-purple-600 hover:text-purple-700"
+                                               title="View Instagram reach details">
+                                                <i class="fas fa-info-circle text-sm"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 rounded-lg p-3">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Performance This Week</p>
+                                            <p class="text-xs text-gray-600">{{ twitter_stats.tweets_sent|add:instagram_stats.posts_sent }} posts published</p>
+                                        </div>
+                                        <div class="text-green-600">
+                                            <i class="fas fa-arrow-up mr-1"></i>
+                                            <span class="text-sm font-bold">+12%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Recent Activity -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-bold text-gray-900">
+                                    <i class="fas fa-clock text-blue-600 mr-2"></i>Recent Activity
+                                </h3>
+                                <a href="{% url 'website:tweet_dashboard' %}"
+                                   class="text-blue-600 hover:text-blue-700 text-sm font-medium">View All →</a>
+                            </div>
+                            <div class="space-y-3">
+                                {% if twitter_stats.tweets_sent > 0 %}
+                                    <div class="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                                        <i class="fab fa-twitter text-blue-500 mt-1"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900">Latest Tweet Published</p>
+                                            <p class="text-xs text-gray-600">
+                                                {{ twitter_stats.tweets_sent }} tweet{{ twitter_stats.tweets_sent|pluralize }} sent today
+                                            </p>
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ twitter_stats.tweets_sent|default:0 }}h ago</span>
+                                    </div>
+                                {% endif %}
+                                {% if instagram_stats.posts_sent > 0 %}
+                                    <div class="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
+                                        <i class="fab fa-instagram text-purple-500 mt-1"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900">Instagram Post Shared</p>
+                                            <p class="text-xs text-gray-600">
+                                                {{ instagram_stats.posts_sent }} post{{ instagram_stats.posts_sent|pluralize }} published
+                                            </p>
+                                        </div>
+                                        <span class="text-xs text-gray-500">2h ago</span>
+                                    </div>
+                                {% endif %}
+                                {% if task_stats.active_tasks > 0 %}
+                                    <div class="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                                        <i class="fas fa-tasks text-green-500 mt-1"></i>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900">New Task Applications</p>
+                                            <p class="text-xs text-gray-600">{{ task_stats.total_applications }} total applications received</p>
+                                        </div>
+                                        <span class="text-xs text-gray-500">4h ago</span>
+                                    </div>
+                                {% endif %}
+                                {% if not twitter_stats.tweets_sent and not instagram_stats.posts_sent and not task_stats.active_tasks %}
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-inbox text-gray-400 text-2xl mb-2"></i>
+                                        <p class="text-sm text-gray-600">No recent activity</p>
+                                        <p class="text-xs text-gray-500">Start creating content to see activity here</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Organizations & Brands -->
+                    {% if org_data %}
+                        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                            <h2 class="text-xl font-bold text-gray-900 mb-6">Organizations & Brands</h2>
+                            {% for org_info in org_data %}
+                                <div class="mb-6 last:mb-0">
+                                    <!-- Organization Header -->
+                                    <div class="flex items-center justify-between mb-4">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-building text-2xl text-blue-600 mr-3"></i>
+                                            <div>
+                                                <h3 class="font-bold text-gray-900">{{ org_info.organization.name }}</h3>
+                                                <p class="text-sm text-gray-600">{{ org_info.brands|length }} brand{{ org_info.brands|length|pluralize }}</p>
+                                            </div>
+                                        </div>
+                                        <a href="{% url 'organization_detail' org_info.organization.pk %}"
+                                           class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                            Manage Organization →
+                                        </a>
+                                    </div>
+                                    <!-- Brands Grid -->
+                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 ml-8">
+                                        {% for brand_info in org_info.brands %}
+                                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                                <!-- Brand Header -->
+                                                <div class="flex items-center justify-between mb-3">
+                                                    <div class="flex items-center">
+                                                        <i class="fas fa-store text-lg text-purple-600 mr-2"></i>
+                                                        <h4 class="font-semibold text-gray-900">{{ brand_info.brand.name }}</h4>
+                                                    </div>
+                                                    <div class="flex items-center space-x-2">
+                                                        <a href="{% url 'organization_brand_detail' org_info.organization.pk brand_info.brand.pk %}"
+                                                           title="Manage Brand"
+                                                           class="text-gray-500 hover:text-gray-700">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4">
+                                                                </path>
+                                                            </svg>
+                                                        </a>
+                                                        <a href="{% url 'organization_brand_detail' org_info.organization.pk brand_info.brand.pk %}"
+                                                           class="text-purple-600 hover:text-purple-700 text-xs">
+                                                            Manage →
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <!-- Platform Integrations -->
+                                                <div class="space-y-2">
+                                                    <!-- Twitter -->
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <div class="flex items-center">
+                                                            <i class="fab fa-twitter text-blue-400 mr-2"></i>
+                                                            <span class="text-gray-700">Twitter</span>
+                                                        </div>
+                                                        {% if brand_info.twitter_connected %}
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="integration-badge connected text-xs">
+                                                                    <i class="fas fa-check mr-1"></i>Connected
+                                                                </span>
+                                                                <a href="{% url 'brand_tweet_queue' org_info.organization.pk brand_info.brand.pk %}"
+                                                                   title="Manage Twitter"
+                                                                   class="text-blue-600 hover:text-blue-800">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                                                        </path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                    </svg>
+                                                                </a>
+                                                                <span class="text-gray-600 text-xs">
+                                                                    {{ brand_info.twitter_stats.tweets_sent }}/{{ brand_info.twitter_stats.tweets_pending }}
+                                                                </span>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="integration-badge not-connected text-xs">
+                                                                    <i class="fas fa-times mr-1"></i>Not Connected
+                                                                </span>
+                                                                <a href="{% url 'organization_brand_connect_twitter' org_info.organization.pk brand_info.brand.pk %}"
+                                                                   title="Connect Twitter"
+                                                                   class="text-blue-600 hover:text-blue-800">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <!-- Instagram -->
+                                                    <div class="flex items-center justify-between text-sm">
+                                                        <div class="flex items-center">
+                                                            <i class="fab fa-instagram text-purple-500 mr-2"></i>
+                                                            <span class="text-gray-700">Instagram</span>
+                                                        </div>
+                                                        {% if brand_info.instagram_connected %}
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="integration-badge connected text-xs">
+                                                                    <i class="fas fa-check mr-1"></i>Connected
+                                                                </span>
+                                                                <a href="{% url 'brand_instagram_queue' org_info.organization.pk brand_info.brand.pk %}"
+                                                                   title="Manage Instagram"
+                                                                   class="text-purple-600 hover:text-purple-800">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                                                                        </path>
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                                    </svg>
+                                                                </a>
+                                                                <span class="text-gray-600 text-xs">
+                                                                    {{ brand_info.instagram_stats.posts_sent }}/{{ brand_info.instagram_stats.posts_pending }}
+                                                                </span>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="flex items-center space-x-2">
+                                                                <span class="integration-badge not-connected text-xs">
+                                                                    <i class="fas fa-times mr-1"></i>Not Connected
+                                                                </span>
+                                                                <a href="{% url 'organization_brand_connect_instagram' org_info.organization.pk brand_info.brand.pk %}"
+                                                                   title="Connect Instagram"
+                                                                   class="text-purple-600 hover:text-purple-800">
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                                    </svg>
+                                                                </a>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <!-- Quick Connect Actions for unconnected services -->
+                                                    {% if not brand_info.twitter_connected or not brand_info.instagram_connected %}
+                                                        <div class="mt-3 pt-2 border-t border-gray-200">
+                                                            <div class="flex space-x-2">
+                                                                {% if not brand_info.twitter_connected %}
+                                                                    <a href="{% url 'organization_brand_connect_twitter' org_info.organization.pk brand_info.brand.pk %}"
+                                                                       class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded text-xs font-medium transition">
+                                                                        Connect Twitter
+                                                                    </a>
+                                                                {% endif %}
+                                                                {% if not brand_info.instagram_connected %}
+                                                                    <a href="{% url 'organization_brand_connect_instagram' org_info.organization.pk brand_info.brand.pk %}"
+                                                                       class="bg-purple-500 hover:bg-purple-600 text-white py-1 px-2 rounded text-xs font-medium transition">
+                                                                        Connect Instagram
+                                                                    </a>
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% if not forloop.last %}<hr class="my-6 border-gray-200">{% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- Legacy Platform Integrations for users without organizations -->
+                        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                            <h2 class="text-xl font-bold text-gray-900 mb-6">Platform Integrations</h2>
+                            <div class="text-center py-8">
+                                <i class="fas fa-building text-4xl text-gray-400 mb-4"></i>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">No Organizations Found</h3>
+                                <p class="text-gray-600 mb-4">Create an organization to manage brands and integrations</p>
+                                <a href="{% url 'organization_add' %}"
+                                   class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                    Create Organization
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <!-- Quick Actions Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <!-- Content Creation -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-plus-circle text-blue-600 mr-2"></i>Create Content
+                            </h3>
+                            <div class="space-y-3">
+                                <a href="{% url 'website:tweet_dashboard' %}"
+                                   class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    <i class="fab fa-twitter mr-2"></i>Tweet Campaign
+                                </a>
+                                <a href="{% url 'website:text_to_image' %}"
+                                   class="block w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-image mr-2"></i>AI Image
+                                </a>
+                                <a href="{% url 'website:blog_create' %}"
+                                   class="block w-full bg-gray-700 text-white text-center py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
+                                    <i class="fas fa-pen mr-2"></i>Blog Post
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Analytics & Insights -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-chart-line text-green-600 mr-2"></i>Analytics & Insights
+                            </h3>
+                            <div class="space-y-3">
+                                <a href="{% url 'website:analytics_dashboard' primary_brand.id %}"
+                                   class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-chart-bar mr-2"></i>Website Analytics
+                                </a>
+                                <a href="{% url 'website:tweet_analytics' %}"
+                                   class="block w-full bg-indigo-600 text-white text-center py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium">
+                                    <i class="fab fa-twitter mr-2"></i>Tweet Analytics
+                                </a>
+                                <a href="/landing/"
+                                   class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-chart-pie mr-2"></i>Brand Overview
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Creator Marketplace -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-users text-purple-600 mr-2"></i>Creator Marketplace
+                            </h3>
+                            <div class="space-y-3">
+                                <a href="{% url 'website:api_tasks_list' %}"
+                                   class="block w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-plus mr-2"></i>Post New Task
+                                </a>
+                                <a href="{% url 'website:users_feed' %}"
+                                   class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-search mr-2"></i>Browse Creators
+                                </a>
+                                <a href="{% url 'chat:chat_list' %}"
+                                   class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-comments mr-2"></i>Messages ({{ chat_stats.brand_conversations }})
+                                </a>
+                            </div>
+                        </div>
+                        <!-- Tools & Settings -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-cog text-orange-600 mr-2"></i>Tools & Settings
+                            </h3>
+                            <div class="space-y-3">
+                                <a href="{% url 'website:referral_dashboard' %}"
+                                   class="block w-full bg-orange-600 text-white text-center py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm font-medium">
+                                    <i class="fas fa-handshake mr-2"></i>Referrals
+                                </a>
+                                <a href="/landing/"
+                                   class="block w-full bg-gray-700 text-white text-center py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
+                                    <i class="fas fa-store mr-2"></i>Brand Settings
+                                </a>
+                                {% if user.is_superuser %}
+                                    <a href="{% url 'admin_dashboard' %}"
+                                       class="block w-full bg-red-600 text-white text-center py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                                        <i class="fas fa-shield-alt mr-2"></i>Admin Panel
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- CRM & Customer Management -->
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-users-cog text-blue-600 mr-2"></i>CRM & Customer Management
+                            </h3>
+                            {% if org_data %}
+                                <!-- CRM Summary Stats -->
+                                <div class="grid grid-cols-2 gap-3 mb-4">
+                                    <div class="bg-blue-50 p-3 rounded-lg text-center">
+                                        <div class="text-2xl font-bold text-blue-600">{{ org_data.0.crm_summary.total_contacts }}</div>
+                                        <div class="text-xs text-gray-600">Total Contacts</div>
+                                    </div>
+                                    <div class="bg-green-50 p-3 rounded-lg text-center">
+                                        <div class="text-2xl font-bold text-green-600">{{ org_data.0.crm_summary.total_deals }}</div>
+                                        <div class="text-xs text-gray-600">Active Deals</div>
+                                    </div>
+                                    <div class="bg-purple-50 p-3 rounded-lg text-center">
+                                        <div class="text-lg font-bold text-purple-600">${{ org_data.0.crm_summary.pipeline_value|floatformat:0 }}</div>
+                                        <div class="text-xs text-gray-600">Pipeline Value</div>
+                                    </div>
+                                    <div class="bg-yellow-50 p-3 rounded-lg text-center">
+                                        <div class="text-2xl font-bold text-yellow-600">{{ org_data.0.crm_summary.new_contacts_week }}</div>
+                                        <div class="text-xs text-gray-600">New This Week</div>
+                                    </div>
+                                </div>
+                                {% if org_data.0.crm_summary.overdue_tasks > 0 %}
+                                    <div class="bg-red-50 border border-red-200 p-3 rounded-lg mb-4">
+                                        <div class="flex items-center text-red-700">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            <span class="text-sm font-medium">{{ org_data.0.crm_summary.overdue_tasks }} overdue task{{ org_data.0.crm_summary.overdue_tasks|pluralize }}</span>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <!-- CRM Action Buttons -->
+                                <div class="space-y-2">
+                                    <a href="{% url 'crm_dashboard' org_data.0.organization.pk %}"
+                                       class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                        <i class="fas fa-chart-line mr-2"></i>CRM Dashboard
+                                    </a>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <a href="{% url 'crm_contact_list' org_data.0.organization.pk %}"
+                                           class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                                            <i class="fas fa-address-book mr-2"></i>Contacts
+                                        </a>
+                                        <a href="{% url 'crm_deal_list' org_data.0.organization.pk %}"
+                                           class="block w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
+                                            <i class="fas fa-handshake mr-2"></i>Pipeline
+                                        </a>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-8">
+                                    <i class="fas fa-building text-gray-400 text-4xl mb-4"></i>
+                                    <p class="text-gray-600 mb-4">Create an organization to access CRM features</p>
+                                    <a href="{% url 'organization_add' %}"
+                                       class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                                        <i class="fas fa-plus mr-2"></i>Create Organization
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Creator Dashboard -->
+            <div class="min-h-screen bg-gray-50">
+                <!-- Main Content -->
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <!-- Stats Overview -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                                    <i class="fas fa-eye text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Profile Views</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ profile_stats.profile_views }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-green-100 text-green-600">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Accepted Tasks</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ task_stats.accepted_applications }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                                    <i class="fas fa-clock text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Pending Apps</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ task_stats.pending_applications }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 stat-card">
+                            <div class="flex items-center">
+                                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
+                                    <i class="fas fa-trophy text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <p class="text-sm font-medium text-gray-600">Completed</p>
+                                    <p class="text-2xl font-bold text-gray-900">{{ task_stats.completed_applications }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Profile Completion -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Profile Status</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center {{ profile_stats.bio_complete|yesno:'bg-green-100 text-green-600,bg-red-100 text-red-600' }}">
+                                    <i class="fas {{ profile_stats.bio_complete|yesno:'fa-check,fa-times' }} text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold">Bio Complete</h3>
+                                <p class="text-sm text-gray-600">{{ profile_stats.bio_complete|yesno:'✓ Added,Add your bio' }}</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center {{ profile_stats.pricing_set|yesno:'bg-green-100 text-green-600,bg-red-100 text-red-600' }}">
+                                    <i class="fas {{ profile_stats.pricing_set|yesno:'fa-check,fa-times' }} text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold">Pricing Set</h3>
+                                <p class="text-sm text-gray-600">{{ profile_stats.pricing_set|yesno:'✓ Configured,Set your rates' }}</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center {{ profile_stats.images_uploaded|yesno:'bg-green-100 text-green-600,bg-red-100 text-red-600' }}">
+                                    <i class="fas {{ profile_stats.images_uploaded|yesno:'fa-check,fa-times' }} text-xl"></i>
+                                </div>
+                                <h3 class="font-semibold">Images Added</h3>
+                                <p class="text-sm text-gray-600">{{ profile_stats.images_uploaded|yesno:'✓ Uploaded,Add photos' }}</p>
+                            </div>
+                        </div>
+                        <div class="text-center mt-6">
+                            <a href="{% url 'website:creator_profile' user.id %}"
+                               class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Complete Profile
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Content & Actions -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-briefcase text-blue-600 mr-2"></i>Available Tasks
+                            </h3>
+                            {% if available_tasks %}
+                                <div class="space-y-3 mb-4">
+                                    {% for task in available_tasks %}
+                                        <div class="border border-gray-200 rounded-lg p-3">
+                                            <h4 class="font-semibold text-sm">{{ task.title }}</h4>
+                                            <p class="text-xs text-gray-600">{{ task.category }} • {{ task.genre }}</p>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <a href="{% url 'website:api_tasks_list' %}"
+                               class="block w-full bg-blue-600 text-white text-center py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                                Browse All Tasks
+                            </a>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-handshake text-green-600 mr-2"></i>Working With
+                            </h3>
+                            {% if working_with_brands %}
+                                <div class="space-y-2 mb-4">
+                                    {% for brand in working_with_brands %}
+                                        <div class="flex items-center text-sm">
+                                            <i class="fas fa-building text-gray-400 mr-2"></i>
+                                            {{ brand }}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="text-sm text-gray-600 mb-4">No active collaborations yet</p>
+                            {% endif %}
+                            <a href="{% url 'chat:chat_list' %}"
+                               class="block w-full bg-green-600 text-white text-center py-2 rounded-lg hover:bg-green-700 transition-colors">
+                                Message Brands
+                            </a>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6">
+                            <h3 class="font-bold text-gray-900 mb-4">
+                                <i class="fas fa-pen text-purple-600 mr-2"></i>Create Content
+                            </h3>
+                            <div class="space-y-3">
+                                <a href="{% url 'website:blog_create' %}"
+                                   class="block w-full bg-purple-600 text-white text-center py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                                    Write Blog Post
+                                </a>
+                                <a href="{% url 'website:users_feed' %}"
+                                   class="block w-full bg-indigo-600 text-white text-center py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                    Creator Feed
+                                </a>
+                                <div class="text-center">
+                                    <span class="integration-badge coming-soon text-xs">
+                                        <i class="fas fa-camera mr-1"></i>Portfolio Coming Soon
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Coming Soon Features -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 mt-8">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Coming Soon for Creators</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-chart-line text-2xl text-blue-500 mb-2"></i>
+                                <h4 class="font-semibold">Analytics Dashboard</h4>
+                                <p class="text-sm text-gray-600">Track your performance and earnings</p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-wallet text-2xl text-green-500 mb-2"></i>
+                                <h4 class="font-semibold">Payment System</h4>
+                                <p class="text-sm text-gray-600">Direct payments from brands</p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-star text-2xl text-yellow-500 mb-2"></i>
+                                <h4 class="font-semibold">Rating & Reviews</h4>
+                                <p class="text-sm text-gray-600">Build your reputation</p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-calendar text-2xl text-purple-500 mb-2"></i>
+                                <h4 class="font-semibold">Content Calendar</h4>
+                                <p class="text-sm text-gray-600">Plan and schedule content</p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-users text-2xl text-indigo-500 mb-2"></i>
+                                <h4 class="font-semibold">Creator Network</h4>
+                                <p class="text-sm text-gray-600">Connect with other creators</p>
+                            </div>
+                            <div class="border border-gray-200 rounded-lg p-4 text-center">
+                                <i class="fas fa-mobile-alt text-2xl text-red-500 mb-2"></i>
+                                <h4 class="font-semibold">Mobile App</h4>
+                                <p class="text-sm text-gray-600">Manage on-the-go</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    <script>
+// Server time bootstrap (epoch ms & timezone from Django if provided)
+const SERVER_EPOCH = typeof {{ server_time_epoch|default:0 }} === 'number' ? {{ server_time_epoch|default:0 }} : 0; // ms
+const SERVER_TZ = "{{ server_tz_abbr|default:'UTC' }}";
+const CLIENT_START = Date.now();
+
+function getServerNow(){
+    if(!SERVER_EPOCH){ return new Date(); }
+    const elapsed = Date.now() - CLIENT_START; // client ms since page load
+    return new Date(SERVER_EPOCH + elapsed);
+}
+
+// Update system time display (HH:MM TZ) using server clock approximation
+function updateSystemTime() {
+    const el = document.getElementById('system-time');
+    if(!el) return;
+    const now = getServerNow();
+    const hours = now.getHours().toString().padStart(2,'0');
+    const mins = now.getMinutes().toString().padStart(2,'0');
+    el.textContent = `System Time: ${hours}:${mins} ${SERVER_TZ}`;
+}
+
+// Minute progress ring: fills clockwise as seconds advance (0-59).
+(function initMinuteRing(){
+    if(document.getElementById('minute-ring-style')) return;
+    const style = document.createElement('style');
+    style.id = 'minute-ring-style';
+    style.textContent = `#pacman{position:relative; border-radius:50%; --progress:0deg; background:conic-gradient(#1f2937 var(--progress), #e5e7eb var(--progress)); box-shadow:0 0 0 1px #d1d5db inset; transition:background .4s linear;}\n#pacman:after{content:''; position:absolute; inset:3px; background:#ffffff; border-radius:50%;}`;
+    document.head.appendChild(style);
+})();
+
+function updateMinuteRing(){
+    const ring = document.getElementById('pacman');
+    if(!ring) return;
+    const now = getServerNow();
+    const sec = now.getSeconds();
+    const deg = (sec / 60) * 360; // 0 - 360
+    ring.style.setProperty('--progress', `${deg}deg`);
+    ring.setAttribute('aria-valuenow', sec);
+    ring.setAttribute('aria-valuemax', 60);
+    ring.setAttribute('role', 'progressbar');
+    ring.setAttribute('aria-label', `Minute progress ${sec} seconds`);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    updateSystemTime();
+    updateMinuteRing();
+    setInterval(updateSystemTime, 1000); // update every second
+    setInterval(updateMinuteRing, 1000);
+});
+    </script>
+{% endblock %}

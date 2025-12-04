@@ -1,0 +1,47 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Reboot the server
+      reboot:
+        msg: "Rebooting server to fix database issues"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: whoami
+
+    - name: Wait for server to come back online
+      wait_for_connection:
+        connect_timeout: 20
+        sleep: 5
+        delay: 5
+        timeout: 300
+
+    - name: Check if services are running after reboot
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - nginx
+        - uvicorn
+        - postgresql
+
+    - name: Display service status
+      command: systemctl status {{ item }} --no-pager -l
+      loop:
+        - nginx
+        - uvicorn
+        - postgresql
+      register: service_status
+      ignore_errors: yes
+
+    - name: Show service status results
+      debug:
+        msg: "{{ item.stdout_lines }}"
+      loop: "{{ service_status.results }}"
+      when: item.stdout_lines is defined 

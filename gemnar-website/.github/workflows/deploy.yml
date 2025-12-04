@@ -1,0 +1,44 @@
+name: Deploy Website
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get install -y sshpass
+
+      - name: Pull latest changes
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "sudo -u django git -C /home/django/gemnar-website pull origin main"
+
+      - name: Install dependencies
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /home/django/gemnar-website && sudo -u django /home/django/.local/bin/poetry install"
+
+      - name: Run database migrations
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /home/django/gemnar-website && sudo -u django ENVIRONMENT=production /home/django/.local/bin/poetry run python manage.py migrate"
+
+      - name: Clear static files cache
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /home/django/gemnar-website && sudo -u django rm -rf staticfiles/*"
+
+      - name: Collect static files
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "cd /home/django/gemnar-website && sudo -u django ENVIRONMENT=production /home/django/.local/bin/poetry run python manage.py collectstatic --noinput --clear"
+
+      - name: Ensure media directory exists
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "sudo -u django mkdir -p /home/django/gemnar-website/media && sudo chown -R django:django /home/django/gemnar-website/media"
+
+      - name: Restart application server
+        run: |
+          sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "sudo systemctl restart uvicorn.service" 

@@ -1,0 +1,297 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Heatmap - {{ heatmap.url_pattern }}{% endblock %}
+{% block extra_css %}
+    <style>
+        .heatmap-container {
+            position: relative;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .heatmap-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .click-point {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.6);
+            border: 2px solid rgba(255, 0, 0, 0.8);
+            transform: translate(-50%, -50%);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+        }
+        .scroll-heatmap {
+            position: absolute;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to bottom, rgba(0, 255, 0, 0.3), rgba(255, 255, 0, 0.3), rgba(255, 0, 0, 0.3));
+            pointer-events: none;
+        }
+        .heatmap-controls {
+            position: sticky;
+            top: 0;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            z-index: 20;
+        }
+        .view-mode-btn {
+            transition: all 0.2s;
+        }
+        .view-mode-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+        .heatmap-hidden {
+            display: none;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Breadcrumb Navigation -->
+    {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs %}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Heatmap Analysis</h1>
+                        <p class="text-gray-600 mt-1">{{ heatmap.url_pattern }}</p>
+                        <div class="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+                            <span><i class="fas fa-calendar mr-1"></i>{{ heatmap.date_from }} - {{ heatmap.date_to }}</span>
+                            <span><i class="fas fa-users mr-1"></i>{{ heatmap.sample_size }} sessions</span>
+                            <span><i class="fas fa-desktop mr-1"></i>{{ heatmap.viewport_width }}x{{ heatmap.viewport_height }}</span>
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="{% url 'website:analytics_heatmaps' brand.id %}"
+                           class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Heatmaps
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Heatmap Controls -->
+        <div class="heatmap-controls bg-white rounded-t-xl border border-gray-200 p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex space-x-2">
+                    <button id="clicksBtn"
+                            class="view-mode-btn active px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium">
+                        <i class="fas fa-mouse-pointer mr-2"></i>Click Heatmap
+                    </button>
+                    <button id="scrollBtn"
+                            class="view-mode-btn px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium">
+                        <i class="fas fa-arrows-alt-v mr-2"></i>Scroll Heatmap
+                    </button>
+                    <button id="attentionBtn"
+                            class="view-mode-btn px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium">
+                        <i class="fas fa-eye mr-2"></i>Attention Heatmap
+                    </button>
+                </div>
+                <div class="flex items-center space-x-4 text-sm text-gray-600">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-red-500 rounded-full mr-2 opacity-60"></div>
+                        <span>High Activity</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-yellow-500 rounded-full mr-2 opacity-60"></div>
+                        <span>Medium Activity</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-500 rounded-full mr-2 opacity-60"></div>
+                        <span>Low Activity</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Heatmap Viewer -->
+        <div class="bg-white rounded-b-xl border border-t-0 border-gray-200 p-6">
+            <div class="heatmap-container mx-auto"
+                 style="width: {{ heatmap.viewport_width }}px;
+                        height: {{ heatmap.viewport_height }}px">
+                <!-- Page representation (simplified) -->
+                <div class="w-full h-full bg-gradient-to-b from-gray-50 to-gray-100 relative">
+                    <!-- Header simulation -->
+                    <div class="h-16 bg-blue-600 border-b border-gray-300"></div>
+                    <!-- Content areas simulation -->
+                    <div class="p-4 space-y-4">
+                        <div class="h-8 bg-gray-300 rounded w-3/4"></div>
+                        <div class="h-4 bg-gray-200 rounded w-full"></div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6"></div>
+                        <div class="h-32 bg-gray-300 rounded mt-6"></div>
+                        <div class="grid grid-cols-2 gap-4 mt-6">
+                            <div class="h-20 bg-gray-300 rounded"></div>
+                            <div class="h-20 bg-gray-300 rounded"></div>
+                        </div>
+                    </div>
+                    <!-- Click Heatmap Overlay -->
+                    <div id="clickHeatmap" class="heatmap-overlay w-full h-full">
+                        <!-- Click points will be rendered here by JavaScript -->
+                    </div>
+                    <!-- Scroll Heatmap Overlay -->
+                    <div id="scrollHeatmap"
+                         class="heatmap-overlay w-full h-full heatmap-hidden">
+                        <!-- Scroll heatmap will be rendered here by JavaScript -->
+                    </div>
+                    <!-- Attention Heatmap Overlay -->
+                    <div id="attentionHeatmap"
+                         class="heatmap-overlay w-full h-full heatmap-hidden">
+                        <!-- Attention heatmap will be rendered here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Heatmap Statistics -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Heatmap Statistics</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-blue-600" id="totalClicks">{{ click_data|length }}</div>
+                        <div class="text-sm text-gray-600">Total Clicks</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-green-600" id="avgScrollDepth">-</div>
+                        <div class="text-sm text-gray-600">Avg. Scroll Depth</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-3xl font-bold text-purple-600">{{ heatmap.sample_size }}</div>
+                        <div class="text-sm text-gray-600">Sessions Analyzed</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Heatmap data from Django
+        const clickData = {{ click_data|safe }};
+        const scrollData = {{ scroll_data|safe }};
+        const attentionData = {{ attention_data|safe }};
+        
+        // View mode controls
+        const viewModeButtons = document.querySelectorAll('.view-mode-btn');
+        const clickHeatmap = document.getElementById('clickHeatmap');
+        const scrollHeatmap = document.getElementById('scrollHeatmap');
+        const attentionHeatmap = document.getElementById('attentionHeatmap');
+
+        // Initialize heatmaps
+        function initializeHeatmaps() {
+            renderClickHeatmap();
+            renderScrollHeatmap();
+            renderAttentionHeatmap();
+            updateStatistics();
+        }
+
+        // Render click heatmap
+        function renderClickHeatmap() {
+            clickHeatmap.innerHTML = '';
+            
+            clickData.forEach(point => {
+                const clickPoint = document.createElement('div');
+                clickPoint.className = 'click-point';
+                clickPoint.style.left = point.x + 'px';
+                clickPoint.style.top = point.y + 'px';
+                
+                // Size based on click count
+                const size = Math.min(Math.max(point.count * 10, 10), 50);
+                clickPoint.style.width = size + 'px';
+                clickPoint.style.height = size + 'px';
+                
+                // Color intensity based on count
+                const intensity = Math.min(point.count / 10, 1);
+                clickPoint.style.background = `rgba(255, 0, 0, ${0.3 + intensity * 0.5})`;
+                clickPoint.style.borderColor = `rgba(255, 0, 0, ${0.5 + intensity * 0.3})`;
+                
+                clickHeatmap.appendChild(clickPoint);
+            });
+        }
+
+        // Render scroll heatmap
+        function renderScrollHeatmap() {
+            scrollHeatmap.innerHTML = '';
+            
+            if (scrollData.length > 0) {
+                // Create scroll depth visualization
+                scrollData.forEach((segment, index) => {
+                    const scrollSegment = document.createElement('div');
+                    scrollSegment.style.position = 'absolute';
+                    scrollSegment.style.left = '0';
+                    scrollSegment.style.right = '0';
+                    scrollSegment.style.top = (segment.depth || 0) + '%';
+                    scrollSegment.style.height = '10px';
+                    
+                    const intensity = Math.min(segment.count / 5, 1);
+                    const color = intensity > 0.7 ? 'red' : intensity > 0.4 ? 'yellow' : 'green';
+                    scrollSegment.style.background = `rgba(${color === 'red' ? '255,0,0' : color === 'yellow' ? '255,255,0' : '0,255,0'}, ${0.3 + intensity * 0.4})`;
+                    
+                    scrollHeatmap.appendChild(scrollSegment);
+                });
+            }
+        }
+
+        // Render attention heatmap
+        function renderAttentionHeatmap() {
+            attentionHeatmap.innerHTML = '';
+            
+            attentionData.forEach(point => {
+                const attentionPoint = document.createElement('div');
+                attentionPoint.className = 'click-point';
+                attentionPoint.style.left = point.x + 'px';
+                attentionPoint.style.top = point.y + 'px';
+                attentionPoint.style.background = `rgba(0, 0, 255, ${0.3 + (point.duration || 1) * 0.1})`;
+                attentionPoint.style.borderColor = `rgba(0, 0, 255, 0.6)`;
+                attentionPoint.style.width = '20px';
+                attentionPoint.style.height = '20px';
+                
+                attentionHeatmap.appendChild(attentionPoint);
+            });
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            document.getElementById('totalClicks').textContent = clickData.length;
+            
+            if (scrollData.length > 0) {
+                const avgDepth = scrollData.reduce((sum, item) => sum + (item.depth || 0), 0) / scrollData.length;
+                document.getElementById('avgScrollDepth').textContent = Math.round(avgDepth) + '%';
+            }
+        }
+
+        // View mode switching
+        viewModeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Update button states
+                viewModeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Hide all heatmaps
+                clickHeatmap.classList.add('heatmap-hidden');
+                scrollHeatmap.classList.add('heatmap-hidden');
+                attentionHeatmap.classList.add('heatmap-hidden');
+                
+                // Show selected heatmap
+                if (button.id === 'clicksBtn') {
+                    clickHeatmap.classList.remove('heatmap-hidden');
+                } else if (button.id === 'scrollBtn') {
+                    scrollHeatmap.classList.remove('heatmap-hidden');
+                } else if (button.id === 'attentionBtn') {
+                    attentionHeatmap.classList.remove('heatmap-hidden');
+                }
+            });
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeHeatmaps);
+    </script>
+{% endblock %}

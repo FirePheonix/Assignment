@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Business profile for {{ business.name }} on Gemnar.">
+        <meta name="keywords"
+              content="business, profile, {{ business.name }}, Gemnar">
+        <title>{{ business.name }} - Business Profile - Gemnar</title>
+        <link rel="stylesheet"
+              href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" />
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700"
+              rel="stylesheet" />
+        <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+        .custom-pink {
+            background-color: #D13B8F;
+        }
+        .custom-pink-light {
+            background-color: rgba(209, 59, 143, 0.1);
+        }
+        </style>
+    </head>
+    <body class="bg-white min-h-screen">
+        <div class="max-w-4xl mx-auto px-4 py-8">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-8">
+                <button onclick="history.back()" class="text-gray-600 hover:text-gray-800">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
+                <img src="{% static 'images/logo.png' %}?v=1234567890"
+                     alt="Gemnar Logo"
+                     width="128"
+                     height="32"
+                     class="h-8 w-auto" />
+                <div class="w-6"></div>
+            </div>
+            <!-- Business Info Card -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+                <div class="text-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ business.name }}</h1>
+                    <a href="{{ business.url }}"
+                       target="_blank"
+                       class="text-pink-600 hover:text-pink-700 underline">Visit Website</a>
+                </div>
+                <div class="border-t border-gray-200 pt-6">
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800">{{ business.created_at|date:"M Y" }}</div>
+                            <div class="text-sm text-gray-600">Joined</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-gray-800">Coming Soon</div>
+                            <div class="text-sm text-gray-600">Campaigns</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Stats Placeholder -->
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <div class="flex items-center mb-6">
+                    <div class="w-8 h-8 custom-pink rounded-full flex items-center justify-center mr-3">
+                        <svg class="w-4 h-4 text-white"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800">Performance Stats</h2>
+                </div>
+                <div class="text-center py-8 border-2 border-dashed border-gray-200 rounded-xl">
+                    <p class="text-gray-500 font-medium">Stats will be inserted here</p>
+                    <p class="text-sm text-gray-400 mt-1">Track your campaign performance and ROI</p>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

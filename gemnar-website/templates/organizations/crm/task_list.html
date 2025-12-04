@@ -1,0 +1,372 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Tasks - {{ organization.name }}{% endblock %}
+{% block org_content %}
+    <!-- Breadcrumbs -->
+    <nav class="flex mb-4" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+            <li class="inline-flex items-center">
+                <a href="{% url 'organization_detail' organization.pk %}"
+                   class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                    <i class="fas fa-building mr-2"></i>
+                    {{ organization.name }}
+                </a>
+            </li>
+            <li>
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <a href="{% url 'crm_dashboard' organization.pk %}"
+                       class="text-sm font-medium text-gray-700 hover:text-blue-600">CRM Dashboard</a>
+                </div>
+            </li>
+            <li aria-current="page">
+                <div class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 mx-2"></i>
+                    <span class="text-sm font-medium text-gray-500">Tasks</span>
+                </div>
+            </li>
+        </ol>
+    </nav>
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Task Management</h1>
+                <p class="text-gray-600">Manage follow-ups, to-dos, and action items</p>
+            </div>
+            <div class="flex space-x-2">
+                <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                        onclick="alert('Task creation functionality coming soon!')">
+                    <i class="fas fa-plus mr-2"></i>Add Task
+                </button>
+                <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-download mr-2"></i>Export
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Task Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-tasks text-blue-500 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ task_stats.total }}</div>
+                    <div class="text-sm text-gray-600">Total Tasks</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-clock text-yellow-500 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ task_stats.pending }}</div>
+                    <div class="text-sm text-gray-600">Pending Tasks</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                </div>
+                <div class="ml-4">
+                    <div class="text-2xl font-bold text-gray-900">{{ task_stats.overdue }}</div>
+                    <div class="text-sm text-gray-600">Overdue Tasks</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Overdue Tasks Alert -->
+    {% if task_stats.overdue > 0 %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">Overdue Tasks Alert</h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>You have {{ task_stats.overdue }} overdue task{{ task_stats.overdue|pluralize }} that need immediate attention.</p>
+                        <a href="?overdue=1" class="font-medium underline hover:text-red-600">View overdue tasks only →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <form method="get"
+              class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-5 lg:gap-4 lg:items-end">
+            <!-- Status Filter -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select id="status"
+                        name="status"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Statuses</option>
+                    {% for value, label in task_statuses %}
+                        <option value="{{ value }}"
+                                {% if current_filters.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Priority Filter -->
+            <div>
+                <label for="priority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                <select id="priority"
+                        name="priority"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Priorities</option>
+                    {% for value, label in task_priorities %}
+                        <option value="{{ value }}"
+                                {% if current_filters.priority == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Assigned To Filter -->
+            <div>
+                <label for="assigned" class="block text-sm font-medium text-gray-700 mb-1">Assigned To</label>
+                <select id="assigned"
+                        name="assigned"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">All Team Members</option>
+                    {% for member in team_members %}
+                        <option value="{{ member.id }}"
+                                {% if current_filters.assigned|add:0 == member.id %}selected{% endif %}>
+                            {{ member.first_name }} {{ member.last_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <!-- Overdue Filter -->
+            <div>
+                <label for="overdue" class="block text-sm font-medium text-gray-700 mb-1">Show Only</label>
+                <div class="flex items-center h-10">
+                    <input type="checkbox"
+                           id="overdue"
+                           name="overdue"
+                           value="1"
+                           {% if current_filters.overdue %}checked{% endif %}
+                           class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="overdue" class="text-sm text-gray-700">Overdue tasks</label>
+                </div>
+            </div>
+            <!-- Filter Buttons -->
+            <div>
+                <div class="flex space-x-2">
+                    <button type="submit"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
+                        <i class="fas fa-search mr-2"></i>Filter
+                    </button>
+                    <a href="{% url 'crm_task_list' organization.pk %}"
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg inline-flex items-center">
+                        Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+    <!-- Task List -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% if page_obj.object_list %}
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Tasks ({{ page_obj.paginator.count }})</h3>
+                    <div class="text-sm text-gray-500">
+                        Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+                    </div>
+                </div>
+            </div>
+            <!-- Task Table -->
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact & Deal</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Assigned To</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for task in page_obj %}
+                            <tr class="hover:bg-gray-50 {% if task.is_overdue %}bg-red-50{% endif %}">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 mr-3 mt-1">
+                                            {% if task.is_overdue %}
+                                                <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                            {% else %}
+                                                <i class="fas fa-task text-gray-400"></i>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="text-sm font-medium text-gray-900">{{ task.title }}</div>
+                                            {% if task.description %}
+                                                <div class="text-sm text-gray-600 mt-1">{{ task.description|truncatechars:100 }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if task.priority == 'urgent' %}bg-red-100 text-red-800 {% elif task.priority == 'high' %}bg-orange-100 text-orange-800 {% elif task.priority == 'medium' %}bg-yellow-100 text-yellow-800 {% elif task.priority == 'low' %}bg-green-100 text-green-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if task.priority == 'urgent' %}
+                                            <i class="fas fa-exclamation-circle mr-1"></i>
+                                        {% elif task.priority == 'high' %}
+                                            <i class="fas fa-arrow-up mr-1"></i>
+                                        {% elif task.priority == 'medium' %}
+                                            <i class="fas fa-minus mr-1"></i>
+                                        {% elif task.priority == 'low' %}
+                                            <i class="fas fa-arrow-down mr-1"></i>
+                                        {% endif %}
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if task.status == 'pending' %} {% if task.is_overdue %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %} {% elif task.status == 'in_progress' %}bg-yellow-100 text-yellow-800 {% elif task.status == 'completed' %}bg-green-100 text-green-800 {% elif task.status == 'cancelled' %}bg-gray-100 text-gray-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if task.is_overdue and task.status in 'pending,in_progress' %}
+                                            Overdue
+                                        {% else %}
+                                            {{ task.get_status_display }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if task.due_date %}
+                                        <div class="{% if task.is_overdue %}text-red-600 font-medium{% endif %}">{{ task.due_date|date:"M d, Y" }}</div>
+                                        <div class="text-gray-500 text-xs">{{ task.due_date|time:"g:i A" }}</div>
+                                    {% else %}
+                                        <span class="text-gray-400">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if task.contact %}
+                                        <div class="flex items-center mb-1">
+                                            <div class="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                                <span class="text-xs font-medium text-gray-700">
+                                                    {{ task.contact.first_name|first }}{{ task.contact.last_name|first }}
+                                                </span>
+                                            </div>
+                                            <div class="text-sm font-medium text-gray-900">{{ task.contact.full_name }}</div>
+                                        </div>
+                                    {% endif %}
+                                    {% if task.deal %}
+                                        <div class="text-sm text-blue-600 {% if task.contact %}ml-8{% endif %}">
+                                            <i class="fas fa-handshake mr-1"></i>{{ task.deal.name }}
+                                        </div>
+                                    {% endif %}
+                                    {% if not task.contact and not task.deal %}<span class="text-gray-400 text-sm">General task</span>{% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    {% if task.assigned_to %}
+                                        <div class="flex items-center">
+                                            <div class="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center mr-2">
+                                                <span class="text-xs font-medium text-gray-700">
+                                                    {{ task.assigned_to.first_name|first }}{{ task.assigned_to.last_name|first }}
+                                                </span>
+                                            </div>
+                                            {{ task.assigned_to.first_name }} {{ task.assigned_to.last_name }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-gray-400">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    {% if task.status != 'completed' %}
+                                        <button class="text-green-600 hover:text-green-900 mr-3"
+                                                onclick="alert('Mark as completed functionality coming soon!')">
+                                            <i class="fas fa-check mr-1"></i>Complete
+                                        </button>
+                                    {% endif %}
+                                    <button class="text-blue-600 hover:text-blue-900 mr-3"
+                                            onclick="alert('Edit task functionality coming soon!')">Edit</button>
+                                    <button class="text-red-600 hover:text-red-900"
+                                            onclick="alert('Delete task functionality coming soon!')">Delete</button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-700">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+                        <nav class="flex space-x-2">
+                            {% if page_obj.has_previous %}
+                                <a href="?{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.priority %}priority={{ current_filters.priority }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.overdue %}overdue={{ current_filters.overdue }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                                   class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                    Previous
+                                </a>
+                            {% endif %}
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <span class="px-3 py-2 text-sm bg-blue-600 text-white border border-blue-600 rounded-md">{{ num }}</span>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <a href="?{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.priority %}priority={{ current_filters.priority }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.overdue %}overdue={{ current_filters.overdue }}&{% endif %}page={{ num }}"
+                                       class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                        {{ num }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                            {% if page_obj.has_next %}
+                                <a href="?{% if current_filters.status %}status={{ current_filters.status }}&{% endif %}{% if current_filters.priority %}priority={{ current_filters.priority }}&{% endif %}{% if current_filters.assigned %}assigned={{ current_filters.assigned }}&{% endif %}{% if current_filters.overdue %}overdue={{ current_filters.overdue }}&{% endif %}page={{ page_obj.next_page_number }}"
+                                   class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                                    Next
+                                </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <i class="fas fa-tasks text-4xl text-gray-400 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No tasks found</h3>
+                {% if current_filters.status or current_filters.priority or current_filters.assigned or current_filters.overdue %}
+                    <p class="text-gray-500 mb-4">No tasks match your current filters. Try adjusting your search criteria.</p>
+                    <a href="{% url 'crm_task_list' organization.pk %}"
+                       class="text-blue-600 hover:text-blue-800 underline">Clear all filters</a>
+                {% else %}
+                    <p class="text-gray-500 mb-4">Stay organized by creating your first task to track follow-ups and action items.</p>
+                    <button class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg"
+                            onclick="alert('Task creation functionality coming soon!')">
+                        <i class="fas fa-plus mr-2"></i>Create Your First Task
+                    </button>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    <!-- Quick Actions -->
+    {% if page_obj.object_list %}
+        <div class="mt-6 bg-white rounded-lg shadow p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+            <div class="flex flex-wrap gap-2">
+                <a href="?status=pending"
+                   class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg text-sm">
+                    View Pending Tasks
+                </a>
+                <a href="?overdue=1"
+                   class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-2 rounded-lg text-sm">View Overdue Tasks</a>
+                <a href="?priority=urgent"
+                   class="bg-orange-100 hover:bg-orange-200 text-orange-800 px-3 py-2 rounded-lg text-sm">
+                    View Urgent Tasks
+                </a>
+                <a href="?status=completed"
+                   class="bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg text-sm">
+                    View Completed Tasks
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

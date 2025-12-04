@@ -1,0 +1,276 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}{{ organization.name }}{% endblock %}
+{% block org_content %}
+    {% csrf_token %}
+    <div class="mb-4">
+        <p>
+            <strong>{% trans "Name" %}:</strong> {{ organization.name }}
+        </p>
+        {% if organization.owner %}
+            <p>
+                <strong>{% trans "Owner" %}:</strong> {{ organization.owner.user.username }}
+            </p>
+        {% endif %}
+    </div>
+    <div class="mb-4">
+        <a href="{% url 'organization_edit' organization_pk=organization.pk %}"
+           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            {% trans "Edit Organization" %}
+        </a>
+        <a href="{% url 'organization_delete' organization_pk=organization.pk %}"
+           class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            {% trans "Delete Organization" %}
+        </a>
+    </div>
+    <!-- Invitations Section -->
+    {% if organization.owners.all and user in organization.owners.all %}
+        <h2 class="text-2xl font-bold mb-4">{% trans "Team Invitations" %}</h2>
+        <div class="bg-blue-50 p-4 rounded-lg mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-blue-900">Invite New Members</h3>
+                    <p class="text-sm text-blue-700">Send email invitations to collaborate on brand management.</p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="{% url 'organization_invitation_send' organization.pk %}"
+                       class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                        {% trans "Send Invitation" %}
+                    </a>
+                    <a href="{% url 'organization_invitation_list' organization.pk %}"
+                       class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        {% trans "Manage Invitations" %}
+                    </a>
+                </div>
+            </div>
+            <!-- Quick invitation stats -->
+            {% with organization.invitations.all as invitations %}
+                {% if invitations %}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white p-3 rounded">
+                            <div class="text-sm text-gray-600">Pending</div>
+                            <div class="text-lg font-bold text-yellow-600">{{ invitations|length }}</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="text-sm text-gray-600">Accepted</div>
+                            <div class="text-lg font-bold text-green-600">{{ invitations|length }}</div>
+                        </div>
+                        <div class="bg-white p-3 rounded">
+                            <div class="text-sm text-gray-600">Expired</div>
+                            <div class="text-lg font-bold text-red-600">0</div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </div>
+    {% endif %}
+    <h2 class="text-2xl font-bold mb-4">{% trans "Brands" %}</h2>
+    <div class="mb-6">
+        <a href="{% url 'organization_brand_create' organization.pk %}"
+           class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
+            {% trans "Add Brand" %}
+        </a>
+        <button onclick="document.getElementById('brand-import-file').click()"
+                class="bg-orange-500 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block ml-2">
+            <i class="fas fa-upload mr-1"></i>{% trans "Import Brand" %}
+        </button>
+        <input type="file"
+               id="brand-import-file"
+               accept=".json"
+               class="hidden"
+               onchange="importBrandData(this)">
+        <a href="{% url 'organization_brand_list' organization.pk %}"
+           class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block ml-2">
+            {% trans "Manage Brands" %}
+        </a>
+    </div>
+    {% if organization.brands.all %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {% for brand in organization.brands.all %}
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                    <h3 class="text-lg font-semibold mb-2">{{ brand.name }}</h3>
+                    <p class="text-sm text-gray-600 mb-2">{{ brand.description|truncatewords:15 }}</p>
+                    <div class="flex items-center space-x-2 mb-3">
+                        {% if brand.is_default %}
+                            <span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-medium">
+                                <i class="fas fa-star mr-1"></i>Default
+                            </span>
+                        {% endif %}
+                        {% if brand.has_twitter_config %}
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Twitter Connected</span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Twitter Not Connected</span>
+                        {% endif %}
+                        {% if brand.has_instagram_config %}
+                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Instagram Connected</span>
+                        {% else %}
+                            <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Instagram Not Connected</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+                           class="text-blue-600 hover:underline text-sm">{% trans "View Dashboard" %}</a>
+                        <a href="{% url 'brand_export' organization.pk brand.pk %}"
+                           class="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-2 rounded text-xs"
+                           title="Export brand data">
+                            <i class="fas fa-download mr-1"></i>Export
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-gray-50 p-6 rounded-lg text-center">
+            <p class="text-gray-600 mb-4">No brands created yet.</p>
+            <a href="{% url 'organization_brand_create' organization.pk %}"
+               class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded">
+                {% trans "Create Your First Brand" %}
+            </a>
+        </div>
+    {% endif %}
+    <!-- CRM Section -->
+    <h2 class="text-2xl font-bold mb-4 mt-8">
+        <i class="fas fa-users-cog text-blue-600 mr-2"></i>{% trans "Customer Relationship Management" %}
+    </h2>
+    <div class="bg-blue-50 p-6 rounded-lg mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <!-- CRM Dashboard -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-chart-line text-blue-600 text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">CRM Dashboard</h3>
+                        <p class="text-sm text-gray-600">Overview & Analytics</p>
+                    </div>
+                </div>
+                <a href="{% url 'crm_dashboard' organization.pk %}"
+                   class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded text-sm">
+                    View Dashboard
+                </a>
+            </div>
+            <!-- Contacts -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-address-book text-green-600 text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Contacts</h3>
+                        <p class="text-sm text-gray-600">Leads & Customers</p>
+                    </div>
+                </div>
+                <a href="{% url 'crm_contact_list' organization.pk %}"
+                   class="block w-full text-center bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-sm">
+                    Manage Contacts
+                </a>
+            </div>
+            <!-- Deals -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-handshake text-purple-600 text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Deals</h3>
+                        <p class="text-sm text-gray-600">Sales Pipeline</p>
+                    </div>
+                </div>
+                <a href="{% url 'crm_deal_list' organization.pk %}"
+                   class="block w-full text-center bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded text-sm">
+                    View Pipeline
+                </a>
+            </div>
+            <!-- Activities & Tasks -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-tasks text-orange-600 text-2xl mr-3"></i>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Activities</h3>
+                        <p class="text-sm text-gray-600">Tasks & Follow-ups</p>
+                    </div>
+                </div>
+                <div class="flex space-x-1">
+                    <a href="{% url 'crm_activity_list' organization.pk %}"
+                       class="flex-1 text-center bg-orange-600 hover:bg-orange-700 text-white py-2 px-2 rounded text-xs">
+                        Activities
+                    </a>
+                    <a href="{% url 'crm_task_list' organization.pk %}"
+                       class="flex-1 text-center bg-orange-500 hover:bg-orange-600 text-white py-2 px-2 rounded text-xs">
+                        Tasks
+                    </a>
+                </div>
+            </div>
+        </div>
+        <!-- Quick Actions -->
+        <div class="border-t pt-4">
+            <h4 class="font-semibold text-gray-900 mb-3">Quick Actions</h4>
+            <div class="flex flex-wrap gap-2">
+                <a href="{% url 'crm_reports' organization.pk %}"
+                   class="bg-indigo-600 hover:bg-indigo-700 text-white py-1 px-3 rounded text-sm">
+                    <i class="fas fa-chart-bar mr-1"></i>Reports
+                </a>
+                <button class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">
+                    <i class="fas fa-plus mr-1"></i>Add Contact
+                </button>
+                <button class="bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-sm">
+                    <i class="fas fa-plus mr-1"></i>New Deal
+                </button>
+                <button class="bg-orange-600 hover:bg-orange-700 text-white py-1 px-3 rounded text-sm">
+                    <i class="fas fa-calendar mr-1"></i>Schedule Activity
+                </button>
+            </div>
+        </div>
+    </div>
+    <h2 class="text-2xl font-bold mb-2 mt-8">{% trans "Members" %}</h2>
+    <a href="{% url 'organization_user_add' organization.pk %}"
+       class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-4 inline-block">
+        {% trans "Add Member" %}
+    </a>
+    <ul class="list-disc pl-5">
+        {% for org_user in organization.organization_users.all %}
+            <li>
+                {{ org_user.user.username }}
+                {% if org_user.is_admin %}(Admin){% endif %}
+                -
+                <a href="{% url 'organization_user_edit' organization.pk org_user.pk %}"
+                   class="text-blue-600 hover:underline">{% trans "Edit" %}</a> |
+                <a href="{% url 'organization_user_delete' organization.pk org_user.pk %}"
+                   class="text-red-600 hover:underline">{% trans "Remove" %}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+{% block extra_js %}
+    <script>
+function importBrandData(fileInput) {
+    const file = fileInput.files[0];
+    if (!file) return;
+    
+    if (file.type !== 'application/json') {
+        alert('Please select a valid JSON file.');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('brand_data', file);
+    formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+    
+    fetch("{% url 'brand_import' organization.pk %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Brand imported successfully!');
+            location.reload();
+        } else {
+            alert('Error importing brand: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while importing the brand.');
+    });
+}
+    </script>
+{% endblock %}

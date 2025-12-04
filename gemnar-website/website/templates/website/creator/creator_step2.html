@@ -1,0 +1,238 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description"
+              content="Upload your photos and videos to complete step 2 of your creator profile on Gemnar.">
+        <meta name="keywords"
+              content="Gemnar, creator, profile, photos, videos, step 2">
+        <title>Creator Profile - Step 2 - Gemnar</title>
+        <link rel="stylesheet"
+              href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" />
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,700"
+              rel="stylesheet" />
+        <style>
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+        }
+        .custom-pink {
+            background-color: #D13B8F;
+        }
+        .custom-pink-light {
+            background-color: rgba(209, 59, 143, 0.1);
+        }
+        .upload-slot {
+            border: 3px dashed #E5E7EB;
+            background-color: #F9FAFB;
+            transition: all 0.3s ease;
+            height: 100px;
+        }
+        .upload-slot:hover {
+            border-color: #D13B8F;
+            background-color: #FDF2F8;
+        }
+        .upload-slot.filled {
+            border-style: solid;
+            border-color: #D13B8F;
+            background-color: white;
+        }
+        </style>
+    </head>
+    <body class="bg-white min-h-screen">
+        <div class="min-h-screen flex flex-col items-center justify-center px-6 py-8">
+            <!-- Logo -->
+            <div class="mb-12">
+                <img src="{% static 'images/logo.png' %}?v=1234567890"
+                     alt="Gemnar Logo"
+                     width="192"
+                     height="64"
+                     class="h-16 w-auto mx-auto" />
+            </div>
+            <!-- Header -->
+            <div class="text-center mb-8 max-w-4xl">
+                <h1 class="text-4xl font-bold text-gray-800 mb-4">Pick your videos and photos</h1>
+                <p class="text-xl text-gray-600 mb-6">Step 2 of 3</p>
+                <div class="w-full bg-gray-200 rounded-full h-2 max-w-md mx-auto">
+                    <!-- djlint:off H021 -->
+                    <div class="custom-pink h-2 rounded-full transition-all duration-300 ease-in-out"
+                         style="width: 66.66%"></div>
+                    <!-- djlint:on H021 -->
+                </div>
+                <p class="text-gray-600 mt-4 text-lg">Upload all 6 photos/videos to continue</p>
+            </div>
+            <!-- Upload Grid -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-4xl border border-gray-100">
+                <form method="post"
+                      enctype="multipart/form-data"
+                      id="upload-form"
+                      onsubmit="return validateForm()">
+                    {% csrf_token %}
+                    <!-- Photo Grid -->
+                    <div class="grid grid-cols-3 gap-6 mb-8">
+                        {% for i in "123456" %}
+                            <div class="upload-slot relative aspect-square rounded-xl cursor-pointer group"
+                                 data-slot="{{ forloop.counter }}">
+                                <input type="file"
+                                       id="photo{{ forloop.counter }}"
+                                       name="photo{{ forloop.counter }}"
+                                       accept="image/*,video/*"
+                                       class="hidden"
+                                       onchange="handleFileUpload(this, {{ forloop.counter }})">
+                                <!-- Upload Icon and Text -->
+                                <div class="upload-placeholder absolute inset-0 flex flex-col items-center justify-center text-gray-400 group-hover:text-pink-400 transition-colors duration-200">
+                                    <svg class="w-12 h-12 mb-2"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium">Add Photo/Video</span>
+                                    <span class="text-xs mt-1 text-gray-500">Required</span>
+                                </div>
+                                <!-- Preview Container -->
+                                <div class="preview-container hidden absolute inset-0 rounded-xl overflow-hidden">
+                                    <img class="preview-image w-full h-full object-cover"
+                                         src=""
+                                         alt="Preview"
+                                         width="200"
+                                         height="200">
+                                    <video class="preview-video w-full h-full object-cover hidden" controls>
+                                    </video>
+                                    <!-- Remove Button -->
+                                    <button type="button"
+                                            class="remove-btn absolute top-2 right-2 w-8 h-8 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-all duration-200"
+                                            onclick="removeFile({{ forloop.counter }})">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Error Message -->
+                    <div id="error-message"
+                         class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                        Please upload all 6 photos/videos before continuing.
+                    </div>
+                    <!-- Tips -->
+                    <div class="custom-pink-light border border-pink-200 rounded-lg p-4 mb-8">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-pink-600 mt-0.5 mr-3 flex-shrink-0"
+                                 fill="currentColor"
+                                 viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd">
+                                </path>
+                            </svg>
+                            <div>
+                                <h4 class="text-pink-800 font-semibold mb-1">Tips for great content:</h4>
+                                <ul class="text-pink-700 text-sm space-y-1">
+                                    <li>• Upload high-quality photos and videos that show your personality</li>
+                                    <li>• Include different types of content (lifestyle, fashion, food, etc.)</li>
+                                    <li>• Show your face and authentic moments</li>
+                                    <li>• Videos bring your profile to life, giving others a better sense of who you are</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Navigation Buttons -->
+                    <div class="flex justify-between items-center pt-6">
+                        <a href="{% url 'website:creator_step1' %}"
+                           class="text-gray-600 hover:text-gray-800 font-medium text-lg underline">
+                            ← Back to Profile
+                        </a>
+                        <button type="submit"
+                                class="custom-pink text-white font-bold py-4 px-8 rounded-2xl shadow-lg focus:outline-none focus:shadow-outline transform transition hover:scale-105 duration-300 ease-in-out text-lg">
+                            Continue to Brand Preferences
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script>
+    function handleFileUpload(input, slotNumber) {
+        const file = input.files[0];
+        if (!file) return;
+
+        const slot = input.closest('.upload-slot');
+        const placeholder = slot.querySelector('.upload-placeholder');
+        const previewContainer = slot.querySelector('.preview-container');
+        const previewImage = slot.querySelector('.preview-image');
+        const previewVideo = slot.querySelector('.preview-video');
+
+        // Hide placeholder, show preview container
+        placeholder.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        slot.classList.add('filled');
+
+        // Create file URL
+        const fileURL = URL.createObjectURL(file);
+
+        // Show preview based on file type
+        if (file.type.startsWith('image/')) {
+            previewImage.src = fileURL;
+            previewImage.classList.remove('hidden');
+            previewVideo.classList.add('hidden');
+        } else if (file.type.startsWith('video/')) {
+            previewVideo.src = fileURL;
+            previewVideo.classList.remove('hidden');
+            previewImage.classList.add('hidden');
+        }
+
+        // Hide error message if all slots are filled
+        if (document.querySelectorAll('.upload-slot.filled').length === 6) {
+            document.getElementById('error-message').classList.add('hidden');
+        }
+    }
+
+    function removeFile(slotNumber) {
+        const input = document.getElementById(`photo${slotNumber}`);
+        const slot = input.closest('.upload-slot');
+        const placeholder = slot.querySelector('.upload-placeholder');
+        const previewContainer = slot.querySelector('.preview-container');
+        const previewImage = slot.querySelector('.preview-image');
+        const previewVideo = slot.querySelector('.preview-video');
+
+        // Clear input
+        input.value = '';
+
+        // Reset preview
+        previewImage.src = '';
+        previewVideo.src = '';
+        previewImage.classList.add('hidden');
+        previewVideo.classList.add('hidden');
+        slot.classList.remove('filled');
+
+        // Show placeholder, hide preview
+        placeholder.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+    }
+
+    function validateForm() {
+        const filledSlots = document.querySelectorAll('.upload-slot.filled').length;
+        const errorMessage = document.getElementById('error-message');
+        
+        if (filledSlots !== 6) {
+            errorMessage.classList.remove('hidden');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // Add click handler to upload slots
+    document.querySelectorAll('.upload-slot').forEach(slot => {
+        slot.addEventListener('click', function(e) {
+            // Don't trigger if clicking on remove button
+            if (e.target.closest('.remove-btn')) return;
+            
+            const slotNumber = this.dataset.slot;
+            const input = document.getElementById(`photo${slotNumber}`);
+            input.click();
+        });
+    });
+        </script>
+    </body>
+</html>

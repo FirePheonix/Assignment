@@ -1,0 +1,272 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}Analytics Settings - {{ brand.name }}{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <!-- Breadcrumb Navigation -->
+        {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div class="flex items-center">
+                        <a href="{% url 'website:analytics_dashboard' brand.id %}"
+                           class="text-gray-400 hover:text-gray-600 mr-4">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Analytics Settings</h1>
+                            <p class="text-gray-600">{{ brand.name }} - Configure tracking preferences</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                <!-- Project Info -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Project Information</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Project Name</label>
+                            <input type="text"
+                                   name="name"
+                                   id="name"
+                                   value="{{ project.name }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="website_url"
+                                   class="block text-sm font-medium text-gray-700 mb-2">Website URL</label>
+                            <input type="url"
+                                   name="website_url"
+                                   id="website_url"
+                                   value="{{ project.website_url }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        </div>
+                    </div>
+                </div>
+                <!-- Tracking Options -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Tracking Options</h3>
+                    <div class="space-y-4">
+                        <!-- Mouse Movements -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                       name="record_mouse"
+                                       id="record_mouse"
+                                       {% if project.record_mouse_movements %}checked{% endif %}
+                                       class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                <label for="record_mouse" class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">Mouse Movement Recording</div>
+                                    <div class="text-sm text-gray-500">Record mouse movements for session replay</div>
+                                </label>
+                            </div>
+                            <i class="fas fa-mouse-pointer text-purple-500"></i>
+                        </div>
+                        <!-- Click Tracking -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                       name="record_clicks"
+                                       id="record_clicks"
+                                       {% if project.record_clicks %}checked{% endif %}
+                                       class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                <label for="record_clicks" class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">Click Tracking</div>
+                                    <div class="text-sm text-gray-500">Track user clicks and interactions</div>
+                                </label>
+                            </div>
+                            <i class="fas fa-hand-pointer text-purple-500"></i>
+                        </div>
+                        <!-- Form Interactions -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                       name="record_forms"
+                                       id="record_forms"
+                                       {% if project.record_form_inputs %}checked{% endif %}
+                                       class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                <label for="record_forms" class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">Form Interaction Tracking</div>
+                                    <div class="text-sm text-gray-500">Track form focus and submissions (no sensitive data)</div>
+                                </label>
+                            </div>
+                            <i class="fas fa-edit text-purple-500"></i>
+                        </div>
+                        <!-- Scroll Tracking -->
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                       name="record_scrolls"
+                                       id="record_scrolls"
+                                       {% if project.record_scrolls %}checked{% endif %}
+                                       class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                                <label for="record_scrolls" class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">Scroll Depth Tracking</div>
+                                    <div class="text-sm text-gray-500">Measure how far users scroll on pages</div>
+                                </label>
+                            </div>
+                            <i class="fas fa-arrows-alt-v text-purple-500"></i>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sampling Rate -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-6">Sampling & Performance</h3>
+                    <div>
+                        <label for="sample_rate"
+                               class="block text-sm font-medium text-gray-700 mb-2">
+                            Sample Rate: <span id="sample-rate-value">{{ project.sample_rate|floatformat:1 }}</span>
+                        </label>
+                        <input type="range"
+                               name="sample_rate"
+                               id="sample_rate"
+                               min="0.1"
+                               max="1.0"
+                               step="0.1"
+                               value="{{ project.sample_rate }}"
+                               oninput="updateSampleRate(this.value)"
+                               class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>10% of visitors</span>
+                            <span>100% of visitors</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-2">
+                            Lower sample rates reduce server load but provide less data.
+                            1.0 = track all visitors, 0.1 = track 10% of visitors.
+                        </p>
+                    </div>
+                </div>
+                <!-- Tracking Code -->
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border border-purple-200">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Installation Code</h3>
+                    <p class="text-gray-600 mb-4">Add this script to your website's &lt;head&gt; section:</p>
+                    <div class="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto mb-4 border border-gray-700">
+                        <code id="tracking-code-display" class="text-white">&lt;script src="https://{{ request.get_host }}/analytics/{{ project.tracking_code }}/script.js"&gt;&lt;/script&gt;</code>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button type="button"
+                                onclick="copyTrackingCode()"
+                                class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-copy mr-2"></i>Copy Code
+                        </button>
+                        <div class="text-sm text-gray-600">
+                            <strong>Tracking Code:</strong> {{ project.tracking_code }}
+                        </div>
+                    </div>
+                </div>
+                <!-- Save Button -->
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                        <i class="fas fa-save mr-2"></i>Save Settings
+                    </button>
+                </div>
+            </form>
+            <!-- Danger Zone -->
+            <div class="mt-8 bg-red-50 rounded-xl p-6 border border-red-200">
+                <h3 class="text-lg font-semibold text-red-900 mb-4">Danger Zone</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-sm font-medium text-red-900">Disable Analytics</h4>
+                        <p class="text-sm text-red-700">This will stop all tracking immediately. Data will be preserved.</p>
+                    </div>
+                    <button type="button"
+                            onclick="confirmDisableAnalytics()"
+                            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        Disable Tracking
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+function updateSampleRate(value) {
+    const percentage = Math.round(value * 100);
+    document.getElementById('sample-rate-value').textContent = value;
+}
+
+function copyTrackingCode() {
+    const codeElement = document.getElementById('tracking-code-display');
+    const code = codeElement.textContent;
+    const button = event.target.closest('button');
+    const originalText = button.innerHTML;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code).then(() => {
+            // Show success message
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-purple-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-purple-600');
+            }, 2000);
+        }).catch(err => {
+            // Fallback for clipboard API failure
+            fallbackCopyTextToClipboard(code, button, originalText);
+        });
+    } else {
+        // Fallback for browsers that don't support clipboard API
+        fallbackCopyTextToClipboard(code, button, originalText);
+    }
+}
+
+function fallbackCopyTextToClipboard(text, button, originalText) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            button.innerHTML = '<i class="fas fa-check mr-2"></i>Copied!';
+            button.classList.add('bg-green-600');
+            button.classList.remove('bg-purple-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-green-600');
+                button.classList.add('bg-purple-600');
+            }, 2000);
+        } else {
+            button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Copy Failed';
+            button.classList.add('bg-red-600');
+            button.classList.remove('bg-purple-600');
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.classList.remove('bg-red-600');
+                button.classList.add('bg-purple-600');
+            }, 2000);
+        }
+    } catch (err) {
+        button.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>Copy Failed';
+        button.classList.add('bg-red-600');
+        button.classList.remove('bg-purple-600');
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.classList.remove('bg-red-600');
+            button.classList.add('bg-purple-600');
+        }, 2000);
+    }
+    
+    document.body.removeChild(textArea);
+}
+function confirmDisableAnalytics() {
+if (confirm('Are you sure you want to disable analytics tracking? This action can be reversed.')) {
+// Implementation for disabling analytics
+window.location.href = `{% url 'website:analytics_dashboard' brand.id %}?action=disable`;
+}
+}
+    </script>
+{% endblock %}

@@ -1,0 +1,2302 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}Tweet Queue - {{ brand.name }}{% endblock %}
+{% block org_content %}
+    <div class="mb-4 sm:mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div>
+                <a href="{% url 'organization_brand_detail' organization.pk brand.pk %}"
+                   class="text-blue-600 hover:underline mb-2 inline-block text-sm sm:text-base">← Back to {{ brand.name }} Dashboard</a>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Tweet Queue</h1>
+                <p class="text-gray-600 text-sm sm:text-base">Manage scheduled tweets for {{ brand.name }} ({{ date_range }})</p>
+                <div class="text-xs sm:text-sm text-gray-500 mt-1 space-y-1">
+                    <p>
+                        Server time: <span id="server-local-time" class="font-mono">{{ current_time|date:"M d, Y H:i:s T" }}</span>
+                    </p>
+                    <p>
+                        UTC time: <span id="server-utc-time" class="font-mono">{{ current_time|date:"M d, Y H:i:s" }} UTC</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Tweet Queue Summary -->
+    <div class="bg-white border rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mb-4">
+            <div class="text-center">
+                <div class="text-lg sm:text-2xl font-bold text-gray-600">{{ tweets.count }}</div>
+                <div class="text-xs sm:text-sm text-gray-600">Total Tweets</div>
+            </div>
+            <div class="text-center">
+                <div class="text-lg sm:text-2xl font-bold text-green-600">{{ sent_tweets.count }}</div>
+                <div class="text-xs sm:text-sm text-gray-600">Posted Tweets</div>
+            </div>
+            <div class="text-center">
+                <div class="text-lg sm:text-2xl font-bold text-blue-600">{{ approved_count }}</div>
+                <div class="text-xs sm:text-sm text-gray-600">Approved Tweets</div>
+            </div>
+        </div>
+        <!-- Next Scheduled Tweet & Subscription Info -->
+        <div class="border-t pt-4 mt-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Next Scheduled Tweet -->
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-blue-900 mb-2">📅 Next Scheduled Tweet</h4>
+                    {% if next_scheduled_tweet %}
+                        <div class="text-sm text-blue-800">
+                            <div class="font-mono mb-1" id="next-tweet-time">{{ next_scheduled_tweet.scheduled_for|date:"M d, Y H:i:s T" }}</div>
+                            <div class="text-xs text-blue-600">UTC: {{ next_scheduled_tweet.scheduled_for|date:"M d, Y H:i:s" }} UTC</div>
+                            <div class="mt-2 p-2 bg-blue-100 rounded text-xs">
+                                <strong>Countdown:</strong> <span id="tweet-countdown" class="font-mono font-bold text-blue-900"></span>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-sm text-gray-500">No scheduled tweets</div>
+                    {% endif %}
+                </div>
+                <!-- Subscription Plan -->
+                <div class="bg-purple-50 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-purple-900 mb-2">💎 Subscription Plan</h4>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-lg font-bold text-purple-800">{{ subscription_plan }}</div>
+                            <div class="text-xs text-purple-600">Current plan</div>
+                        </div>
+                        {% if subscription_plan == "Free" or subscription_plan == "Canceled" %}
+                            <a href="{{ upgrade_url }}"
+                               class="bg-purple-600 hover:bg-purple-700 text-white text-xs px-3 py-1 rounded-full transition-colors">
+                                Upgrade
+                            </a>
+                        {% else %}
+                            <span class="bg-green-100 text-green-800 text-xs px-3 py-1 rounded-full">✅ Active</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Inline Create Tweet Form -->
+    {% if is_admin %}
+        <div class="bg-white border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6"
+             id="createTweetForm">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Create New Tweet</h3>
+            <!-- Additional Prompt and Website Controls -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Additional AI Prompt (Optional)</label>
+                    <input type="text"
+                           id="additional-prompt"
+                           name="additional_prompt"
+                           class="w-full p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                           placeholder="e.g., Make it funny, focus on benefits, include a call-to-action...">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Website for Content</label>
+                    <div class="flex gap-2">
+                        <input type="url"
+                               id="website-url"
+                               name="website_url"
+                               value="{{ brand.url|default:'' }}"
+                               class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                               placeholder="https://example.com">
+                        <button type="button"
+                                onclick="testWebsiteContent()"
+                                class="px-3 py-2 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                                title="Test website content extraction">Test</button>
+                    </div>
+                    <div id="website-status" class="text-xs mt-1 hidden"></div>
+                </div>
+            </div>
+            <form id="tweetForm">
+                {% csrf_token %}
+                <div class="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4">
+                    <!-- Content Section -->
+                    <div class="lg:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tweet Content</label>
+                        <textarea name="content"
+                                  id="tweet-content"
+                                  rows="4"
+                                  maxlength="280"
+                                  class="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm sm:text-base"
+                                  placeholder="What's happening?"></textarea>
+                        <!-- Tweet Strategy Selection -->
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="text-sm font-medium text-gray-700">Choose a Strategy</label>
+                                <a href="{% url 'tweet_strategies_dashboard' organization_pk=organization.pk brand_pk=brand.pk %}"
+                                   class="text-xs text-blue-600 hover:text-blue-800 underline"
+                                   target="_blank">Manage Strategies →</a>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                                {% for strategy in tweet_strategies %}
+                                    <button type="button"
+                                            onclick="selectStrategy({{ strategy.id }}, '{{ strategy.name|escapejs }}')"
+                                            class="strategy-btn bg-gray-100 hover:bg-blue-100 border border-gray-300 hover:border-blue-400 text-gray-700 hover:text-blue-700 text-xs px-2 py-2 rounded transition-colors text-center"
+                                            data-strategy-id="{{ strategy.id }}"
+                                            title="{{ strategy.description }}">
+                                        <div class="font-medium">{{ strategy.name }}</div>
+                                        <div class="text-xs text-gray-500">{{ strategy.get_category_display }}</div>
+                                    </button>
+                                {% endfor %}
+                                <button type="button"
+                                        onclick="selectWebsiteStrategy()"
+                                        class="strategy-btn bg-green-100 hover:bg-green-200 border border-green-300 hover:border-green-400 text-green-700 hover:text-green-800 text-xs px-2 py-2 rounded transition-colors text-center"
+                                        data-strategy-id="website"
+                                        title="Generate content based on your website">
+                                    <div class="font-medium">Website Content</div>
+                                    <div class="text-xs text-green-600">From URL</div>
+                                </button>
+                                <button type="button"
+                                        onclick="selectPromptStrategy()"
+                                        class="strategy-btn bg-purple-100 hover:bg-purple-200 border border-purple-300 hover:border-purple-400 text-purple-700 hover:text-purple-800 text-xs px-2 py-2 rounded transition-colors text-center"
+                                        data-strategy-id="prompt"
+                                        title="Generate content from your custom prompt">
+                                    <div class="font-medium">✨ Custom Prompt</div>
+                                    <div class="text-xs text-purple-600">AI Generated</div>
+                                </button>
+                            </div>
+                            <div id="selected-strategy" class="text-xs text-gray-600 mb-2 hidden">
+                                Selected: <span id="selected-strategy-name"></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center mt-2">
+                            <div class="character-count text-xs sm:text-sm text-gray-500">
+                                <span id="char-count">0</span>/280
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button"
+                                        onclick="generateAITweetWithStrategy()"
+                                        id="generate-ai-btn"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                        disabled>🎯 Generate with Strategy</button>
+                                <button type="button"
+                                        onclick="generateAITweetFromWebsite()"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                    🌐 Website Content
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Scheduling Section -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Schedule For</label>
+                        <input type="datetime-local"
+                               name="scheduled_for"
+                               id="scheduled-for"
+                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 mb-3 text-sm"
+                               required>
+                        <!-- Quick Schedule Buttons -->
+                        <div class="space-y-2">
+                            <button type="button"
+                                    onclick="scheduleInMinutes(2)"
+                                    class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm py-2 px-3 rounded">
+                                📧 Tweet in 2 minutes
+                            </button>
+                            <button type="button"
+                                    onclick="scheduleInMinutes(15)"
+                                    class="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs sm:text-sm py-2 px-3 rounded">
+                                ⏰ Tweet in 15 minutes
+                            </button>
+                            <button type="button"
+                                    onclick="scheduleInHours(1)"
+                                    class="w-full bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm py-2 px-3 rounded">
+                                🕐 Tweet in 1 hour
+                            </button>
+                        </div>
+                        <!-- Image Generation for New Tweet -->
+                        <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 text-yellow-600"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z">
+                                        </path>
+                                    </svg>
+                                    <span class="text-xs sm:text-sm font-medium text-yellow-700">Generate AI Image</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <select id="image-quality-select" class="text-xs border rounded px-2 py-1">
+                                        <option value="low">Low Quality (Fast)</option>
+                                        <option value="high">High Quality (OpenAI)</option>
+                                    </select>
+                                    <button type="button"
+                                            onclick="generateImageForNewTweet()"
+                                            id="generate-image-btn"
+                                            class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                        🎨 Generate
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="new-tweet-image-container" class="mt-3">
+                                <div id="image-placeholder"
+                                     class="w-full h-24 sm:h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                                    <div class="text-center">
+                                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400 mx-auto mb-2"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                        <p class="text-xs text-gray-500">Generated image will appear here</p>
+                                    </div>
+                                </div>
+                                <div id="image-loading"
+                                     class="w-full h-24 sm:h-32 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hidden">
+                                    <div class="text-center">
+                                        <div class="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-yellow-500 mx-auto mb-2"></div>
+                                        <p class="text-xs text-gray-500">Generating image...</p>
+                                    </div>
+                                </div>
+                                <div id="image-result" class="w-full hidden">
+                                    <!-- Generated image will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Submit Button -->
+                        <button type="submit"
+                                class="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 sm:py-3 px-4 rounded-lg text-sm sm:text-base">
+                            Create Tweet
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+    {% if tweets %}
+        <div class="space-y-3 sm:space-y-4">
+            <!-- All tweets -->
+            {% for tweet in tweets %}
+                {% if tweet.status == 'posted' %}
+                    <!-- Posted Tweet Container -->
+                    <div class="bg-white border border-green-300 rounded-lg p-3 sm:p-6 hover:shadow-lg transition-shadow tweet-card"
+                         data-tweet-id="{{ tweet.id }}">
+                        <!-- Posted Tweet Banner -->
+                        <div class="bg-green-100 border-l-4 border-green-500 p-2 mb-4">
+                            <div class="flex items-center">
+                                <span class="text-green-700 font-semibold text-sm">✅ Successfully Posted to Twitter</span>
+                            </div>
+                        </div>
+                        <div class="relative z-10 flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
+                            <!-- Image Thumbnail -->
+                            <div class="flex-shrink-0 order-2 sm:order-1">
+                                <div class="w-full h-64 sm:w-32 sm:h-32 bg-gray-200 rounded-lg flex items-center justify-center image-thumbnail mx-auto sm:mx-0"
+                                     data-tweet-id="{{ tweet.id }}">
+                                    {% if tweet.image %}
+                                        <img src="{{ tweet.image.url }}"
+                                             alt="Tweet image"
+                                             width="80"
+                                             height="80"
+                                             class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                             onclick="showImageModal('{{ tweet.image.url }}')"
+                                             title="Click to view full size">
+                                    {% else %}
+                                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                {% if is_admin and tweet.status != 'posted' %}
+                                    <div class="mt-2 space-y-1">
+                                        <select id="quality-{{ tweet.id }}"
+                                                class="w-full text-xs border rounded px-2 py-1">
+                                            <option value="low">Low Quality (Fast)</option>
+                                            <option value="high">High Quality (OpenAI)</option>
+                                        </select>
+                                        <button onclick="generateImage({{ tweet.id }})"
+                                                class="bg-green-500 hover:bg-green-600 text-white text-xs py-1 px-2 rounded w-full">
+                                            Generate Image
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Tweet Content -->
+                            <div class="flex-1 order-1 sm:order-2">
+                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                        <div class="text-xs sm:text-sm text-gray-500">
+                                            {% if is_admin and tweet.status != 'posted' %}
+                                                <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                                                    <input type="datetime-local"
+                                                           value="{{ tweet.scheduled_for|date:'Y-m-d\TH:i' }}"
+                                                           class="text-xs border border-gray-300 rounded px-2 py-1 w-full sm:w-auto"
+                                                           onchange="updateTweetSchedule({{ tweet.id }}, this.value)"
+                                                           data-tweet-id="{{ tweet.id }}">
+                                                    <button onclick="scheduleIn1Minute({{ tweet.id }})"
+                                                            class="bg-orange-500 hover:bg-orange-600 text-white text-xs py-1 px-2 rounded w-full sm:w-auto"
+                                                            title="Schedule for 1 minute from now">1min</button>
+                                                </div>
+                                            {% else %}
+                                                <div class="font-mono text-xs sm:text-sm">{{ tweet.scheduled_for|date:"M d, Y H:i:s" }} UTC</div>
+                                                {% if tweet.posted_at %}
+                                                    <div class="text-xs text-gray-500 mt-1">Posted {{ tweet.posted_at|timesince }} ago</div>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if tweet.status == 'approved' and tweet.scheduled_for %}
+                                                <div class="countdown-timer text-xs text-blue-600 font-semibold"
+                                                     data-scheduled-for="{{ tweet.scheduled_for|date:'c' }}"
+                                                     data-tweet-id="{{ tweet.id }}">Calculating...</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            {% if is_admin %}
+                                                <!-- Status Dropdown for Admins -->
+                                                <div class="relative">
+                                                    <button type="button"
+                                                            class="status-dropdown-btn px-2 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}"
+                                                            onclick="toggleStatusDropdown({{ tweet.id }})"
+                                                            data-tweet-id="{{ tweet.id }}"
+                                                            data-current-status="{{ tweet.status }}">
+                                                        {{ tweet.status|title }} ▼
+                                                    </button>
+                                                    <div id="status-dropdown-{{ tweet.id }}"
+                                                         class="absolute top-full left-0 mt-1 w-24 bg-white border border-gray-300 rounded-md shadow-lg z-10 hidden">
+                                                        <a href="#"
+                                                           onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'draft')"
+                                                           class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'draft' %}bg-gray-100 font-semibold{% endif %}">
+                                                            Draft
+                                                        </a>
+                                                        <a href="#"
+                                                           onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'approved')"
+                                                           class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'approved' %}bg-blue-100 font-semibold{% endif %}">
+                                                            Approved
+                                                        </a>
+                                                        <a href="#"
+                                                           onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'posted')"
+                                                           class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'posted' %}bg-green-100 font-semibold{% endif %}">
+                                                            Posted
+                                                        </a>
+                                                        <a href="#"
+                                                           onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'failed')"
+                                                           class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'failed' %}bg-red-100 font-semibold{% endif %}">
+                                                            Failed
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <!-- Static Status Badge for Non-Admins -->
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                    {{ tweet.status|title }}
+                                                </span>
+                                            {% endif %}
+                                            <!-- Twitter URL if posted -->
+                                            {% if tweet.status == 'posted' and tweet.tweet_url or tweet.get_twitter_url %}
+                                                <a href="{{ tweet.tweet_url|default:tweet.get_twitter_url }}"
+                                                   target="_blank"
+                                                   class="text-blue-600 hover:text-blue-800 text-xs sm:text-sm flex items-center">
+                                                    <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1"
+                                                         fill="currentColor"
+                                                         viewBox="0 0 24 24">
+                                                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                                                    </svg>
+                                                    <span class="hidden sm:inline">View on Twitter</span>
+                                                    <span class="sm:hidden">Twitter</span>
+                                                </a>
+                                            {% endif %}
+                                            <!-- Metrics display for posted tweets -->
+                                            {% if tweet.status == 'posted' %}
+                                                <div class="flex items-center gap-2 mt-2">
+                                                    <div class="flex items-center gap-3 text-xs">
+                                                        <span class="flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                                            </svg>
+                                                            <span id="like-count-{{ tweet.id }}">{{ tweet.like_count }}</span>
+                                                        </span>
+                                                        <span class="flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M23.977 12c0 6.627-5.373 12-12 12s-12-5.373-12-12 5.373-12 12-12 12 5.373 12 12zm-12 5l7-5-7-5v10z" />
+                                                            </svg>
+                                                            <span id="retweet-count-{{ tweet.id }}">{{ tweet.retweet_count }}</span>
+                                                        </span>
+                                                        <span class="flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 2c4.411 0 8 3.589 8 8s-3.589 8-8 8-8-3.589-8-8 3.589-8 8-8zm-1 3v6l5.25 3.15.75-1.23L12 14V7h-1z" />
+                                                            </svg>
+                                                            <span id="reply-count-{{ tweet.id }}">{{ tweet.reply_count }}</span>
+                                                        </span>
+                                                        <span class="flex items-center gap-1">
+                                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                            </svg>
+                                                            <span id="quote-count-{{ tweet.id }}">{{ tweet.quote_count }}</span>
+                                                        </span>
+                                                    </div>
+                                                    {% if is_admin %}
+                                                        <button onclick="refreshMetrics({{ tweet.id }})"
+                                                                class="ml-2 bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded refresh-metrics-btn"
+                                                                id="refresh-btn-{{ tweet.id }}"
+                                                                title="Refresh metrics from Twitter">🔄</button>
+                                                    {% endif %}
+                                                </div>
+                                                {% if tweet.metrics_last_updated %}
+                                                    <div class="text-xs text-gray-500 mt-1">Metrics updated: {{ tweet.metrics_last_updated|date:"M d, H:i" }}</div>
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% if is_admin %}
+                                        <div class="flex flex-wrap gap-1 sm:gap-2">
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="generateAIText({{ tweet.id }})"
+                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                                    AI Generate
+                                                </button>
+                                            {% endif %}
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="scheduleForNextSlot({{ tweet.id }})"
+                                                        class="bg-purple-500 hover:bg-purple-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                                        title="Schedule for next available time slot">
+                                                    <span class="hidden sm:inline">📅 Schedule Next Slot</span>
+                                                    <span class="sm:hidden">📅 Next</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="postTweetNow({{ tweet.id }})"
+                                                        class="bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                                    <span class="hidden sm:inline">🚀 Post to Twitter</span>
+                                                    <span class="sm:hidden">🚀 Post</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if tweet.status == 'posted' %}
+                                                <button onclick="deleteFromTwitter({{ tweet.id }})"
+                                                        class="bg-orange-500 hover:bg-orange-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                                        title="Delete from Twitter">
+                                                    <span class="hidden sm:inline">🗑️ Delete from Twitter</span>
+                                                    <span class="sm:hidden">🗑️</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if is_superuser %}
+                                                <a href="/admin/website/brandtweet/{{ tweet.id }}/change/"
+                                                   target="_blank"
+                                                   class="bg-gray-600 hover:bg-gray-700 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded inline-block"
+                                                   title="Edit in Django Admin">
+                                                    <span class="hidden sm:inline">✏️ Edit Admin</span>
+                                                    <span class="sm:hidden">✏️</span>
+                                                </a>
+                                            {% endif %}
+                                            <button onclick="deleteTweet({{ tweet.id }})"
+                                                    class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                                    title="Delete Tweet">
+                                                <span class="hidden sm:inline">🗑️ Delete</span>
+                                                <span class="sm:hidden">🗑️</span>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Editable Tweet Content -->
+                                <div class="tweet-content-container">
+                                    {% if is_admin and tweet.status != 'posted' %}
+                                        <textarea class="w-full p-2 sm:p-3 border border-gray-300 rounded-lg resize-none tweet-content-input text-sm"
+                                                  rows="3"
+                                                  maxlength="280"
+                                                  data-tweet-id="{{ tweet.id }}"
+                                                  placeholder="Enter tweet content...">{{ tweet.content }}</textarea>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="character-count text-xs sm:text-sm text-gray-500">
+                                                <span class="current">{{ tweet.content|length }}</span>/280
+                                            </div>
+                                            <button onclick="saveTweetContent({{ tweet.id }})"
+                                                    class="bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded save-btn">
+                                                Save
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="p-2 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <p class="text-gray-800 tweet-content text-sm sm:text-base">{{ tweet.content|default:"No content yet..." }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if tweet.error_message %}
+                                    <div class="mt-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p class="text-red-800 text-xs sm:text-sm">{{ tweet.error_message }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Regular Tweet Container -->
+                    <div class="bg-white border rounded-lg p-3 sm:p-6 hover:shadow-lg transition-shadow tweet-card"
+                         data-tweet-id="{{ tweet.id }}">
+                        <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-3 sm:space-y-0">
+                            <!-- Image Thumbnail -->
+                            <div class="flex-shrink-0 order-2 sm:order-1">
+                                <div class="w-full h-64 sm:w-32 sm:h-32 bg-gray-200 rounded-lg flex items-center justify-center image-thumbnail mx-auto sm:mx-0"
+                                     data-tweet-id="{{ tweet.id }}">
+                                    {% if tweet.image %}
+                                        <img src="{{ tweet.image.url }}"
+                                             alt="Tweet image"
+                                             width="80"
+                                             height="80"
+                                             class="w-full h-full object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                                             onclick="showImageModal('{{ tweet.image.url }}')"
+                                             title="Click to view full size">
+                                    {% else %}
+                                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-gray-400"
+                                             fill="none"
+                                             stroke="currentColor"
+                                             viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 16m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                    {% endif %}
+                                </div>
+                                {% if is_admin and tweet.status != 'posted' %}
+                                    <div class="mt-2 space-y-1">
+                                        <select id="quality-{{ tweet.id }}"
+                                                class="w-full text-xs border rounded px-2 py-1">
+                                            <option value="low">Low Quality (Fast)</option>
+                                            <option value="high">High Quality (OpenAI)</option>
+                                        </select>
+                                        <button onclick="generateImage({{ tweet.id }})"
+                                                class="bg-green-500 hover:bg-green-600 text-white text-xs py-1 px-2 rounded w-full">
+                                            Generate Image
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Tweet Content -->
+                            <div class="flex-1 order-1 sm:order-2">
+                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 space-y-2 sm:space-y-0">
+                                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                                        <div class="text-xs sm:text-sm text-gray-500">
+                                            {% if is_admin and tweet.status != 'posted' %}
+                                                <div class="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                                                    <input type="datetime-local"
+                                                           value="{{ tweet.scheduled_for|date:'Y-m-d\TH:i' }}"
+                                                           class="text-xs border border-gray-300 rounded px-2 py-1 w-full sm:w-auto"
+                                                           onchange="updateTweetSchedule({{ tweet.id }}, this.value)"
+                                                           data-tweet-id="{{ tweet.id }}">
+                                                    <button onclick="scheduleIn1Minute({{ tweet.id }})"
+                                                            class="bg-orange-500 hover:bg-orange-600 text-white text-xs py-1 px-2 rounded w-full sm:w-auto"
+                                                            title="Schedule for 1 minute from now">1min</button>
+                                                </div>
+                                            {% else %}
+                                                <div class="font-mono text-xs sm:text-sm">{{ tweet.scheduled_for|date:"M d, Y H:i:s" }} UTC</div>
+                                                {% if tweet.posted_at %}
+                                                    <div class="text-xs text-gray-500 mt-1">Posted {{ tweet.posted_at|timesince }} ago</div>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if tweet.status == 'approved' and tweet.scheduled_for %}
+                                                <div class="countdown-timer text-xs text-blue-600 font-semibold"
+                                                     data-scheduled-for="{{ tweet.scheduled_for|date:'c' }}"
+                                                     data-tweet-id="{{ tweet.id }}">Calculating...</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if is_admin %}
+                                            <!-- Status Dropdown for Admins -->
+                                            <div class="relative">
+                                                <button type="button"
+                                                        class="status-dropdown-btn px-2 py-1 text-xs font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}"
+                                                        onclick="toggleStatusDropdown({{ tweet.id }})"
+                                                        data-tweet-id="{{ tweet.id }}"
+                                                        data-current-status="{{ tweet.status }}">
+                                                    {{ tweet.status|title }} ▼
+                                                </button>
+                                                <div id="status-dropdown-{{ tweet.id }}"
+                                                     class="absolute top-full left-0 mt-1 w-24 bg-white border border-gray-300 rounded-md shadow-lg z-10 hidden">
+                                                    <a href="#"
+                                                       onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'draft')"
+                                                       class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'draft' %}bg-gray-100 font-semibold{% endif %}">
+                                                        Draft
+                                                    </a>
+                                                    <a href="#"
+                                                       onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'approved')"
+                                                       class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'approved' %}bg-blue-100 font-semibold{% endif %}">
+                                                        Approved
+                                                    </a>
+                                                    <a href="#"
+                                                       onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'posted')"
+                                                       class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'posted' %}bg-green-100 font-semibold{% endif %}">
+                                                        Posted
+                                                    </a>
+                                                    <a href="#"
+                                                       onclick="event.preventDefault(); updateTweetStatus({{ tweet.id }}, 'failed')"
+                                                       class="block px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 {% if tweet.status == 'failed' %}bg-red-100 font-semibold{% endif %}">
+                                                        Failed
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% else %}
+                                            <!-- Static Status Badge for Non-Admins -->
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full {% if tweet.status == 'posted' %}bg-green-100 text-green-800 {% elif tweet.status == 'failed' %}bg-red-100 text-red-800 {% elif tweet.status == 'approved' %}bg-blue-100 text-blue-800 {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ tweet.status|title }}
+                                            </span>
+                                        {% endif %}
+                                        <!-- Metrics display for posted tweets -->
+                                        {% if tweet.status == 'posted' %}
+                                            <div class="flex items-center gap-2 mt-2">
+                                                <div class="flex items-center gap-3 text-xs">
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                                                        </svg>
+                                                        <span id="like-count-{{ tweet.id }}">{{ tweet.like_count }}</span>
+                                                    </span>
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M23.977 12c0 6.627-5.373 12-12 12s-12-5.373-12-12 5.373-12 12-12 12 5.373 12 12zm-12 5l7-5-7-5v10z" />
+                                                        </svg>
+                                                        <span id="retweet-count-{{ tweet.id }}">{{ tweet.retweet_count }}</span>
+                                                    </span>
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 2c4.411 0 8 3.589 8 8s-3.589 8-8 8-8-3.589-8-8 3.589-8 8-8zm-1 3v6l5.25 3.15.75-1.23L12 14V7h-1z" />
+                                                        </svg>
+                                                        <span id="reply-count-{{ tweet.id }}">{{ tweet.reply_count }}</span>
+                                                    </span>
+                                                    <span class="flex items-center gap-1">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                                        </svg>
+                                                        <span id="quote-count-{{ tweet.id }}">{{ tweet.quote_count }}</span>
+                                                    </span>
+                                                </div>
+                                                {% if is_admin %}
+                                                    <button onclick="refreshMetrics({{ tweet.id }})"
+                                                            class="ml-2 bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded refresh-metrics-btn"
+                                                            id="refresh-btn-{{ tweet.id }}"
+                                                            title="Refresh metrics from Twitter">🔄</button>
+                                                {% endif %}
+                                            </div>
+                                            {% if tweet.metrics_last_updated %}
+                                                <div class="text-xs text-gray-500 mt-1">Metrics updated: {{ tweet.metrics_last_updated|date:"M d, H:i" }}</div>
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                    {% if is_admin %}
+                                        <div class="flex flex-wrap gap-1 sm:gap-2">
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="generateAIText({{ tweet.id }})"
+                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                                    AI Generate
+                                                </button>
+                                            {% endif %}
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="scheduleForNextSlot({{ tweet.id }})"
+                                                        class="bg-purple-500 hover:bg-purple-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                                        title="Schedule for next available time slot">
+                                                    <span class="hidden sm:inline">📅 Schedule Next Slot</span>
+                                                    <span class="sm:hidden">📅 Next</span>
+                                                </button>
+                                            {% endif %}
+                                            {% if tweet.status != 'posted' %}
+                                                <button onclick="postTweetNow({{ tweet.id }})"
+                                                        class="bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded">
+                                                    <span class="hidden sm:inline">🚀 Post to Twitter</span>
+                                                    <span class="sm:hidden">🚀 Post</span>
+                                                </button>
+                                            {% endif %}
+                                            <button onclick="deleteTweet({{ tweet.id }})"
+                                                    class="bg-red-500 hover:bg-red-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded"
+                                                    title="Delete Tweet">
+                                                <span class="hidden sm:inline">🗑️ Delete</span>
+                                                <span class="sm:hidden">🗑️</span>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Editable Tweet Content -->
+                                <div class="tweet-content-container">
+                                    {% if is_admin and tweet.status != 'posted' %}
+                                        <textarea class="w-full p-2 sm:p-3 border border-gray-300 rounded-lg resize-none tweet-content-input text-sm"
+                                                  rows="3"
+                                                  maxlength="280"
+                                                  data-tweet-id="{{ tweet.id }}"
+                                                  placeholder="Enter tweet content...">{{ tweet.content }}</textarea>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="character-count text-xs sm:text-sm text-gray-500">
+                                                <span class="current">{{ tweet.content|length }}</span>/280
+                                            </div>
+                                            <button onclick="saveTweetContent({{ tweet.id }})"
+                                                    class="bg-green-500 hover:bg-green-600 text-white text-xs sm:text-sm py-1 px-2 sm:px-3 rounded save-btn">
+                                                Save
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="p-2 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                            <p class="text-gray-800 tweet-content text-sm sm:text-base">{{ tweet.content|default:"No content yet..." }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if tweet.error_message %}
+                                    <div class="mt-3 p-2 sm:p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <p class="text-red-800 text-xs sm:text-sm">{{ tweet.error_message }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="bg-gray-50 rounded-lg p-6 sm:p-8 text-center">
+            <div class="text-gray-400 mb-4">
+                <svg class="w-12 h-12 sm:w-16 sm:h-16 mx-auto"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                    </path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">No tweets scheduled</h3>
+            <p class="text-gray-600 mb-4 text-sm sm:text-base">
+                Start building your content calendar by creating your first tweet.
+            </p>
+            {% if is_admin %}
+                <p class="text-purple-600 font-medium text-sm sm:text-base">Use the form above to create your first tweet.</p>
+            {% endif %}
+        </div>
+    {% endif %}
+    <!-- AI Prompt Modal for inline use -->
+    {% if is_admin %}
+        <div id="aiPromptModal"
+             class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50 p-4">
+            <div class="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:max-w-lg shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">AI Text Generation</h3>
+                    <form id="aiPromptForm">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Describe what you want the tweet to be about</label>
+                            <textarea name="prompt"
+                                      rows="3"
+                                      class="w-full p-3 border border-gray-300 rounded-lg resize-none text-sm"
+                                      placeholder="e.g., Write an engaging tweet about our new product launch"></textarea>
+                        </div>
+                        <div class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                            <button type="button"
+                                    onclick="hideAIPromptModal()"
+                                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded text-sm">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded text-sm">
+                                Generate Text
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+{% block extra_css %}
+    <style>
+        .royal-tweet-border {
+            border-color: #FFD700 !important;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        .royal-gold-border {
+            border-color: #FFD700 !important;
+        }
+        .royal-gold-text {
+            color: #FFD700 !important;
+        }
+        .royal-gold-light-text {
+            color: #FFE066 !important;
+        }
+        .royal-gold-lighter-text {
+            color: #FFEB9C !important;
+        }
+        .royal-content-text {
+            color: #FFF9C4 !important;
+        }
+        @keyframes shimmer {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: calc(200px + 100%) 0;
+            }
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        .refresh-metrics-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .refresh-metrics-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+{% endblock %}
+{% block extra_js %}
+    <script>
+let currentTweetId = null;
+let selectedStrategyId = null;
+let selectedStrategyName = null;
+
+// Scheduling helper functions
+function scheduleInMinutes(minutes) {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + minutes);
+    document.getElementById('scheduled-for').value = now.toISOString().slice(0, 16);
+}
+
+function scheduleInHours(hours) {
+    const now = new Date();
+    now.setHours(now.getHours() + hours);
+    document.getElementById('scheduled-for').value = now.toISOString().slice(0, 16);
+}
+
+// Character counting for inline form
+function updateCharCount() {
+    const textarea = document.getElementById('tweet-content');
+    const counter = document.getElementById('char-count');
+    if (textarea && counter) {
+        counter.textContent = textarea.value.length;
+        if (textarea.value.length > 280) {
+            counter.parentElement.className = 'character-count text-sm text-red-500';
+        } else if (textarea.value.length > 250) {
+            counter.parentElement.className = 'character-count text-sm text-yellow-500';
+        } else {
+            counter.parentElement.className = 'character-count text-sm text-gray-500';
+        }
+    }
+}
+
+// Update server time display
+function updateCurrentTime() {
+    const localTimeElement = document.getElementById('server-local-time');
+    const utcTimeElement = document.getElementById('server-utc-time');
+    
+    if (localTimeElement && utcTimeElement) {
+        const now = new Date();
+        
+        // Server local time with timezone
+        localTimeElement.textContent = now.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+        });
+        
+        // UTC time
+        utcTimeElement.textContent = now.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZone: 'UTC'
+        }) + ' UTC';
+    }
+}
+
+// Countdown timer for next scheduled tweet
+function updateTweetCountdown() {
+    const countdownElement = document.getElementById('tweet-countdown');
+    if (!countdownElement) return;
+    
+    {% if next_scheduled_tweet %}
+    const targetTime = new Date('{{ next_scheduled_tweet.scheduled_for|date:"c" }}');
+    const now = new Date();
+    const timeDiff = targetTime - now;
+    
+    if (timeDiff <= 0) {
+        countdownElement.textContent = 'Posting soon...';
+        countdownElement.className = 'font-mono font-bold text-green-600';
+        return;
+    }
+    
+    const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+    
+    let countdownText = '';
+    if (days > 0) {
+        countdownText = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+    } else if (hours > 0) {
+        countdownText = `${hours}h ${minutes}m ${seconds}s`;
+    } else if (minutes > 0) {
+        countdownText = `${minutes}m ${seconds}s`;
+    } else {
+        countdownText = `${seconds}s`;
+    }
+    
+    countdownElement.textContent = countdownText;
+    
+    // Color coding based on time remaining
+    if (timeDiff < 60000) { // Less than 1 minute
+        countdownElement.className = 'font-mono font-bold text-red-600';
+    } else if (timeDiff < 300000) { // Less than 5 minutes
+        countdownElement.className = 'font-mono font-bold text-orange-600';
+    } else if (timeDiff < 3600000) { // Less than 1 hour
+        countdownElement.className = 'font-mono font-bold text-yellow-600';
+    } else {
+        countdownElement.className = 'font-mono font-bold text-blue-900';
+    }
+    {% endif %}
+}
+
+// AI modal functions (for inline form)
+function showAIPromptModal(tweetId = null) {
+    currentTweetId = tweetId;
+    document.getElementById('aiPromptModal').classList.remove('hidden');
+}
+
+function hideAIPromptModal() {
+    document.getElementById('aiPromptModal').classList.add('hidden');
+    document.getElementById('aiPromptForm').reset();
+    currentTweetId = null;
+}
+
+function generateAITextInline() {
+    showAIPromptModal();
+}
+
+// Strategy Selection Functions
+function selectStrategy(strategyId, strategyName) {
+    selectedStrategyId = strategyId;
+    selectedStrategyName = strategyName;
+    
+    // Update UI to show selected strategy
+    document.querySelectorAll('.strategy-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-200', 'border-blue-500', 'text-blue-800');
+        btn.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
+    });
+    
+    // Highlight selected strategy
+    const selectedBtn = document.querySelector(`[data-strategy-id="${strategyId}"]`);
+    if (selectedBtn) {
+        selectedBtn.classList.remove('bg-gray-100', 'border-gray-300', 'text-gray-700');
+        selectedBtn.classList.add('bg-blue-200', 'border-blue-500', 'text-blue-800');
+    }
+    
+    // Show selected strategy text
+    document.getElementById('selected-strategy').classList.remove('hidden');
+    document.getElementById('selected-strategy-name').textContent = strategyName;
+    
+    // Enable the generate with strategy button
+    document.getElementById('generate-ai-btn').disabled = false;
+}
+
+function selectWebsiteStrategy() {
+    selectedStrategyId = 'website';
+    selectedStrategyName = 'Website Content';
+    
+    // Update UI to show selected strategy
+    document.querySelectorAll('.strategy-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-200', 'border-blue-500', 'text-blue-800', 'bg-green-200', 'border-green-500', 'text-green-800', 'bg-purple-200', 'border-purple-500', 'text-purple-800');
+        if (btn.dataset.strategyId === 'website') {
+            btn.classList.add('bg-green-200', 'border-green-500', 'text-green-800');
+        } else {
+            btn.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
+        }
+    });
+    
+    // Show selected strategy text
+    document.getElementById('selected-strategy').classList.remove('hidden');
+    document.getElementById('selected-strategy-name').textContent = selectedStrategyName;
+    
+    // Enable the generate with strategy button
+    document.getElementById('generate-ai-btn').disabled = false;
+}
+
+function selectPromptStrategy() {
+    selectedStrategyId = 'prompt';
+    selectedStrategyName = 'Custom Prompt';
+    
+    // Update UI to show selected strategy
+    document.querySelectorAll('.strategy-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-200', 'border-blue-500', 'text-blue-800', 'bg-green-200', 'border-green-500', 'text-green-800', 'bg-purple-200', 'border-purple-500', 'text-purple-800');
+        if (btn.dataset.strategyId === 'prompt') {
+            btn.classList.add('bg-purple-200', 'border-purple-500', 'text-purple-800');
+        } else {
+            btn.classList.add('bg-gray-100', 'border-gray-300', 'text-gray-700');
+        }
+    });
+    
+    // Show selected strategy text
+    document.getElementById('selected-strategy').classList.remove('hidden');
+    document.getElementById('selected-strategy-name').textContent = selectedStrategyName;
+    
+    // Enable the generate with strategy button
+    document.getElementById('generate-ai-btn').disabled = false;
+}
+
+function testWebsiteContent() {
+    const websiteUrl = document.getElementById('website-url').value;
+    const statusDiv = document.getElementById('website-status');
+    
+    if (!websiteUrl) {
+        statusDiv.textContent = 'Please enter a website URL';
+        statusDiv.className = 'text-xs mt-1 text-red-600';
+        statusDiv.classList.remove('hidden');
+        return;
+    }
+    
+    statusDiv.textContent = 'Testing website...';
+    statusDiv.className = 'text-xs mt-1 text-blue-600';
+    statusDiv.classList.remove('hidden');
+    
+    // Test the website content extraction
+    fetch(`/api/twitter/test-website-content/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken()
+        },
+        body: JSON.stringify({
+            website_url: websiteUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            statusDiv.textContent = `✓ Content extracted (${data.content_length} chars)`;
+            statusDiv.className = 'text-xs mt-1 text-green-600';
+        } else {
+            statusDiv.textContent = `✗ Failed: ${data.error}`;
+            statusDiv.className = 'text-xs mt-1 text-red-600';
+        }
+    })
+    .catch(error => {
+        statusDiv.textContent = `✗ Error testing website`;
+        statusDiv.className = 'text-xs mt-1 text-red-600';
+    });
+}
+
+function generateAITweetWithStrategy() {
+    if (!selectedStrategyId) {
+        showNotification('Please select a strategy first', 'error');
+        return;
+    }
+    
+    const button = document.getElementById('generate-ai-btn');
+    const originalText = button.textContent;
+    button.textContent = 'Generating...';
+    button.disabled = true;
+    
+    // Get additional inputs
+    const additionalPrompt = document.getElementById('additional-prompt').value;
+    const websiteUrl = document.getElementById('website-url').value;
+    
+    if (selectedStrategyId === 'website') {
+        // Use the existing website content generation
+        generateAITweetFromWebsite();
+        // Reset button state
+        button.textContent = originalText;
+        button.disabled = false;
+        return;
+    }
+    
+    if (selectedStrategyId === 'prompt') {
+        // Generate from custom prompt
+        if (!additionalPrompt.trim()) {
+            showNotification('Please enter a custom prompt for AI generation', 'error');
+            button.textContent = originalText;
+            button.disabled = false;
+            return;
+        }
+        
+        generateFromCustomPrompt(additionalPrompt, websiteUrl);
+        button.textContent = originalText;
+        button.disabled = false;
+        return;
+    }
+    
+    // Use the new strategy-based generation
+    fetch(`/api/twitter/generate-with-strategy/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+            strategy_id: selectedStrategyId,
+            brand_id: {{ brand.pk }},
+            additional_prompt: additionalPrompt,
+            website_url: websiteUrl,
+            context: {}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('tweet-content').value = data.tweet.content;
+            updateCharCount();
+            showNotification(`AI tweet generated using ${selectedStrategyName} strategy!`, 'success');
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error generating AI tweet with strategy', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+function generateFromCustomPrompt(prompt, websiteUrl) {
+    fetch(`/api/twitter/generate-from-prompt/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify({
+            prompt: prompt,
+            brand_id: {{ brand.pk }},
+            website_url: websiteUrl
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('tweet-content').value = data.content;
+            updateCharCount();
+            showNotification('AI tweet generated from custom prompt!', 'success');
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error generating AI tweet from prompt', 'error');
+        console.error('Error:', error);
+    });
+}
+
+function generateAITweetFromWebsite() {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Generating...';
+    button.disabled = true;
+    
+    fetch(`{% url 'brand_tweet_generate_ai_from_website' organization.pk brand.pk %}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('tweet-content').value = data.content;
+            updateCharCount();
+            showNotification(data.message, 'success');
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error generating AI tweet', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+// Tweet management functions (for existing tweets)
+function saveTweetContent(tweetId) {
+    const textarea = document.querySelector(`textarea[data-tweet-id="${tweetId}"]`);
+    const content = textarea.value;
+    
+    fetch(`{% url 'brand_tweet_update' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ content: content })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Tweet updated successfully!', 'success');
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating tweet', 'error');
+    });
+}
+
+function generateAIText(tweetId) {
+    showAIPromptModal(tweetId);
+}
+
+function generateImage(tweetId) {
+    // Get quality selection
+    const qualitySelect = document.getElementById(`quality-${tweetId}`);
+    const quality = qualitySelect ? qualitySelect.value : 'low';
+    
+    // Show loading state
+    const button = document.querySelector(`[onclick="generateImage(${tweetId})"]`);
+    const originalText = button.textContent;
+    
+    // Show different messages based on quality
+    if (quality === 'high') {
+        button.textContent = 'Generating (may take longer)...';
+        showNotification('High quality image generation started. This may take a moment...', 'info');
+    } else {
+        button.textContent = 'Generating...';
+    }
+    button.disabled = true;
+    
+    // Get the tweet content for prompt generation
+    const tweetElement = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+    const tweetContentElement = tweetElement ? tweetElement.querySelector('.tweet-content-input') : null;
+    const tweetContent = tweetContentElement ? tweetContentElement.value.trim() : '';
+    
+    // Set service based on quality selection
+    const payload = {
+        service: quality === 'high' ? 'openai' : 'runware',
+        quality: quality
+    };
+    
+    // Only ask for custom prompt if no tweet content exists
+    if (!tweetContent) {
+        const customPrompt = prompt(
+            'No tweet content found. Enter a custom prompt for image generation:',
+            ''
+        );
+        
+        if (customPrompt && customPrompt.trim()) {
+            payload.prompt = customPrompt.trim();
+        } else {
+            // Reset button if user cancels
+            button.textContent = originalText;
+            button.disabled = false;
+            return;
+        }
+    }
+    
+    fetch(`{% url 'brand_tweet_generate_image' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        },
+        body: JSON.stringify(payload)
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        console.log('Response status:', response.status, 'Content-Type:', contentType);
+        
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // Log the response text for debugging
+            return response.text().then(text => {
+                console.error('Non-JSON response received:', text.substring(0, 500));
+                
+                // If not JSON, it's likely an HTML error page (403, 404, etc.)
+                if (response.status === 403) {
+                    throw new Error('Permission denied. You may need to be an organization admin to generate images.');
+                } else if (response.status === 401) {
+                    throw new Error('Authentication required. Please log in and try again.');
+                } else if (response.status === 404) {
+                    throw new Error('Tweet not found.');
+                } else if (response.status === 500) {
+                    throw new Error('Server error. Please try again later.');
+                } else {
+                    throw new Error(`Server error (${response.status}): ${response.statusText}. Response: ${text.substring(0, 100)}`);
+                }
+            });
+        }
+    })
+    .then(data => {
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+        
+        if (data.success) {
+            showNotification(`${data.message} (${data.service})`, 'success');
+            
+            // Update the tweet row with the generated image
+            const tweetRow = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+            if (tweetRow) {
+                // Find or create image display area
+                let imageContainer = tweetRow.querySelector('.generated-image-container');
+                if (!imageContainer) {
+                    imageContainer = document.createElement('div');
+                    imageContainer.className = 'generated-image-container mt-3';
+                    tweetRow.appendChild(imageContainer);
+                }
+                
+                imageContainer.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${data.image_url}" alt="Generated image" class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg border border-gray-300 cursor-pointer hover:border-blue-500 transition-colors" onclick="showImageModal('${data.image_url}')">
+                        <div class="text-sm text-gray-600">
+                            <div class="font-medium">Generated by ${data.service}</div>
+                            <div class="text-xs text-gray-500">Prompt: ${data.prompt.slice(0, 60)}...</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Refresh the page to show the updated tweet with image
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            // Handle specific error cases
+            let errorMessage = data.error;
+            if (data.error === '0' || data.error === 'Image generation error: 0') {
+                errorMessage = 'Image generation failed. Please try again or check your API configuration.';
+            }
+            showNotification('Error: ' + errorMessage, 'error');
+            console.error('Image generation error details:', data);
+        }
+    })
+    .catch(error => {
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+        
+        // Handle network or server errors
+        let errorMessage = error.message;
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+            errorMessage = 'Server error. Please try again later.';
+        } else if (error.message.includes('Permission denied')) {
+            errorMessage = 'Permission denied. You need to be an organization admin to generate images.';
+        } else if (error.message.includes('Authentication required')) {
+            errorMessage = 'Please log in and try again.';
+        }
+        
+        showNotification('Error generating image: ' + errorMessage, 'error');
+        console.error('Image generation error:', error);
+    });
+}
+
+// Status dropdown functions
+function toggleStatusDropdown(tweetId) {
+    const dropdown = document.getElementById(`status-dropdown-${tweetId}`);
+    const allDropdowns = document.querySelectorAll('[id^="status-dropdown-"]');
+    
+    // Close all other dropdowns
+    allDropdowns.forEach(dd => {
+        if (dd.id !== `status-dropdown-${tweetId}`) {
+            dd.classList.add('hidden');
+        }
+    });
+    
+    // Toggle current dropdown
+    dropdown.classList.toggle('hidden');
+}
+
+function updateTweetStatus(tweetId, newStatus) {
+    const dropdown = document.getElementById(`status-dropdown-${tweetId}`);
+    const button = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+    
+    // Close dropdown immediately
+    dropdown.classList.add('hidden');
+    
+    // Don't update if status is the same
+    if (button.getAttribute('data-current-status') === newStatus) {
+        return;
+    }
+    
+    // Show loading state
+    const originalText = button.textContent;
+    button.textContent = 'Updating...';
+    button.disabled = true;
+    
+    fetch(`{% url 'brand_tweet_update' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update button text and styling
+            button.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1) + ' ▼';
+            button.setAttribute('data-current-status', newStatus);
+            
+            // Remove existing status color classes while preserving other classes
+            button.classList.remove('bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800', 
+                                   'bg-blue-100', 'text-blue-800', 'bg-gray-100', 'text-gray-800');
+            
+            // Add new status color classes
+            if (newStatus === 'posted') {
+                button.classList.add('bg-green-100', 'text-green-800');
+            } else if (newStatus === 'failed') {
+                button.classList.add('bg-red-100', 'text-red-800');
+            } else if (newStatus === 'approved') {
+                button.classList.add('bg-blue-100', 'text-blue-800');
+            } else {
+                button.classList.add('bg-gray-100', 'text-gray-800');
+            }
+            
+            showNotification(`Tweet status updated to ${newStatus}!`, 'success');
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+            button.textContent = originalText;
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating tweet status', 'error');
+        button.textContent = originalText;
+    })
+    .finally(() => {
+        button.disabled = false;
+    });
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.relative')) {
+        const allDropdowns = document.querySelectorAll('[id^="status-dropdown-"]');
+        allDropdowns.forEach(dropdown => {
+            dropdown.classList.add('hidden');
+        });
+    }
+});
+
+function postTweetNow(tweetId) {
+    if (confirm('Are you sure you want to post this tweet now?')) {
+        // First update status to approved, then post
+        fetch(`{% url 'brand_tweet_update' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': (typeof getCSRFToken === 'function' ? getCSRFToken() : getCookie('csrftoken'))
+            },
+            body: JSON.stringify({ status: 'approved' })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Now post the tweet
+                return fetch(`{% url 'brand_tweet_post_now' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': (typeof getCSRFToken === 'function' ? getCSRFToken() : getCookie('csrftoken'))
+                    }
+                });
+            } else {
+                throw new Error('Failed to approve tweet: ' + data.error);
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Tweet posted successfully!', 'success');
+                if (data.tweet_url) {
+                    setTimeout(() => {
+                        window.open(data.tweet_url, '_blank');
+                    }, 1000);
+                }
+                location.reload();
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error: ' + error.message, 'error');
+        });
+    }
+}
+
+function deleteFromTwitter(tweetId) {
+    if (confirm('Are you sure you want to delete this tweet from Twitter? This action cannot be undone.')) {
+        fetch(`{% url 'brand_tweet_delete_from_twitter' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Tweet deleted from Twitter successfully!', 'success');
+                location.reload();
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('Error deleting tweet: ' + error.message, 'error');
+        });
+    }
+}
+
+// Form handlers
+document.addEventListener('DOMContentLoaded', function() {
+    // Inline tweet form
+    document.getElementById('tweetForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        fetch('{% url "brand_tweet_create" organization.pk brand.pk %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification('Tweet created successfully!', 'success');
+                this.reset();
+                updateCharCount();
+                location.reload();
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        });
+    });
+
+    // AI prompt form
+    document.getElementById('aiPromptForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const prompt = formData.get('prompt');
+        
+        if (currentTweetId) {
+            // Generate AI text for existing tweet
+            fetch(`{% url 'brand_tweet_generate_ai_text' organization.pk brand.pk 0 %}`.replace('0', currentTweetId), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ prompt: prompt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const textarea = document.querySelector(`textarea[data-tweet-id="${currentTweetId}"]`);
+                    textarea.value = data.content;
+                    updateCharacterCount(textarea);
+                    showNotification('AI text generated successfully!', 'success');
+                    hideAIPromptModal();
+                } else {
+                    showNotification('Error: ' + data.error, 'error');
+                }
+            });
+        } else {
+            // Generate AI text for inline form - simple placeholder for now
+            const suggestions = [
+                `Exciting updates coming from {{ brand.name }}! Stay tuned for something amazing. #Innovation #Progress`,
+                `Just wrapped up an incredible session working on {{ brand.name }}. The future is bright! #TeamWork #Success`,
+                `Behind the scenes at {{ brand.name }} - where creativity meets innovation. What's your next big idea? #Inspiration`,
+                `Coffee, creativity, and {{ brand.name }} vibes. Ready to tackle whatever comes next! #Motivation #Growth`
+            ];
+            const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+            document.getElementById('tweet-content').value = randomSuggestion;
+            updateCharCount();
+            showNotification('AI text generated!', 'success');
+            hideAIPromptModal();
+        }
+    });
+
+    // Character count for inline form
+    document.getElementById('tweet-content').addEventListener('input', updateCharCount);
+
+    // Character count updates for existing tweets
+    document.querySelectorAll('.tweet-content-input').forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            updateCharacterCount(this);
+        });
+    });
+
+    // Set default date for new tweets (1 hour from now)
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    const dateInput = document.getElementById('scheduled-for');
+    if (dateInput) {
+        dateInput.value = now.toISOString().slice(0, 16);
+    }
+
+    // Update current time every second
+    setInterval(updateCurrentTime, 1000);
+    updateCurrentTime(); // Initial call
+    
+    // Update countdown timer every second
+    setInterval(updateTweetCountdown, 1000);
+    updateTweetCountdown(); // Initial call
+
+    // Initial character count
+    updateCharCount();
+});
+
+function updateCharacterCount(textarea) {
+    const tweetCard = textarea.closest('.tweet-card');
+    const counterSpan = tweetCard.querySelector('.character-count .current');
+    if (counterSpan) {
+        counterSpan.textContent = textarea.value.length;
+    }
+}
+
+function showNotification(message, type) {
+    // Simple notification system
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-lg text-white z-50 max-w-sm ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    }`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 5000);
+}
+
+function refreshMetrics(tweetId) {
+    const button = document.getElementById(`refresh-btn-${tweetId}`);
+    if (button) {
+        // Show loading state
+        const originalText = button.textContent;
+        button.textContent = '⟳';
+        button.disabled = true;
+        button.classList.add('animate-spin');
+        
+        fetch(`{% url 'brand_tweet_refresh_metrics' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Reset button
+            button.textContent = originalText;
+            button.disabled = false;
+            button.classList.remove('animate-spin');
+            
+            if (data.success) {
+                // Update the metrics display
+                const metrics = data.metrics;
+                const likeElement = document.getElementById(`like-count-${tweetId}`);
+                const retweetElement = document.getElementById(`retweet-count-${tweetId}`);
+                const replyElement = document.getElementById(`reply-count-${tweetId}`);
+                const quoteElement = document.getElementById(`quote-count-${tweetId}`);
+                
+                if (likeElement) likeElement.textContent = metrics.like_count;
+                if (retweetElement) retweetElement.textContent = metrics.retweet_count;
+                if (replyElement) replyElement.textContent = metrics.reply_count;
+                if (quoteElement) quoteElement.textContent = metrics.quote_count;
+                
+                // Update timestamp if element exists
+                const timestampElement = document.querySelector(`[data-tweet-id="${tweetId}"] .metrics-timestamp`);
+                if (timestampElement && metrics.metrics_last_updated) {
+                    const updateTime = new Date(metrics.metrics_last_updated);
+                    timestampElement.textContent = `Updated: ${updateTime.toLocaleString()}`;
+                }
+                
+                showNotification('Metrics updated successfully!', 'success');
+            } else {
+                showNotification('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            // Reset button on error
+            button.textContent = originalText;
+            button.disabled = false;
+            button.classList.remove('animate-spin');
+            
+            showNotification('Error refreshing metrics: ' + error.message, 'error');
+        });
+    }
+}
+
+function deleteTweet(tweetId) {
+    if (!confirm('Are you sure you want to delete this tweet? This action cannot be undone.')) return;
+
+    const url = `{% url 'brand_tweet_delete' organization.pk brand.pk 0 %}`.replace('0', tweetId);
+    const button = document.querySelector(`.tweet-card[data-tweet-id="${tweetId}"] button[title="Delete Tweet"], .bg-red-500[onclick*="deleteTweet(${tweetId})"]`);
+    const originalText = button ? button.textContent : null;
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Deleting...';
+    }
+
+    fetch(url, {
+        method: 'POST', // Using POST to maintain CSRF protection; backend also accepts DELETE.
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(async response => {
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            throw new Error('Invalid server response');
+        }
+        if (!response.ok || !data.success) {
+            throw new Error(data && data.error ? data.error : `HTTP ${response.status}`);
+        }
+        // Remove tweet card from DOM without full reload for snappier UX
+        const card = document.querySelector(`.tweet-card[data-tweet-id="${tweetId}"]`);
+        if (card) {
+            card.style.transition = 'opacity 0.25s';
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 250);
+        }
+        showNotification('Tweet deleted successfully!', 'success');
+    })
+    .catch(error => {
+        showNotification('Error deleting tweet: ' + error.message, 'error');
+    })
+    .finally(() => {
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText || 'Delete';
+        }
+    });
+}
+
+// Update tweet schedule
+function updateTweetSchedule(tweetId, newDateTime) {
+    if (!newDateTime) {
+        showNotification('Please select a valid date and time', 'error');
+        return;
+    }
+    
+    fetch(`{% url 'brand_tweet_update_schedule' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ 
+            scheduled_for: newDateTime 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Tweet schedule updated successfully!', 'success');
+            // Update countdown timer if applicable
+            updateCountdowns();
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating schedule: ' + error.message, 'error');
+    });
+}
+
+// Schedule tweet for 1 minute from now
+function scheduleIn1Minute(tweetId) {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() + 1);
+    const oneMinuteLater = now.toISOString().slice(0, 16);
+    
+    // Update the datetime input field
+    const dateInput = document.querySelector(`input[data-tweet-id="${tweetId}"]`);
+    if (dateInput) {
+        dateInput.value = oneMinuteLater;
+    }
+    
+    updateTweetSchedule(tweetId, oneMinuteLater);
+}
+
+function generateImageForNewTweet() {
+    const tweetContent = document.getElementById('tweet-content').value;
+    const quality = document.getElementById('image-quality-select').value;
+    
+    if (!tweetContent.trim()) {
+        showNotification('Please enter tweet content first', 'error');
+        return;
+    }
+    
+    // Show loading state
+    const button = document.getElementById('generate-image-btn');
+    const placeholder = document.getElementById('image-placeholder');
+    const loading = document.getElementById('image-loading');
+    const result = document.getElementById('image-result');
+    
+    const originalText = button.textContent;
+    
+    // Show different messages based on quality
+    if (quality === 'high') {
+        button.textContent = 'Generating (may take longer)...';
+        showNotification('High quality image generation started. This may take a moment...', 'info');
+    } else {
+        button.textContent = 'Generating...';
+    }
+    button.disabled = true;
+    
+    // Hide placeholder and result, show loading
+    placeholder.classList.add('hidden');
+    result.classList.add('hidden');
+    loading.classList.remove('hidden');
+    
+    // Choose API endpoint based on quality
+    let apiUrl, requestBody, headers;
+    
+    if (quality === 'high') {
+        // Use OpenAI for high quality
+        apiUrl = '{% url "generate_ai_image_openai" %}';
+        requestBody = JSON.stringify({
+            prompt: `Create a professional marketing image for a social media post about: ${tweetContent.slice(0, 100)}. Brand: {{ brand.name }}. Modern, clean design.`,
+            size: '1024x1024',
+            quality: 'hd'
+        });
+        headers = {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        };
+    } else {
+        // Use regular service for low quality
+        const formData = new FormData();
+        formData.append('prompt', `Create a professional marketing image for a social media post about: ${tweetContent.slice(0, 100)}. Brand: {{ brand.name }}. Modern, clean design.`);
+        formData.append('width', '512');
+        formData.append('height', '512');
+        formData.append('steps', '30');
+        
+        apiUrl = '{% url "website:text_to_image" %}';
+        requestBody = formData;
+        headers = {
+            'X-CSRFToken': getCSRFToken()
+        };
+    }
+    
+    // Make the API call
+    fetch(apiUrl, {
+        method: 'POST',
+        body: requestBody,
+        headers: headers
+    })
+    .then(response => {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return response.json();
+        } else {
+            // If not JSON, it's likely an HTML error page
+            console.error('Received non-JSON response:', response.status, response.statusText);
+            if (response.status === 403) {
+                throw new Error('Permission denied. You may need to be logged in to generate images.');
+            } else if (response.status === 401) {
+                throw new Error('Authentication required. Please log in and try again.');
+            } else if (response.status === 404) {
+                throw new Error('Image generation service not found.');
+            } else if (response.status === 500) {
+                throw new Error('Server error. Please try again later.');
+            } else {
+                throw new Error(`Server error (${response.status}): ${response.statusText}`);
+            }
+        }
+    })
+    .then(data => {
+        // Reset button
+        button.textContent = originalText;
+        button.disabled = false;
+        
+        // Hide loading
+        loading.classList.add('hidden');
+        
+        if (data.success && data.data && data.data.data && data.data.data[0] && data.data.data[0].imageURL) {
+            const imageUrl = data.data.data[0].imageURL;
+            
+            // Show the generated image
+            result.innerHTML = `
+                <div class="relative">
+                    <img src="${imageUrl}" alt="Generated image" class="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:border-blue-500 transition-colors" onclick="showImageModal('${imageUrl}')">
+                    <div class="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
+                        Generated
+                    </div>
+                </div>
+            `;
+            result.classList.remove('hidden');
+            
+            showNotification('Image generated successfully!', 'success');
+        } else {
+            // Show placeholder on error
+            placeholder.classList.remove('hidden');
+            console.error('Image generation failed:', data);
+            showNotification('Error generating image: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        // Reset button and show placeholder
+        button.textContent = originalText;
+        button.disabled = false;
+        loading.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        
+        console.error('Image generation error:', error);
+        let errorMessage = error.message || 'Network error occurred';
+        if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+            errorMessage = 'Network error. Please check your internet connection and try again.';
+        } else if (errorMessage.includes('SyntaxError: Unexpected token')) {
+            errorMessage = 'Server returned invalid response. Please try again or contact support.';
+        }
+        
+        showNotification('Error generating image: ' + errorMessage, 'error');
+    });
+}
+
+// Function to show image in modal
+function showImageModal(imageUrl) {
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-2 sm:p-4';
+    modal.innerHTML = `
+        <div class="max-w-full max-h-full w-full sm:max-w-4xl">
+            <div class="relative">
+                <img src="${imageUrl}" alt="Generated image" class="max-w-full max-h-full rounded-lg w-full h-auto">
+                <button onclick="this.closest('.fixed').remove()" class="absolute top-2 right-2 bg-white text-black rounded-full w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center hover:bg-gray-200 text-lg sm:text-xl font-bold">
+                    ×
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Close on outside click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+        }
+    });
+    
+    document.body.appendChild(modal);
+}
+
+// Get CSRF token helper function
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Get CSRF token from form or cookie consistently
+function getCSRFToken() {
+    // Try to get from form first (more reliable)
+    const formToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (formToken && formToken.value) {
+        return formToken.value;
+    }
+    // Fallback to cookie
+    return getCookie('csrftoken');
+}
+
+// WebSocket connection for real-time updates
+let tweetSocket = null;
+
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/tweet-queue/{{ organization.pk }}/{{ brand.pk }}/`;
+    
+    tweetSocket = new WebSocket(wsUrl);
+    
+    tweetSocket.onopen = function() {
+        console.log('WebSocket connected');
+    };
+    
+    tweetSocket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'server_time') {
+            updateServerTime(data.timestamp);
+        } else if (data.type === 'tweet_posted') {
+            handleTweetPosted(data.tweet_id, data.posted_at, data.tweet_url);
+        } else if (data.type === 'tweet_status_update') {
+            handleTweetStatusUpdate(data.tweet_id, data.status, data.posted_at);
+        } else if (data.type === 'tweet_failed') {
+            handleTweetFailed(data.tweet_id, data.error_message);
+        }
+    };
+    
+    tweetSocket.onclose = function() {
+        console.log('WebSocket disconnected, attempting to reconnect...');
+        setTimeout(connectWebSocket, 3000);
+    };
+    
+    tweetSocket.onerror = function(error) {
+        console.error('WebSocket error:', error);
+    };
+}
+
+function updateServerTime(timestamp) {
+    const localTimeElement = document.getElementById('server-local-time');
+    const utcTimeElement = document.getElementById('server-utc-time');
+    
+    if (localTimeElement && utcTimeElement) {
+        const date = new Date(timestamp);
+        
+        // Server local time with timezone
+        localTimeElement.textContent = date.toLocaleString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+        });
+        
+        // UTC time
+        utcTimeElement.textContent = formatDateTimeUTC(date) + ' UTC';
+    }
+}
+
+function formatDateTimeUTC(date) {
+    const options = {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'UTC'
+    };
+    return date.toLocaleDateString('en-US', options);
+}
+
+function handleTweetPosted(tweetId, postedAt, tweetUrl) {
+    const tweetElement = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+    if (tweetElement) {
+        // Update status badge
+        const statusBadge = tweetElement.querySelector('.status-dropdown-btn, .px-2.py-1.text-xs.font-semibold.rounded-full');
+        if (statusBadge) {
+            statusBadge.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800';
+            statusBadge.textContent = 'Posted';
+        }
+        
+        // Remove countdown timer
+        const countdownElement = tweetElement.querySelector('.countdown-timer');
+        if (countdownElement) {
+            countdownElement.remove();
+        }
+        
+        // Show notification
+        showNotification(`Tweet posted successfully!`, 'success');
+        
+        // Move to posted section after a delay
+        setTimeout(() => {
+            location.reload();
+        }, 2000);
+    }
+}
+
+function handleTweetStatusUpdate(tweetId, status, postedAt) {
+    const tweetElement = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+    if (tweetElement) {
+        // Update status badge
+        const statusBadge = tweetElement.querySelector('.status-dropdown-btn, .px-2.py-1.text-xs.font-semibold.rounded-full');
+        if (statusBadge) {
+            let classes = 'px-2 py-1 text-xs font-semibold rounded-full ';
+            switch (status) {
+                case 'posted':
+                    classes += 'bg-green-100 text-green-800';
+                    break;
+                case 'failed':
+                    classes += 'bg-red-100 text-red-800';
+                    break;
+                case 'approved':
+                    classes += 'bg-blue-100 text-blue-800';
+                    break;
+                default:
+                    classes += 'bg-gray-100 text-gray-800';
+            }
+            statusBadge.className = classes;
+            statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+        
+        // If tweet is posted, remove countdown timer
+        if (status === 'posted') {
+            const countdownElement = tweetElement.querySelector('.countdown-timer');
+            if (countdownElement) {
+                countdownElement.remove();
+            }
+        }
+    }
+}
+
+function handleTweetFailed(tweetId, errorMessage) {
+    const tweetElement = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+    if (tweetElement) {
+        // Update status badge
+        const statusBadge = tweetElement.querySelector('.status-dropdown-btn, .px-2.py-1.text-xs.font-semibold.rounded-full');
+        if (statusBadge) {
+            statusBadge.className = 'px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800';
+            statusBadge.textContent = 'Failed';
+        }
+        
+        // Remove countdown timer
+        const countdownElement = tweetElement.querySelector('.countdown-timer');
+        if (countdownElement) {
+            countdownElement.remove();
+        }
+        
+        // Show notification
+        showNotification(`Tweet failed: ${errorMessage}`, 'error');
+    }
+}
+
+// Countdown timer functionality
+function updateCountdowns() {
+    const countdownTimers = document.querySelectorAll('.countdown-timer');
+    const now = new Date();
+    
+    countdownTimers.forEach(timer => {
+        const scheduledFor = new Date(timer.dataset.scheduledFor);
+        const diff = scheduledFor - now;
+        
+        if (diff <= 0) {
+            timer.textContent = 'Posting now...';
+            timer.className = 'countdown-timer text-xs text-orange-600 font-semibold';
+        } else {
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            let countdownText = '';
+            if (days > 0) {
+                countdownText = `Posting in ${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                countdownText = `Posting in ${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                countdownText = `Posting in ${minutes}m ${seconds}s`;
+            } else {
+                countdownText = `Posting in ${seconds}s`;
+                timer.className = 'countdown-timer text-xs text-red-600 font-semibold';
+            }
+            
+            timer.textContent = countdownText;
+        }
+    });
+}
+
+// Initialize WebSocket and countdown timers
+document.addEventListener('DOMContentLoaded', function() {
+    connectWebSocket();
+    
+    // Update countdowns every second
+    setInterval(updateCountdowns, 1000);
+    updateCountdowns(); // Initial update
+    
+    // Update server time every second
+    setInterval(() => {
+        const now = new Date();
+        const localTimeElement = document.getElementById('server-local-time');
+        const utcTimeElement = document.getElementById('server-utc-time');
+        
+        if (localTimeElement && utcTimeElement) {
+            // Server local time with timezone
+            localTimeElement.textContent = now.toLocaleString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            });
+            
+            // UTC time
+            utcTimeElement.textContent = formatDateTimeUTC(now) + ' UTC';
+        }
+    }, 1000);
+});
+
+// Schedule tweet for next available time slot
+function scheduleForNextSlot(tweetId) {
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Scheduling...';
+    button.disabled = true;
+    
+    fetch(`{% url 'brand_tweet_schedule_next_slot' organization.pk brand.pk 0 %}`.replace('0', tweetId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            
+            // Update the tweet's scheduled time in the UI
+            const tweetElement = document.querySelector(`[data-tweet-id="${tweetId}"]`);
+            if (tweetElement) {
+                const scheduledElement = tweetElement.querySelector('.text-xs.text-gray-600');
+                if (scheduledElement && scheduledElement.textContent.includes('Scheduled for')) {
+                    scheduledElement.textContent = `Scheduled for: ${data.formatted_time}`;
+                }
+            }
+            
+            // Refresh the page to show updated schedule
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showNotification('Error: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error scheduling tweet', 'error');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+    });
+}
+
+    </script>
+{% endblock %}

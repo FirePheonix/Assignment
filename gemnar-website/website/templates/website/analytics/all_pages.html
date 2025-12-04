@@ -1,0 +1,331 @@
+{% extends 'website/base.html' %}
+{% load static %}
+{% block title %}All Pages - {{ brand.name }} Analytics{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+    <style>
+        .pulse-green {
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .new-entry {
+            background-color: #f0fdf4;
+            border-left: 4px solid #22c55e;
+            animation: fadeInNew 0.5s ease-in;
+        }
+        @keyframes fadeInNew {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="min-h-screen bg-gray-50">
+        <!-- Connection Status -->
+        <div id="connection-status" class="connection-status">
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                <div class="w-3 h-3 bg-green-500 rounded-full mr-2 pulse-green"></div>
+                <span class="text-sm font-medium">Live</span>
+            </div>
+        </div>
+        <!-- Breadcrumb Navigation -->
+        {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b border-gray-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">All Pages - Live View</h1>
+                        <p class="text-gray-600">{{ brand.name }} - Real-time page views</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-eye mr-1"></i>
+                            <span id="total-count">{{ recent_pageviews|length }}</span> views in last 24h
+                        </div>
+                        <button id="pause-btn"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                            <i class="fas fa-pause mr-1"></i>Pause
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-900">Recent Page Views</h2>
+                        <div class="flex items-center space-x-4">
+                            <button id="clear-btn" class="text-gray-500 hover:text-gray-700 text-sm">
+                                <i class="fas fa-trash mr-1"></i>Clear List
+                            </button>
+                            <div class="text-sm text-gray-500">
+                                Auto-refresh: <span class="font-medium text-green-600">ON</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-hidden">
+                    <div id="pageviews-container"
+                         class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                        {% for pageview in recent_pageviews %}
+                            <div class="p-4 hover:bg-gray-50 pageview-entry"
+                                 data-id="{{ pageview.id }}">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="flex-shrink-0">
+                                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-eye text-blue-600 text-sm"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center space-x-2">
+                                                    <p class="text-sm font-medium text-gray-900 truncate">{{ pageview.title|default:pageview.path }}</p>
+                                                    {% if pageview.session.device_type %}
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                            {{ pageview.session.device_type|capfirst }}
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex items-center space-x-4 mt-1">
+                                                    <p class="text-sm text-gray-500 truncate">{{ pageview.path }}</p>
+                                                    <span class="text-xs text-gray-400">{{ pageview.session.ip_address }}</span>
+                                                    <span class="text-xs text-gray-400">{{ pageview.session.browser }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-4">
+                                        <div class="text-right">
+                                            <p class="text-sm text-gray-900 timestamp"
+                                               data-timestamp="{{ pageview.started_at.isoformat }}">
+                                                {{ pageview.started_at|timesince }} ago
+                                            </p>
+                                            <p class="text-xs text-gray-500">{{ pageview.started_at|date:"H:i:s" }}</p>
+                                        </div>
+                                        <a href="{% url 'website:analytics_session_replay' brand.id pageview.session.id %}"
+                                           class="text-blue-600 hover:text-blue-700">
+                                            <i class="fas fa-play text-sm"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fas fa-eye-slash text-4xl mb-4"></i>
+                                <p>No page views yet. Waiting for real-time data...</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        class PageViewsMonitor {
+            constructor() {
+                this.eventSource = null;
+                this.isPaused = false;
+                this.container = document.getElementById('pageviews-container');
+                this.totalCount = document.getElementById('total-count');
+                this.connectionStatus = document.getElementById('connection-status');
+                this.pauseBtn = document.getElementById('pause-btn');
+                this.clearBtn = document.getElementById('clear-btn');
+                
+                this.init();
+            }
+
+            init() {
+                this.setupEventSource();
+                this.setupEventListeners();
+                this.updateTimestamps();
+                
+                // Update timestamps every minute
+                setInterval(() => this.updateTimestamps(), 60000);
+            }
+
+            setupEventSource() {
+                if (this.eventSource) {
+                    this.eventSource.close();
+                }
+
+                this.eventSource = new EventSource('{% url "website:analytics_pages_stream" brand.id %}');
+                
+                this.eventSource.onmessage = (event) => {
+                    if (!this.isPaused) {
+                        const data = JSON.parse(event.data);
+                        this.addNewPageView(data);
+                    }
+                };
+
+                this.eventSource.onerror = () => {
+                    this.updateConnectionStatus(false);
+                    // Reconnect after 5 seconds
+                    setTimeout(() => this.setupEventSource(), 5000);
+                };
+
+                this.eventSource.onopen = () => {
+                    this.updateConnectionStatus(true);
+                };
+            }
+
+            addNewPageView(data) {
+                // Check if this entry already exists
+                if (document.querySelector(`[data-id="${data.id}"]`)) {
+                    return;
+                }
+
+                const entryHtml = `
+                    <div class="p-4 hover:bg-gray-50 pageview-entry new-entry" data-id="${data.id}">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-3">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-eye text-blue-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2">
+                                            <p class="text-sm font-medium text-gray-900 truncate">
+                                                ${data.title || data.path}
+                                            </p>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                                ${data.device_type}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center space-x-4 mt-1">
+                                            <p class="text-sm text-gray-500 truncate">${data.path}</p>
+                                            <span class="text-xs text-gray-400">${data.ip_address}</span>
+                                            <span class="text-xs text-gray-400">${data.browser}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="text-right">
+                                    <p class="text-sm text-gray-900 timestamp" data-timestamp="${data.timestamp}">
+                                        Just now
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        ${new Date(data.timestamp).toLocaleTimeString()}
+                                    </p>
+                                </div>
+                                <a href="/brand/{{ brand.id }}/analytics/sessions/${data.session_id}/replay/" class="text-blue-600 hover:text-blue-700">
+                                    <i class="fas fa-play text-sm"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                this.container.insertAdjacentHTML('afterbegin', entryHtml);
+                
+                // Remove the new-entry class after animation
+                setTimeout(() => {
+                    const newEntry = this.container.querySelector('.new-entry');
+                    if (newEntry) {
+                        newEntry.classList.remove('new-entry');
+                    }
+                }, 500);
+
+                // Update total count
+                const currentCount = parseInt(this.totalCount.textContent);
+                this.totalCount.textContent = currentCount + 1;
+
+                // Keep only the latest 100 entries
+                const entries = this.container.querySelectorAll('.pageview-entry');
+                if (entries.length > 100) {
+                    entries[entries.length - 1].remove();
+                }
+            }
+
+            updateConnectionStatus(connected) {
+                if (connected) {
+                    this.connectionStatus.innerHTML = `
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2 pulse-green"></div>
+                            <span class="text-sm font-medium">Live</span>
+                        </div>
+                    `;
+                } else {
+                    this.connectionStatus.innerHTML = `
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg shadow-lg flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            <span class="text-sm font-medium">Disconnected</span>
+                        </div>
+                    `;
+                }
+            }
+
+            updateTimestamps() {
+                const timestamps = document.querySelectorAll('.timestamp[data-timestamp]');
+                timestamps.forEach(element => {
+                    const timestamp = new Date(element.getAttribute('data-timestamp'));
+                    const now = new Date();
+                    const diffMs = now - timestamp;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMins / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+
+                    let timeText;
+                    if (diffDays > 0) {
+                        timeText = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+                    } else if (diffHours > 0) {
+                        timeText = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+                    } else if (diffMins > 0) {
+                        timeText = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+                    } else {
+                        timeText = 'Just now';
+                    }
+                    
+                    element.textContent = timeText;
+                });
+            }
+
+            setupEventListeners() {
+                this.pauseBtn.addEventListener('click', () => {
+                    this.isPaused = !this.isPaused;
+                    if (this.isPaused) {
+                        this.pauseBtn.innerHTML = '<i class="fas fa-play mr-1"></i>Resume';
+                        this.pauseBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        this.pauseBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    } else {
+                        this.pauseBtn.innerHTML = '<i class="fas fa-pause mr-1"></i>Pause';
+                        this.pauseBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        this.pauseBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                });
+
+                this.clearBtn.addEventListener('click', () => {
+                    if (confirm('Clear all entries from the list?')) {
+                        this.container.innerHTML = `
+                            <div class="p-8 text-center text-gray-500">
+                                <i class="fas fa-eye-slash text-4xl mb-4"></i>
+                                <p>List cleared. Waiting for new page views...</p>
+                            </div>
+                        `;
+                        this.totalCount.textContent = '0';
+                    }
+                });
+            }
+        }
+
+        // Initialize the monitor when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new PageViewsMonitor();
+        });
+    </script>
+{% endblock %}

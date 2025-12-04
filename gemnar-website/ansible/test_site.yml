@@ -1,0 +1,44 @@
+---
+- hosts: production
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  tasks:
+    - name: Test Django shell access
+      command: "/home/django/.local/bin/poetry run python manage.py shell -c \"
+        from django.contrib.auth import get_user_model;
+        User = get_user_model();
+        print(f'User model: {User}');
+        print(f'User table exists: {User._meta.db_table}');
+        print(f'Total users: {User.objects.count()}')
+        \""
+      args:
+        chdir: "/home/django/gemnar-website"
+      become_user: django
+      register: shell_test
+
+    - name: Display shell test results
+      debug:
+        var: shell_test.stdout_lines
+
+    - name: Test website response
+      uri:
+        url: "https://gemnar.com"
+        method: GET
+        status_code: 200
+      register: website_test
+      ignore_errors: yes
+
+    - name: Display website test results
+      debug:
+        msg: "Website status: {{ website_test.status }} - {{ website_test.msg if website_test.msg is defined else 'Success' }}"
+
+    - name: Check recent uvicorn logs
+      command: journalctl -u uvicorn.service -n 20 --no-pager
+      register: uvicorn_logs
+      ignore_errors: yes
+
+    - name: Display recent uvicorn logs
+      debug:
+        var: uvicorn_logs.stdout_lines 

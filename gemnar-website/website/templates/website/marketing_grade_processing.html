@@ -1,0 +1,77 @@
+{% extends 'website/base.html' %}
+{% block title %}Analyzing Your Marketing Grade...{% endblock %}
+{% block content %}
+    <div class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+        <div class="w-full max-w-2xl text-center p-8">
+            <h1 class="text-4xl font-bold mb-4">Analyzing {{ domain }}...</h1>
+            <p class="text-lg text-gray-400 mb-8">Please wait while we run our proprietary analysis on your brand.</p>
+            <div id="checks-container"
+                 class="text-left text-lg space-y-2 h-64 overflow-y-auto p-4 bg-gray-800 rounded-lg shadow-inner">
+                <!-- JS will populate this -->
+            </div>
+            <div class="mt-8">
+                <div class="w-full bg-gray-700 rounded-full h-4">
+                    <div id="progress-bar"
+                         class="bg-gradient-to-r from-pink-500 to-orange-400 h-4 rounded-full"
+                         style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="mt-2 text-gray-400">0% Complete</p>
+            </div>
+        </div>
+    </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const checks = [
+    "Initializing Gemnar AI Core...", "Connecting to marketing data streams...", "Analyzing domain authority for {{ domain }}...",
+    "Crawling website structure...", "Evaluating on-page SEO factors...", "Checking for meta descriptions and titles...",
+    "Scanning for broken links...", "Assessing mobile responsiveness...", "Calculating page load speed...",
+    "Analyzing keyword density and relevance...", "Evaluating content readability score...", "Checking for duplicate content...",
+    "Auditing backlink profile...", "Identifying toxic backlinks...", "Quantifying referring domains...",
+    "Analyzing competitor landscape...", "Benchmarking against top 3 competitors...", "Identifying competitor keywords...",
+    "Scanning social media presence...", "Checking for Facebook engagement...", "Analyzing Twitter activity...",
+    "Evaluating Instagram presence...", "Checking for LinkedIn company page...", "Assessing social media sentiment...",
+    "Analyzing brand mentions...", "Checking for online reviews...", "Evaluating review sentiment...",
+    "Scanning for local SEO signals...", "Verifying Google Business Profile...", "Analyzing local citations...",
+    "Checking for schema markup...", "Evaluating structured data implementation...", "Validating rich snippets...",
+    "Analyzing website security...", "Checking for HTTPS implementation...", "Scanning for malware...",
+    "Evaluating user experience (UX) signals...", "Analyzing bounce rate...", "Calculating time on page...",
+    "Assessing call-to-action effectiveness...", "Checking for lead capture forms...", "Analyzing conversion funnels...",
+    "Evaluating email marketing integration...", "Checking for newsletter signup forms...", "Assessing email campaign performance...",
+    "Analyzing paid advertising footprint...", "Checking for Google Ads campaigns...", "Evaluating Facebook Ads presence...",
+    "Calculating customer acquisition cost...", "Analyzing customer lifetime value...", "Compiling final report...",
+    "Generating marketing grade...", "Finalizing recommendations..."
+  ];
+
+  const container = document.getElementById('checks-container');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  let currentIndex = 0;
+
+  function runCheck() {
+    if (currentIndex < checks.length) {
+      const checkItem = document.createElement('p');
+      checkItem.innerHTML = `<span class="text-gray-500 mr-2">[...]</span> ${checks[currentIndex]}`;
+      container.appendChild(checkItem);
+      container.scrollTop = container.scrollHeight; // Auto-scroll to bottom
+
+      setTimeout(() => {
+        checkItem.innerHTML = `<span class="text-green-400 mr-2">[OK]</span> ${checks[currentIndex]}`;
+      }, 200 + Math.random() * 300);
+
+      const progress = Math.round(((currentIndex + 1) / checks.length) * 100);
+      progressBar.style.width = progress + '%';
+      progressText.innerText = progress + '% Complete';
+
+      currentIndex++;
+      setTimeout(runCheck, 300 + Math.random() * 400);
+    } else {
+      setTimeout(() => {
+        window.location.href = `{% url 'website:marketing_grade_result' %}?domain={{ domain }}`;
+      }, 1000);
+    }
+  }
+
+  runCheck();
+});
+    </script>
+{% endblock %}

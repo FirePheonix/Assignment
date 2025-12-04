@@ -1,0 +1,889 @@
+{% extends "website/base.html" %}
+{% load static %}
+{% csrf_token %}
+{% block title %}Tweet Strategies Dashboard - Gemnar{% endblock %}
+{% block extra_head %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    .strategy-card {
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .strategy-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.95);
+        z-index: 10;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin: 1rem 0;
+    }
+    
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 50;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    }
+    
+    .toast.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <!-- Breadcrumb Navigation -->
+    {% include 'website/components/breadcrumb.html' with breadcrumbs=breadcrumbs action_buttons=action_buttons %}
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Section -->
+        <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-8">
+            <div>
+                <h1 class="text-4xl font-bold gradient-text mb-2">🚀 Tweet Strategies Dashboard</h1>
+                <p class="text-gray-600">Create strategic, effective tweets using proven marketing frameworks</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 mt-4 lg:mt-0">
+                <button onclick="refreshAnalytics()"
+                        class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition duration-300">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh Data
+                </button>
+                <select id="brandSelector"
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    <option value="">All Brands</option>
+                    {% for brand in user_brands %}<option value="{{ brand.id }}">{{ brand.name }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold">{{ total_strategies }}</h3>
+                <p class="text-purple-100">Active Strategies</p>
+            </div>
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold">{{ user_tweets_count }}</h3>
+                <p class="text-blue-100">Total Tweets</p>
+            </div>
+            <div class="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold">{{ posted_tweets_count }}</h3>
+                <p class="text-green-100">Posted Tweets</p>
+            </div>
+            <div class="bg-gradient-to-r from-pink-600 to-red-600 text-white p-6 rounded-xl shadow-lg">
+                <h3 class="text-3xl font-bold">{{ strategy_stats|length }}</h3>
+                <p class="text-pink-100">Used Strategies</p>
+            </div>
+        </div>
+        <!-- Main Content Tabs -->
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="border-b border-gray-200">
+                <nav class="flex space-x-8" id="mainTabs">
+                    <button class="tab-button active py-4 px-6 text-sm font-medium border-b-2 border-purple-500 text-purple-600"
+                            data-target="strategies">
+                        <i class="fas fa-lightbulb mr-2"></i>Strategies
+                    </button>
+                    <button class="tab-button py-4 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                            data-target="generator">
+                        <i class="fas fa-magic mr-2"></i>Generate Tweet
+                    </button>
+                    <button class="tab-button py-4 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                            data-target="analytics">
+                        <i class="fas fa-chart-bar mr-2"></i>Analytics
+                    </button>
+                    <button class="tab-button py-4 px-6 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                            data-target="recent">
+                        <i class="fas fa-clock mr-2"></i>Recent Tweets
+                    </button>
+                </nav>
+            </div>
+            <div class="p-6">
+                <!-- Strategies Tab -->
+                <div id="strategies" class="tab-content">
+                    {% for category, strategies in strategies_by_category.items %}
+                        <div class="mb-8">
+                            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg p-6 mb-6">
+                                <h4 class="text-2xl font-bold">{{ category }}</h4>
+                                <p class="text-purple-100">{{ strategies|length }} strateg{{ strategies|length|pluralize:"y,ies" }}</p>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {% for strategy in strategies %}
+                                    <div class="strategy-card bg-white border border-gray-200 rounded-xl p-6 hover:border-purple-300 cursor-pointer"
+                                         onclick="generateTweetWithStrategy({{ strategy.id }}, '{{ strategy.name|escapejs }}')"
+                                         data-strategy-id="{{ strategy.id }}">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div class="flex items-center">
+                                                <span class="text-2xl mr-3">
+                                                    {% if strategy.category == 'engagement' %}
+                                                        🔥
+                                                    {% elif strategy.category == 'educational' %}
+                                                        📚
+                                                    {% elif strategy.category == 'promotional' %}
+                                                        🚀
+                                                    {% elif strategy.category == 'storytelling' %}
+                                                        📖
+                                                    {% elif strategy.category == 'social_proof' %}
+                                                        ⭐
+                                                    {% elif strategy.category == 'news_updates' %}
+                                                        📰
+                                                    {% elif strategy.category == 'behind_scenes' %}
+                                                        🎬
+                                                    {% elif strategy.category == 'community' %}
+                                                        👥
+                                                    {% else %}
+                                                        ✨
+                                                    {% endif %}
+                                                </span>
+                                                <h5 class="text-lg font-semibold text-gray-900">{{ strategy.name }}</h5>
+                                            </div>
+                                            <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm">{{ strategy.usage_count }} uses</span>
+                                        </div>
+                                        <p class="text-gray-600 mb-4">{{ strategy.description }}</p>
+                                        <div class="mb-4">
+                                            <strong class="text-sm text-gray-700">Suggested tones:</strong>
+                                            <br>
+                                            {% for tone in strategy.tone_suggestions %}
+                                                <span class="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs mr-1 mt-1">{{ tone }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% if strategy.timing_suggestions.best_time %}
+                                            <div class="mb-4">
+                                                <strong class="text-sm text-gray-700">Best timing:</strong>
+                                                <br>
+                                                <small class="text-gray-500">{{ strategy.timing_suggestions.best_time }}</small>
+                                            </div>
+                                        {% endif %}
+                                        <div class="flex gap-2">
+                                            <button onclick="event.stopPropagation(); viewStrategyDetails({{ strategy.id }})"
+                                                    class="flex-1 bg-purple-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-purple-700 transition duration-300">
+                                                <i class="fas fa-eye mr-1"></i>Details
+                                            </button>
+                                            <div class="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm text-center">
+                                                <i class="fas fa-magic mr-1"></i>Click to Generate
+                                            </div>
+                                        </div>
+                                        <!-- Loading overlay -->
+                                        <div class="loading-overlay hidden absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-xl">
+                                            <div class="text-center">
+                                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-2"></div>
+                                                <p class="text-sm text-gray-600">Generating tweet...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <!-- Tweet Generator Tab -->
+                <div id="generator" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2">
+                            <div class="bg-gray-50 rounded-xl p-6 mb-6">
+                                <h4 class="text-xl font-semibold mb-4">Generate Strategic Tweet</h4>
+                                <form id="tweetGeneratorForm" class="space-y-4">
+                                    <div>
+                                        <label for="generatorBrand"
+                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                            Select Brand
+                                        </label>
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                id="generatorBrand"
+                                                required>
+                                            <option value="">Choose a brand...</option>
+                                            {% for brand in user_brands %}<option value="{{ brand.id }}">{{ brand.name }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="generatorStrategy"
+                                               class="block text-sm font-medium text-gray-700 mb-2">
+                                            Select Strategy
+                                        </label>
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                id="generatorStrategy"
+                                                required>
+                                            <option value="">Choose a strategy...</option>
+                                            {% for category, strategies in strategies_by_category.items %}
+                                                <optgroup label="{{ category }}">
+                                                    {% for strategy in strategies %}<option value="{{ strategy.id }}">{{ strategy.name }}</option>{% endfor %}
+                                                </optgroup>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div id="contextFields" class="hidden">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Context Information</label>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <input type="text"
+                                                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                   id="contextTopic"
+                                                   placeholder="Topic (e.g., AI trends)">
+                                            <input type="text"
+                                                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                   id="contextCompetitor"
+                                                   placeholder="Competitor (e.g., OtherTool)">
+                                            <input type="text"
+                                                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                   id="contextFeature"
+                                                   placeholder="Feature (e.g., real-time sync)">
+                                            <input type="text"
+                                                   class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                   id="contextCustom"
+                                                   placeholder="Additional context">
+                                        </div>
+                                    </div>
+                                    <button type="submit"
+                                            class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-purple-700 hover:to-blue-700 transition duration-300">
+                                        <i class="fas fa-magic mr-2"></i>Generate Tweet
+                                    </button>
+                                </form>
+                            </div>
+                            <div id="generatedTweet"
+                                 class="bg-green-50 border border-green-200 rounded-xl p-6 hidden">
+                                <h5 class="text-lg font-semibold mb-4">Generated Tweet</h5>
+                                <div class="bg-white border rounded-lg p-4 mb-4">
+                                    <p id="tweetContent" class="mb-2"></p>
+                                    <small class="text-gray-500">Characters: <span id="charCount">0</span>/280</small>
+                                </div>
+                                <div class="flex gap-3">
+                                    <button onclick="approveTweet()"
+                                            class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300">
+                                        <i class="fas fa-check mr-2"></i>Approve & Save
+                                    </button>
+                                    <button onclick="editTweet()"
+                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                                        <i class="fas fa-edit mr-2"></i>Edit
+                                    </button>
+                                    <button onclick="regenerateTweet()"
+                                            class="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition duration-300">
+                                        <i class="fas fa-redo mr-2"></i>Regenerate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="bg-gray-50 rounded-xl p-6">
+                                <h5 class="text-lg font-semibold mb-4">Strategy Guide</h5>
+                                <div id="strategyGuide">
+                                    <p class="text-gray-500">Select a strategy to see details and guidance.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Analytics Tab -->
+                <div id="analytics" class="tab-content hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h5 class="text-lg font-semibold mb-4">Strategy Usage</h5>
+                            <div class="chart-container">
+                                <canvas id="strategyUsageChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h5 class="text-lg font-semibold mb-4">Tweet Status Distribution</h5>
+                            <div class="chart-container">
+                                <canvas id="tweetStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 bg-gray-50 rounded-xl p-6">
+                            <h5 class="text-lg font-semibold mb-4">Tweet Activity Over Time</h5>
+                            <div class="chart-container">
+                                <canvas id="dailyTweetsChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <h5 class="text-lg font-semibold mb-4">Top Performing Strategies</h5>
+                            <div id="topStrategies">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recent Tweets Tab -->
+                <div id="recent" class="tab-content hidden">
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <h5 class="text-lg font-semibold mb-4">Recent Tweets</h5>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white rounded-lg">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    {% for tweet in recent_tweets %}
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4">
+                                                <div class="max-w-xs">{{ tweet.content|truncatewords:10 }}</div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ tweet.brand.name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {% if tweet.status == 'posted' %}bg-green-100 text-green-800{% elif tweet.status == 'approved' %}bg-yellow-100 text-yellow-800{% elif tweet.status == 'draft' %}bg-gray-100 text-gray-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                                    {{ tweet.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ tweet.created_at|timesince }} ago</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <button onclick="viewTweet({{ tweet.id }})"
+                                                        class="text-blue-600 hover:text-blue-900">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No tweets found</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Strategy Details Modal -->
+    <div id="strategyModal"
+         class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-xl bg-white">
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-xl -m-5 mb-5 p-4">
+                <div class="flex justify-between items-center">
+                    <h5 id="strategyModalTitle" class="text-xl font-semibold">Strategy Details</h5>
+                    <button onclick="closeModal()" class="text-white hover:text-gray-300">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="strategyModalBody" class="mt-3">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button onclick="closeModal()"
+                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition duration-300">
+                    Close
+                </button>
+                <button onclick="useStrategyFromModal()"
+                        class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg hover:from-purple-700 hover:to-blue-700 transition duration-300">
+                    Use This Strategy
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+let currentStrategyId = null;
+let currentTweetData = null;
+let charts = {};
+
+// Initialize dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    setupTabs();
+    loadAnalytics();
+    
+    // Setup form handlers
+    document.getElementById('tweetGeneratorForm').addEventListener('submit', handleTweetGeneration);
+    document.getElementById('generatorStrategy').addEventListener('change', handleStrategySelection);
+});
+
+// Setup tab functionality
+function setupTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const target = button.getAttribute('data-target');
+            
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active', 'border-purple-500', 'text-purple-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            tabContents.forEach(content => content.classList.add('hidden'));
+            
+            // Add active class to clicked button and show target content
+            button.classList.add('active', 'border-purple-500', 'text-purple-600');
+            button.classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(target).classList.remove('hidden');
+        });
+    });
+}
+
+// Load analytics data
+async function loadAnalytics() {
+    try {
+        const response = await fetch('{% url "strategy_analytics" %}');
+        const data = await response.json();
+        
+        updateCharts(data);
+        updateTopStrategies(data.top_strategies);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+        showToast('Error loading analytics data', 'error');
+    }
+}
+
+// Update charts with analytics data
+function updateCharts(data) {
+    // Strategy Usage Chart
+    const strategyCtx = document.getElementById('strategyUsageChart').getContext('2d');
+    if (charts.strategyUsage) charts.strategyUsage.destroy();
+    
+    charts.strategyUsage = new Chart(strategyCtx, {
+        type: 'doughnut',
+        data: {
+            labels: data.strategy_usage.map(s => s.name),
+            datasets: [{
+                data: data.strategy_usage.map(s => s.usage_count),
+                backgroundColor: [
+                    '#8B5CF6', '#3B82F6', '#10B981', '#F59E0B',
+                    '#EF4444', '#EC4899', '#6366F1', '#14B8A6'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Tweet Status Chart
+    const statusCtx = document.getElementById('tweetStatusChart').getContext('2d');
+    if (charts.tweetStatus) charts.tweetStatus.destroy();
+    
+    charts.tweetStatus = new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: data.tweet_status_data.map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
+            datasets: [{
+                data: data.tweet_status_data.map(s => s.count),
+                backgroundColor: ['#10B981', '#F59E0B', '#6B7280', '#EF4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Daily Tweets Chart
+    const dailyCtx = document.getElementById('dailyTweetsChart').getContext('2d');
+    if (charts.dailyTweets) charts.dailyTweets.destroy();
+    
+    charts.dailyTweets = new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: data.daily_tweets.map(d => d.day),
+            datasets: [{
+                label: 'Tweets Created',
+                data: data.daily_tweets.map(d => d.count),
+                borderColor: '#8B5CF6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Update top strategies list
+function updateTopStrategies(strategies) {
+    const container = document.getElementById('topStrategies');
+    container.innerHTML = strategies.map((strategy, index) => `
+        <div class="flex justify-between items-center mb-3 p-3 bg-white border rounded-lg">
+            <div>
+                <div class="font-semibold text-gray-900">#${index + 1} ${strategy.name}</div>
+                <div class="text-sm text-gray-500">${strategy.category}</div>
+            </div>
+            <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-semibold">${strategy.usage_count}</span>
+        </div>
+    `).join('');
+}
+
+// Handle tweet generation form
+async function handleTweetGeneration(e) {
+    e.preventDefault();
+    
+    const brandId = document.getElementById('generatorBrand').value;
+    const strategyId = document.getElementById('generatorStrategy').value;
+    
+    if (!brandId || !strategyId) {
+        showToast('Please select both brand and strategy', 'error');
+        return;
+    }
+    
+    const context = {
+        topic: document.getElementById('contextTopic').value,
+        competitor: document.getElementById('contextCompetitor').value,
+        feature: document.getElementById('contextFeature').value,
+        additional_context: document.getElementById('contextCustom').value
+    };
+    
+    // Remove empty context fields
+    Object.keys(context).forEach(key => {
+        if (!context[key]) delete context[key];
+    });
+    
+    try {
+        const response = await fetch('{% url "generate_strategy_tweet" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                strategy_id: parseInt(strategyId),
+                brand_id: parseInt(brandId),
+                context: context
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentTweetData = data;
+            displayGeneratedTweet(data.tweet.content);
+            showToast('Tweet generated successfully!', 'success');
+        } else {
+            showToast(data.error || 'Failed to generate tweet', 'error');
+        }
+    } catch (error) {
+        console.error('Error generating tweet:', error);
+        showToast('Error generating tweet', 'error');
+    }
+}
+
+// Display generated tweet
+function displayGeneratedTweet(content) {
+    document.getElementById('tweetContent').textContent = content;
+    document.getElementById('charCount').textContent = content.length;
+    document.getElementById('generatedTweet').classList.remove('hidden');
+    
+    // Color code character count
+    const charCount = document.getElementById('charCount');
+    const length = content.length;
+    if (length > 280) {
+        charCount.style.color = '#EF4444';
+    } else if (length > 250) {
+        charCount.style.color = '#F59E0B';
+    } else {
+        charCount.style.color = '#10B981';
+    }
+}
+
+// Handle strategy selection in generator
+async function handleStrategySelection() {
+    const strategyId = document.getElementById('generatorStrategy').value;
+    if (!strategyId) {
+        document.getElementById('contextFields').classList.add('hidden');
+        document.getElementById('strategyGuide').innerHTML = '<p class="text-gray-500">Select a strategy to see details and guidance.</p>';
+        return;
+    }
+    
+    document.getElementById('contextFields').classList.remove('hidden');
+    
+    try {
+        const response = await fetch(`{% url "strategy_details" 0 %}`.replace('0', strategyId));
+        const data = await response.json();
+        
+        if (data.success) {
+            updateStrategyGuide(data.strategy);
+        }
+    } catch (error) {
+        console.error('Error loading strategy details:', error);
+    }
+}
+
+// Update strategy guide panel
+function updateStrategyGuide(strategy) {
+    document.getElementById('strategyGuide').innerHTML = `
+        <h6 class="font-semibold text-gray-900 mb-2">${strategy.name}</h6>
+        <p class="text-sm text-gray-600 mb-4">${strategy.description}</p>
+        
+        <div class="mb-4">
+            <strong class="text-sm text-gray-700">Suggested tones:</strong><br>
+            ${strategy.tone_suggestions.map(tone => `<span class="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs mr-1 mt-1">${tone}</span>`).join('')}
+        </div>
+        
+        ${strategy.hashtag_suggestions.length > 0 ? `
+        <div class="mb-4">
+            <strong class="text-sm text-gray-700">Suggested hashtags:</strong><br>
+            ${strategy.hashtag_suggestions.map(tag => `<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-1 mt-1">${tag}</span>`).join('')}
+        </div>
+        ` : ''}
+        
+        <div class="mb-4">
+            <strong class="text-sm text-gray-700">Example output:</strong><br>
+            <div class="bg-white border rounded-lg p-3 mt-2 text-sm text-gray-700">
+                ${strategy.example_output}
+            </div>
+        </div>
+    `;
+}
+
+// View strategy details modal
+async function viewStrategyDetails(strategyId) {
+    try {
+        const response = await fetch(`{% url "strategy_details" 0 %}`.replace('0', strategyId));
+        const data = await response.json();
+        
+        if (data.success) {
+            const strategy = data.strategy;
+            currentStrategyId = strategyId;
+            
+            document.getElementById('strategyModalTitle').textContent = strategy.name;
+            document.getElementById('strategyModalBody').innerHTML = `
+                <div class="mb-4">
+                    <span class="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold mr-2">${strategy.category}</span>
+                    <span class="inline-block bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">${strategy.usage_count} uses</span>
+                </div>
+                
+                <p class="text-gray-700 mb-4">${strategy.description}</p>
+                
+                <h6 class="font-semibold text-gray-900 mb-2">Prompt Template:</h6>
+                <div class="bg-gray-100 rounded-lg p-4 mb-4">
+                    <code class="text-sm text-gray-800">${strategy.prompt_template}</code>
+                </div>
+                
+                <h6 class="font-semibold text-gray-900 mb-2">Example Output:</h6>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div class="text-sm text-gray-700">${strategy.example_output}</div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <h6 class="font-semibold text-gray-900 mb-2">Suggested Tones:</h6>
+                        <div>
+                            ${strategy.tone_suggestions.map(tone => `<span class="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs mr-1 mb-1">${tone}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="font-semibold text-gray-900 mb-2">Suggested Hashtags:</h6>
+                        <div>
+                            ${strategy.hashtag_suggestions.map(tag => `<span class="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs mr-1 mb-1">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                ${strategy.timing_suggestions.best_time ? `
+                <div class="mt-4">
+                    <h6 class="font-semibold text-gray-900 mb-2">Timing Recommendations:</h6>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li><strong>Best time:</strong> ${strategy.timing_suggestions.best_time}</li>
+                        ${strategy.timing_suggestions.frequency ? `<li><strong>Frequency:</strong> ${strategy.timing_suggestions.frequency}</li>` : ''}
+                        ${strategy.timing_suggestions.note ? `<li><strong>Note:</strong> ${strategy.timing_suggestions.note}</li>` : ''}
+                    </ul>
+                </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('strategyModal').classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error loading strategy details:', error);
+        showToast('Error loading strategy details', 'error');
+    }
+}
+
+// Modal functions
+function closeModal() {
+    document.getElementById('strategyModal').classList.add('hidden');
+}
+
+// Use strategy from different contexts
+function useStrategy(strategyId) {
+    // Switch to generator tab and select the strategy
+    document.querySelector('[data-target="generator"]').click();
+    setTimeout(() => {
+        document.getElementById('generatorStrategy').value = strategyId;
+        handleStrategySelection();
+    }, 100);
+}
+
+function useStrategyFromModal() {
+    if (currentStrategyId) {
+        closeModal();
+        useStrategy(currentStrategyId);
+    }
+}
+
+// Tweet actions
+function approveTweet() {
+    if (currentTweetData) {
+        showToast('Tweet approved and saved as draft!', 'success');
+        // Refresh recent tweets
+        setTimeout(() => {
+            document.querySelector('[data-target="recent"]').click();
+        }, 1000);
+    }
+}
+
+function editTweet() {
+    const content = document.getElementById('tweetContent').textContent;
+    const newContent = prompt('Edit tweet content:', content);
+    if (newContent !== null) {
+        displayGeneratedTweet(newContent);
+    }
+}
+
+function regenerateTweet() {
+    document.getElementById('tweetGeneratorForm').dispatchEvent(new Event('submit'));
+}
+
+// Utility functions
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+function showToast(message, type = 'info') {
+    const toastContainer = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    
+    const colorClasses = {
+        'success': 'bg-green-500 text-white',
+        'error': 'bg-red-500 text-white',
+        'info': 'bg-blue-500 text-white'
+    };
+    
+    const toast = document.createElement('div');
+    toast.id = toastId;
+    toast.className = `toast p-4 rounded-lg shadow-lg ${colorClasses[type] || colorClasses['info']}`;
+    toast.innerHTML = `
+        <div class="flex justify-between items-center">
+            <span>${message}</span>
+            <button onclick="removeToast('${toastId}')" class="ml-4 text-white hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => removeToast(toastId), 5000);
+}
+
+function removeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }
+}
+
+function refreshAnalytics() {
+    loadAnalytics();
+    showToast('Analytics refreshed!', 'success');
+}
+
+function viewTweet(tweetId) {
+    showToast('Tweet viewing will redirect to tweet management', 'info');
+    // Could redirect to tweet management page
+}
+
+// Generate tweet with strategy and website content
+async function generateTweetWithStrategy(strategyId, strategyName) {
+    const strategyCard = document.querySelector(`[data-strategy-id="${strategyId}"]`);
+    const loadingOverlay = strategyCard.querySelector('.loading-overlay');
+    
+    // Show loading state
+    loadingOverlay.classList.remove('hidden');
+    
+    try {
+        // Get current brand and organization from context
+        const currentBrand = {{ current_brand.id|default:'null' }};
+        const currentOrganization = {{ current_organization.id|default:'null' }};
+        
+        if (!currentBrand || !currentOrganization) {
+            // If no specific brand/org, prompt user to select
+            showToast('Please select a brand from the dropdown first', 'error');
+            return;
+        }
+        
+        const url = `/organizations/organizations/${currentOrganization}/brands/${currentBrand}/generate-strategy-tweet-with-website/`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                strategy_id: strategyId,
+                brand_id: currentBrand,
+                organization_id: currentOrganization,
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showToast(`Tweet generated using ${strategyName}!`, 'success');
+            
+            // Show the generated tweet in a modal or tab
+            displayGeneratedTweet(data.tweet.content, data);
+            
+            // Switch to generator tab to show the result
+            document.querySelector('[data-target="generator"]').click();
+        } else {
+            throw new Error(data.error || 'Failed to generate tweet');
+        }
+    } catch (error) {
+        console.error('Error generating tweet:', error);
+        showToast(`Error: ${error.message}`, 'error');
+    } finally {
+        // Hide loading state
+        loadingOverlay.classList.add('hidden');
+    }
+}
+
+function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+}
+    </script>
+{% endblock %}

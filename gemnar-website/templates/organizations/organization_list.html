@@ -1,0 +1,25 @@
+{% extends "organizations/base.html" %}
+{% load i18n %}
+{% block org_title %}
+    {% trans "Your Organizations" %}
+{% endblock %}
+{% block org_content %}
+    <div class="mb-4">
+        <a href="{% url 'organization_add' %}"
+           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            {% trans "Create New Organization" %}
+        </a>
+    </div>
+    {% if organization_list %}
+        <ul class="list-disc pl-5">
+            {% for organization in organization_list %}
+                <li>
+                    <a href="{{ organization.get_absolute_url }}"
+                       class="text-blue-600 hover:underline">{{ organization.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>{% trans "You are not a member of any organizations." %}</p>
+    {% endif %}
+{% endblock %}
