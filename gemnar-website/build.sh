@@ -11,7 +11,7 @@ pip install poetry
 poetry config virtualenvs.create false
 
 # Install dependencies using Poetry (production only, no dev dependencies)
-poetry install --no-dev
+poetry install --only=main
 
 # Collect static files
 poetry run python manage.py collectstatic --no-input
