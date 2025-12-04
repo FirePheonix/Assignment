@@ -8,7 +8,7 @@ import { organizationsAPI, Organization, OrganizationMember } from "@/lib/api/or
 import { brandsAPI, Brand } from "@/lib/api/brands";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export default function OrganizationDetailPage({ params }: Props) {
@@ -21,6 +21,7 @@ export default function OrganizationDetailPage({ params }: Props) {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [removeLoading, setRemoveLoading] = useState(false);
   const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(null);
   const [inviteData, setInviteData] = useState({
     email: "",
     role: "member" as "admin" | "member",
@@ -28,15 +29,25 @@ export default function OrganizationDetailPage({ params }: Props) {
   });
 
   useEffect(() => {
-    loadOrganizationData();
-  }, [params.id]);
+    params.then(p => {
+      setOrgId(p.id);
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (orgId) {
+      loadOrganizationData();
+    }
+  }, [orgId]);
 
   const loadOrganizationData = async () => {
+    if (!orgId) return;
+    
     try {
       const [orgData, membersData, brandsData] = await Promise.all([
-        organizationsAPI.getOrganization(parseInt(params.id)),
-        organizationsAPI.getOrganizationMembers(parseInt(params.id)),
-        organizationsAPI.getOrganizationBrands(parseInt(params.id)),
+        organizationsAPI.getOrganization(parseInt(orgId)),
+        organizationsAPI.getOrganizationMembers(parseInt(orgId)),
+        organizationsAPI.getOrganizationBrands(parseInt(orgId)),
       ]);
       
       setOrganization(orgData);

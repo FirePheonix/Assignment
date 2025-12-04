@@ -36,23 +36,17 @@ const mockTextModels = {
   },
 };
 
-export default function FlowGeneratorPage({ 
-  initialWorkspace,
-  readOnly = false,
-}: { 
-  initialWorkspace?: Workspace;
-  readOnly?: boolean;
-} = {}) {
+interface PageProps {
+  params?: Promise<Record<string, string>>;
+  searchParams?: Promise<Record<string, string | string[]>>;
+}
+
+export default function FlowGeneratorPage(_props: PageProps) {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(initialWorkspace || null);
-  const [isLoading, setIsLoading] = useState(!initialWorkspace);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // If we have an initial workspace (from slug route), don't load from API
-    if (initialWorkspace) {
-      return;
-    }
-
     const loadWorkspaces = async () => {
       try {
         const workspaceList = await workspaceApi.list();
@@ -75,7 +69,7 @@ export default function FlowGeneratorPage({
     };
 
     loadWorkspaces();
-  }, [initialWorkspace]);
+  }, []);
 
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {

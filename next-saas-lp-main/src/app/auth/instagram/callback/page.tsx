@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { CheckCircle, AlertCircle, Instagram } from 'lucide-react';
 
-export default function InstagramOAuthCallbackPage() {
+function InstagramCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -131,5 +131,23 @@ export default function InstagramOAuthCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InstagramOAuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-8">
+        <div className="background-pattern-blue" />
+        <div className="relative z-10 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+            <Instagram className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+        </div>
+      </div>
+    }>
+      <InstagramCallbackContent />
+    </Suspense>
   );
 }
