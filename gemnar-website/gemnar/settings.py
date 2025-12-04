@@ -171,16 +171,14 @@ if ENVIRONMENT == "development":
     }
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 else:
-    # Production/staging PostgreSQL
+    # Production/staging PostgreSQL - Use DATABASE_URL from Render
+    import dj_database_url
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME", "gemnar_db"),
-            "USER": os.environ.get("DB_USER", "gemnar_user"),
-            "PASSWORD": os.environ.get("DB_PASSWORD", "gemnar_password_change_me"),
-            "HOST": os.environ.get("DB_HOST", "localhost"),
-            "PORT": os.environ.get("DB_PORT", "5432"),
-        }
+        "default": dj_database_url.parse(
+            os.environ.get("DATABASE_URL"), 
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
     # Email settings for production with Mailgun
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
