@@ -142,10 +142,8 @@ class Migration(migrations.Migration):
                 "ordering": ["-created_at"],
             },
         ),
-        migrations.RemoveIndex(
-            model_name="pageview",
-            name="website_pag_session_61c15b_idx",
-        ),
+        # Removed: migrations.RemoveIndex - index may not exist in all databases
+        # The index removal is now handled by migration 0070 safely
         migrations.AddField(
             model_name="workspace",
             name="user",
