@@ -6,12 +6,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """
+    NO-OP Migration: This migration was auto-generated but creates models that don't exist
+    in the actual codebase. The real workspace model is FlowWorkspace in workspace_models.py.
+    Keeping this as a no-op to maintain migration history.
+    """
 
     dependencies = [
         ("website", "0058_remove_pageview_website_pag_session_61c15b_idx_and_more"),
     ]
 
     operations = [
+        # All operations removed - these models don't exist in the codebase
+        # The actual workspace functionality uses FlowWorkspace from workspace_models.py
+        # Keeping this migration file to maintain migration chain continuity
+    ]
+
+# Original operations (commented out for reference):
+"""
         migrations.CreateModel(
             name="Workspace",
             fields=[
@@ -270,4 +282,4 @@ class Migration(migrations.Migration):
             name="workspaceversion",
             unique_together={("workspace", "version_number")},
         ),
-    ]
+"""

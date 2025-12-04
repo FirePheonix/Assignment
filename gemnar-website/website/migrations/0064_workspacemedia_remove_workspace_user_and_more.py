@@ -7,12 +7,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """
+    NO-OP Migration: This migration tried to modify Workspace/WorkspaceShare models that don't exist.
+    The real workspace model is FlowWorkspace in workspace_models.py.
+    Keeping this as a no-op to maintain migration history.
+    """
 
     dependencies = [
         ("website", "0063_add_slug_to_workspace"),
     ]
 
     operations = [
+        # All operations removed - these models don't exist in the codebase
+        # Keeping this migration file to maintain migration chain continuity
+    ]
+
+# Original operations (commented out for reference):
+"""
         migrations.CreateModel(
             name="WorkspaceMedia",
             fields=[
@@ -180,4 +191,4 @@ class Migration(migrations.Migration):
         migrations.DeleteModel(
             name="WorkspaceVersion",
         ),
-    ]
+"""
