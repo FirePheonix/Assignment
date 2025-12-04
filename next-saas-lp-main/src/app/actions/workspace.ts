@@ -16,16 +16,14 @@ export interface Workspace {
 
 const API_URL = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://127.0.0.1:8000';
 
-// Helper to get auth headers with cookies
+// Helper to get auth headers with token
 async function getAuthHeaders() {
   const cookieStore = await cookies();
-  const sessionid = cookieStore.get('sessionid')?.value;
-  const csrftoken = cookieStore.get('csrftoken')?.value;
+  const authToken = cookieStore.get('auth_token')?.value;
   
   return {
     'Content-Type': 'application/json',
-    ...(sessionid && { Cookie: `sessionid=${sessionid}` }),
-    ...(csrftoken && { 'X-CSRFToken': csrftoken }),
+    ...(authToken && { 'Authorization': `Token ${authToken}` }),
   };
 }
 

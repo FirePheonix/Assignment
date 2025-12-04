@@ -120,6 +120,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -323,10 +324,13 @@ ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_LOGIN_METHODS = {"email"}
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_USERNAME_MIN_LENGTH = 3
-# Ensure 'username' is present in SIGNUP_FIELDS dict (optional) to satisfy
-# dj-rest-auth's registration serializer which inspects this setting.
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_SIGNUP_FIELDS = ["username", "email*", "password1*", "password2*"]
+# Configure signup fields - new format replaces ACCOUNT_USERNAME_REQUIRED
+ACCOUNT_SIGNUP_FIELDS = {
+    "username": {"required": False},
+    "email": {"required": True},
+    "password1": {"required": True},
+    "password2": {"required": True},
+}
 
 # Social Account Provider Configuration
 SOCIALACCOUNT_PROVIDERS = {

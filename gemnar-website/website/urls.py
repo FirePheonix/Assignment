@@ -178,12 +178,7 @@ urlpatterns = [
         views.account_deletion_confirm,
         name="account_deletion_confirm",
     ),
-    # API URLs - Auth endpoints for Next.js
-    path(
-        "api/auth/csrf/",
-        api_views.get_csrf_token,
-        name="get_csrf_token",
-    ),
+    # API Authentication Endpoints - Token-based auth only
     path(
         "api/auth/me/",
         api_views.current_user,

@@ -19,28 +19,20 @@ export default function BrandSignupPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get CSRF token from cookie
-  const getCSRFToken = () => {
-    const cookies = document.cookie.split(';');
-    const csrfCookie = cookies.find(c => c.trim().startsWith('csrftoken='));
-    return csrfCookie ? csrfCookie.split('=')[1] : null;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     try {
-      // Get CSRF token from cookie
-      const csrfToken = getCSRFToken();
+      const authToken = localStorage.getItem('auth_token');
 
       // Use the new brand registration API endpoint
       const response = await fetch(`${DJANGO_BACKEND}/api/auth/register/brand/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(csrfToken && { 'X-CSRFToken': csrfToken }),
+          ...(authToken && { 'Authorization': `Token ${authToken}` }),
         },
         body: JSON.stringify({
           email: email,

@@ -47,30 +47,14 @@ function getAuthToken(): string | null {
   return token;
 }
 
-function getCsrfToken(): string | null {
-  if (typeof document === 'undefined') return null;
-  
-  const name = 'csrftoken';
-  const cookies = document.cookie.split(';');
-  
-  for (let cookie of cookies) {
-    cookie = cookie.trim();
-    if (cookie.startsWith(name + '=')) {
-      return decodeURIComponent(cookie.substring(name.length + 1));
-    }
-  }
-  
-  return null;
-}
+// Remove CSRF function - using token auth only
 
 async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const token = getAuthToken();
-  const csrfToken = getCsrfToken();
   
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Token ${token}` }),
-    ...(csrfToken && { 'X-CSRFToken': csrfToken }),
     ...options.headers,
   };
 
@@ -85,11 +69,9 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
 
 async function fetchMultipartWithAuth(url: string, options: RequestInit = {}) {
   const token = getAuthToken();
-  const csrfToken = getCsrfToken();
   
   const headers: HeadersInit = {
     ...(token && { 'Authorization': `Token ${token}` }),
-    ...(csrfToken && { 'X-CSRFToken': csrfToken }),
     ...options.headers,
   };
 

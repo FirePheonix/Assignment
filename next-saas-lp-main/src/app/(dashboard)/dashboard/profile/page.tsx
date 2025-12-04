@@ -142,18 +142,14 @@ export default function ProfilePage() {
         return;
       }
 
-      // Get CSRF token
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
+      const authToken = localStorage.getItem('auth_token');
 
       const response = await fetch(`${DJANGO_BACKEND}/api/auth/password/change/`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
+          ...(authToken && { 'Authorization': `Token ${authToken}` }),
         },
         body: JSON.stringify({
           old_password: currentPassword,

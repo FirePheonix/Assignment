@@ -27,12 +27,6 @@ export default function NewConversationPage() {
     try {
       setSearching(true);
 
-      // Get CSRF token
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrftoken='))
-        ?.split('=')[1];
-
       const token = localStorage.getItem('auth_token');
       const DJANGO_BACKEND = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000';
 
@@ -41,7 +35,6 @@ export default function NewConversationPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Token ${token}`,
-          'X-CSRFToken': csrfToken || '',
         },
         credentials: 'include',
         body: JSON.stringify({ email: email.trim().toLowerCase() }),

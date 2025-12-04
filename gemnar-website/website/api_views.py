@@ -68,18 +68,6 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(["GET"])
-@permission_classes([permissions.AllowAny])
-def get_csrf_token(request):
-    """
-    Public endpoint to get CSRF token.
-    Used by Next.js frontend to ensure CSRF cookie is set before making authenticated requests.
-    """
-    from django.middleware.csrf import get_token
-    csrf_token = get_token(request)
-    return Response({"detail": "CSRF cookie set"})
-
-
-@api_view(["GET"])
 @authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def current_user(request):
@@ -7445,8 +7433,8 @@ def debug_instagram_config(request):
         )
 
 
-@csrf_exempt
 @api_view(["GET", "POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def brand_instagram_posts(request):
@@ -7550,8 +7538,8 @@ def brand_instagram_posts(request):
         )
 
 
-@csrf_exempt
 @api_view(["GET", "PUT", "DELETE"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def brand_instagram_post_detail(request, post_id):
@@ -7599,8 +7587,8 @@ def brand_instagram_post_detail(request, post_id):
         )
 
 
-@csrf_exempt
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def post_instagram_now(request, post_id):
     """
