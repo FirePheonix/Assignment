@@ -448,7 +448,7 @@ def update_user_profile(request):
 
 
 @api_view(["POST"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_image(request):
@@ -573,7 +573,7 @@ def upload_image(request):
 
 
 @api_view(["GET"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def list_user_uploads(request):
     """
@@ -709,7 +709,7 @@ def list_user_uploads(request):
 
 
 @api_view(["DELETE"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def delete_user_upload(request, image_id):
     """
@@ -2515,7 +2515,7 @@ def get_veo_1080p_video(request, task_id):
 
 
 @api_view(["POST"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_reference_image(request):
@@ -2573,7 +2573,7 @@ def upload_reference_image(request):
 
 
 @api_view(["POST"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.AllowAny])  # Allow anonymous uploads for flow-generator
 @parser_classes([MultiPartParser, FormParser])
 def upload_to_cloudinary(request):
@@ -2712,7 +2712,7 @@ def upload_to_cloudinary(request):
 
 
 @api_view(["POST"])
-@authentication_classes([CsrfExemptSessionAuthentication, TokenAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def generate_ai_audio(request):
@@ -10895,7 +10895,7 @@ def sora_download_video(request, video_id):
 # ============================================================================
 
 @api_view(['POST'])
-@authentication_classes([TokenAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_instagram_image(request):
@@ -10960,7 +10960,7 @@ def upload_instagram_image(request):
 
 
 @api_view(['POST'])
-@authentication_classes([TokenAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
 def upload_instagram_image_to_production(request):
@@ -10970,7 +10970,7 @@ def upload_instagram_image_to_production(request):
 
 
 @api_view(['GET'])
-@authentication_classes([TokenAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def list_user_uploads(request):
     """List user's uploaded images/videos from Cloudinary"""
@@ -11044,7 +11044,7 @@ def list_user_uploads(request):
 
 
 @api_view(['DELETE'])
-@authentication_classes([TokenAuthentication, CsrfExemptSessionAuthentication])
+@authentication_classes([TokenAuthentication])
 @permission_classes([permissions.IsAuthenticated])
 def delete_user_upload(request, image_id):
     """Delete user's uploaded image/video from Cloudinary"""
