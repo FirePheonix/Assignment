@@ -12,6 +12,7 @@
     "@ai-sdk/react": "^2.0.93",
     "@icons-pack/react-simple-icons": "^13.8.0",
     "@monaco-editor/react": "^4.7.0",
+    "@opennextjs/cloudflare": "^1.14.3",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-context-menu": "^2.2.16",
@@ -94,6 +95,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.53.0"
   }
 }
