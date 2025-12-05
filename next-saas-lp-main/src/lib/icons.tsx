@@ -1,0 +1,21 @@
+// Provider Icons - Simple SVG components
+export const OpenAiIcon = () => <span className="text-lg">🤖</span>;
+export const AnthropicIcon = () => <span className="text-lg">🧠</span>;
+export const GoogleIcon = () => <span className="text-lg">🔍</span>;
+export const MetaIcon = () => <span className="text-lg">👤</span>;
+export const XaiIcon = () => <span className="text-lg">✖️</span>;
+export const LumaIcon = () => <span className="text-lg">💡</span>;
+export const MinimaxIcon = () => <span className="text-lg">⚡</span>;
+export const GroqIcon = () => <span className="text-lg">⚙️</span>;
+export const MistralIcon = () => <span className="text-lg">🌬️</span>;
+export const CohereIcon = () => <span className="text-lg">🔗</span>;
+export const DeepSeekIcon = () => <span className="text-lg">🔎</span>;
+export const RunwayIcon = () => <span className="text-lg">🛫</span>;
+export const TogetherIcon = () => <span className="text-lg">🤝</span>;
+export const ReplicateIcon = () => <span className="text-lg">🔄</span>;
+export const PerplexityIcon = () => <span className="text-lg">🎯</span>;
+export const AmazonIcon = () => <span className="text-lg">📦</span>;
+export const AmazonBedrockIcon = () => <span className="text-lg">🪨</span>;
+export const BlackForestLabsIcon = () => <span className="text-lg">🌲</span>;
+export const GrokIcon = () => <span className="text-lg">🤔</span>;
+export const UnknownIcon = () => <span className="text-lg">❓</span>;
