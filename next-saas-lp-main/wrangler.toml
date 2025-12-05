@@ -1,0 +1,6 @@
+  name = "assignment"
+compatibility_date = "2025-12-05"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NEXT_PUBLIC_DJANGO_URL = "https://assignment-ov4q.onrender.com"
