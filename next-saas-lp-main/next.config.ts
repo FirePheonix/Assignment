@@ -30,11 +30,19 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb',
     },
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': path.resolve(__dirname, './src'),
     };
+    config.resolve.extensions = [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.json',
+      ...config.resolve.extensions,
+    ];
     return config;
   },
 };
