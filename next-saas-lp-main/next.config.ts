@@ -1,6 +1,6 @@
-import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import type { NextConfig } from "next";
 
-export default defineCloudflareConfig({
+const nextConfig: NextConfig = {
   eslint: {
     // Ignore ESLint errors during production build
     ignoreDuringBuilds: true,
@@ -32,4 +32,6 @@ export default defineCloudflareConfig({
     },
   },
   // API routes now handle Django proxy with fallback, no need for rewrites
-});
+};
+
+export default nextConfig;
