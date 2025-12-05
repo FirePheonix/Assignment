@@ -100,5 +100,14 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wrangler": "^4.53.0"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-darwin-arm64": "^4.1.5",
+    "@tailwindcss/oxide-darwin-x64": "^4.1.5",
+    "@tailwindcss/oxide-linux-arm64-gnu": "^4.1.5",
+    "@tailwindcss/oxide-linux-arm64-musl": "^4.1.5",
+    "@tailwindcss/oxide-linux-x64-gnu": "^4.1.5",
+    "@tailwindcss/oxide-linux-x64-musl": "^4.1.5",
+    "@tailwindcss/oxide-win32-x64-msvc": "^4.1.5"
   }
 }
