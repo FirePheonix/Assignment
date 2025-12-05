@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 import * as motion from "motion/react-m"
 import Image from "next/image";
@@ -156,7 +156,7 @@ export const AnimatedTestimonials = ({
               name="Previous"
               title="Previous"
             >
-              <IconArrowLeft className="h-5 w-5 text-black transition-transform duration-300 group-hover/button:rotate-12" />
+              <ChevronLeft className="h-5 w-5 text-black transition-transform duration-300 group-hover/button:rotate-12" />
             </button>
             <button
               onClick={handleNext}
@@ -164,7 +164,7 @@ export const AnimatedTestimonials = ({
               name="Next"
               title="Next"
             >
-              <IconArrowRight className="h-5 w-5 text-black transition-transform duration-300 group-hover/button:-rotate-12" />
+              <ChevronRight className="h-5 w-5 text-black transition-transform duration-300 group-hover/button:-rotate-12" />
             </button>
           </div>
         </div>
