@@ -92,7 +92,7 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    # "django.contrib.sessions",  # Removed for token-only auth
+    "django.contrib.sessions",  # Required by allauth and admin
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sites",  # Must come before allauth

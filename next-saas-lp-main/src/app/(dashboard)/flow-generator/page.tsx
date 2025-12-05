@@ -112,9 +112,9 @@ export default function FlowGeneratorPage(_props: PageProps) {
         <GatewayProviderClient models={mockTextModels}>
           <ReactFlowProvider>
             <MouseModeProvider>
-              <Canvas readOnly={readOnly}>
+              <Canvas readOnly={false}>
                 <Controls />
-                {!readOnly && (
+                {true && (
                   <>
                     <div className="absolute top-4 left-4 z-[50] flex items-center gap-2">
                       <div className="flex items-center rounded-full border bg-card/90 p-1 drop-shadow-xs backdrop-blur-sm">

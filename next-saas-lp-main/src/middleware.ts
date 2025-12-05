@@ -15,9 +15,6 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/terms',
   '/privacy',
-  '/flow-generator', // Allow flow generator for now
-  '/dashboard', // Allow dashboard
-  '/tasks', // Allow tasks
 ];
 
 // Check if route is public or matches public pattern
@@ -60,65 +57,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // In development, be more lenient with auth
-  // Check for auth token in cookies (token-based auth)
-  if (IS_DEVELOPMENT) {
-    const cookieHeader = request.headers.get('cookie') || '';
-    
-    // Check for sessionid (session-based) OR auth_token presence
-    // Note: We can't read localStorage in middleware, but if a user is logged in,
-    // they should have been to the site before and may have session cookies
-    const hasSessionCookie = cookieHeader.includes('sessionid=');
-    
-    // For token-based auth, we need to be more permissive in middleware
-    // since we can't access localStorage here. The client-side layout will handle auth.
-    if (hasSessionCookie) {
-      console.log('[Middleware] Session cookie found, allowing access to:', pathname);
-      return NextResponse.next();
-    }
-    
-    // In development, allow access to protected routes - let client-side auth handle it
-    // This is necessary because token auth uses localStorage, not cookies
-    console.log('[Middleware] No session cookie, but allowing access in development. Client-side will handle auth check.');
-    return NextResponse.next();
-  }
-
-  // Production: Check authentication with Django backend
-  const cookieHeader = request.headers.get('cookie') || '';
-  
-  try {
-    console.log('[Middleware] Checking auth for:', pathname);
-    
-    const response = await fetch(`${DJANGO_BACKEND}/api/auth/me/`, {
-      method: 'GET',
-      headers: {
-        'cookie': cookieHeader,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    console.log('[Middleware] Auth response status:', response.status);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log('[Middleware] User authenticated:', data.email);
-      return NextResponse.next();
-    }
-  } catch (error) {
-    console.error('[Middleware] Auth check failed:', error);
-  }
-
-  // User is not authenticated, redirect to login
-  console.log('[Middleware] Redirecting to login from:', pathname);
-  const loginUrl = new URL('/login', request.url);
-  
-  // Only set redirect if it's a valid protected route (not auth-related)
-  if (pathname !== '/login' && pathname !== '/signup' && !pathname.startsWith('/signup/')) {
-    loginUrl.searchParams.set('redirect', pathname);
-  }
-  
-  return NextResponse.redirect(loginUrl);
+  // For token-based auth (localStorage), we cannot check auth in middleware
+  // because middleware runs on the server and cannot access localStorage.
+  // 
+  // Let all protected routes through and rely on client-side auth checks.
+  // The layout components will redirect unauthenticated users to login.
+  console.log('[Middleware] Allowing access to:', pathname, '(client-side auth will handle)');
+  return NextResponse.next();
 }
 
 export const config = {
