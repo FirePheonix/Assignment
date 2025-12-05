@@ -351,6 +351,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "https://gemnar.com",
     "https://www.gemnar.com",
+    "https://gemnar.shubhsoch.workers.dev",  # Cloudflare Workers frontend
 ]
 
 CORS_ALLOW_CREDENTIALS = False  # No credentials needed for token auth
