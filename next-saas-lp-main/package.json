@@ -108,6 +108,16 @@
     "@tailwindcss/oxide-linux-arm64-musl": "^4.1.5",
     "@tailwindcss/oxide-linux-x64-gnu": "^4.1.5",
     "@tailwindcss/oxide-linux-x64-musl": "^4.1.5",
-    "@tailwindcss/oxide-win32-x64-msvc": "^4.1.5"
+    "@tailwindcss/oxide-win32-x64-msvc": "^4.1.5",
+    "lightningcss-darwin-arm64": "^1.29.0",
+    "lightningcss-darwin-x64": "^1.29.0",
+    "lightningcss-freebsd-x64": "^1.29.0",
+    "lightningcss-linux-arm-gnueabihf": "^1.29.0",
+    "lightningcss-linux-arm64-gnu": "^1.29.0",
+    "lightningcss-linux-arm64-musl": "^1.29.0",
+    "lightningcss-linux-x64-gnu": "^1.29.0",
+    "lightningcss-linux-x64-musl": "^1.29.0",
+    "lightningcss-win32-arm64-msvc": "^1.29.0",
+    "lightningcss-win32-x64-msvc": "^1.29.0"
   }
 }
