@@ -41,7 +41,6 @@ export default function BrandSignupPage() {
           brand_name: brandName,
           website: website,
         }),
-        credentials: 'include',
       });
 
       console.log('Brand signup response status:', response.status);

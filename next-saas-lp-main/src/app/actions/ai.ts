@@ -331,7 +331,6 @@ export const generateVideoAction = async (params: {
             duration: params.seconds || 5,
             cfg_scale: 0.5,
           }),
-          credentials: 'include',
         });
         
         if (!response.ok) {
@@ -353,7 +352,6 @@ export const generateVideoAction = async (params: {
             `${process.env.NEXT_PUBLIC_DJANGO_URL || 'http://127.0.0.1:8000'}/api/ai/kling/status/${encodeURIComponent(videoIdOrTaskId)}/`,
             {
               headers: cookieHeader ? { Cookie: cookieHeader } : {},
-              credentials: 'include',
             }
           );
           

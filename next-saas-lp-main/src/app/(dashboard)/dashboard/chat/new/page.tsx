@@ -36,7 +36,6 @@ export default function NewConversationPage() {
           'Content-Type': 'application/json',
           'Authorization': `Token ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 

@@ -44,7 +44,6 @@ export const saveWorkspaceAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/${workspaceId}/`, {
       method: 'PATCH',
       headers,
-      credentials: 'include',
       body: JSON.stringify({ content }),
     });
 
@@ -86,7 +85,6 @@ export const createWorkspaceAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/`, {
       method: 'POST',
       headers,
-      credentials: 'include',
       body: JSON.stringify({ name, content: { nodes: [], edges: [] } }),
     });
 
@@ -126,7 +124,6 @@ export const deleteWorkspaceAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/${workspaceId}/`, {
       method: 'DELETE',
       headers,
-      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -157,7 +154,6 @@ export const getWorkspaceAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/${workspaceId}/`, {
       method: 'GET',
       headers,
-      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -197,7 +193,6 @@ export const listWorkspacesAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/`, {
       method: 'GET',
       headers,
-      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -236,7 +231,6 @@ export const renameWorkspaceAction = async (
     const response = await fetch(`${API_URL}/api/workspaces/${workspaceId}/`, {
       method: 'PATCH',
       headers,
-      credentials: 'include',
       body: JSON.stringify({ name }),
     });
 

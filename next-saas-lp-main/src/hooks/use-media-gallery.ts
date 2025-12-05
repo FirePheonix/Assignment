@@ -61,7 +61,6 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include',
   });
 
   return response;
@@ -78,7 +77,6 @@ async function fetchMultipartWithAuth(url: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include',
   });
 
   return response;

@@ -27,7 +27,6 @@ async function ensureCSRFToken(): Promise<void> {
     // Make a GET request to get CSRF cookie
     await fetch(`${DJANGO_BACKEND}/api/auth/csrf/`, {
       method: 'GET',
-      credentials: 'include',
     });
   } catch {
     // Ignore errors, just trying to get CSRF token
@@ -197,7 +196,6 @@ export async function generateAudioFromText(
 
     const response = await fetch(`${DJANGO_BACKEND}/api/ai/generate-audio/`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         ...(csrfToken && { 'X-CSRFToken': csrfToken }),
         ...(token && { 'Authorization': `Token ${token}` }),
@@ -247,7 +245,6 @@ export async function uploadAudioFile(
 
     const response = await fetch(`${DJANGO_BACKEND}/api/ai/generate-audio/`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         ...(csrfToken && { 'X-CSRFToken': csrfToken }),
       },

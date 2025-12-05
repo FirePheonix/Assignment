@@ -146,7 +146,6 @@ export default function ProfilePage() {
 
       const response = await fetch(`${DJANGO_BACKEND}/api/auth/password/change/`, {
         method: 'POST',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           ...(authToken && { 'Authorization': `Token ${authToken}` }),

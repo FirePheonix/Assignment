@@ -69,7 +69,6 @@ async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const response = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include', // Important: include cookies
   });
 
   return response;

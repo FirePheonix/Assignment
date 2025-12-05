@@ -123,7 +123,6 @@ export async function generateImage(params: GenerateImageParams, cookieHeader?: 
       method: 'POST',
       headers,
       body: formData,
-      credentials: 'include',
     });
     
     console.log('📥 Response:', response.status, response.statusText);
@@ -244,7 +243,6 @@ export async function editImageWithReferences(params: EditImageParams, cookieHea
       method: 'POST',
       headers,
       body: formData,
-      credentials: 'include',
     });
 
     console.log('📡 Response status:', response.status, response.statusText);
@@ -310,7 +308,6 @@ export async function generateTransparentImage(params: {
 
     const response = await fetch(`${DJANGO_BACKEND}/api/ai/gpt-image/transparent/`, {
       method: 'POST',
-      credentials: 'include',
       body: formData,
     });
 
@@ -358,7 +355,6 @@ export async function streamImageGeneration(params: {
 
     const response = await fetch(`${DJANGO_BACKEND}/api/ai/gpt-image/stream/`, {
       method: 'POST',
-      credentials: 'include',
       body: formData,
     });
 

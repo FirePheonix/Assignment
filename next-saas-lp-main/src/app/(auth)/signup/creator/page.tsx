@@ -43,7 +43,6 @@ export default function CreatorSignupPage() {
           first_name: firstName,
           last_name: lastName,
         }),
-        credentials: 'include',
       });
 
       console.log('Signup response status:', response.status);
