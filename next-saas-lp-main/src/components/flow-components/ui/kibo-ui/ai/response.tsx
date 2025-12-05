@@ -1,23 +1,6 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import {
-  type BundledLanguage,
-  CodeBlock,
-  CodeBlockBody,
-  CodeBlockContent,
-  CodeBlockCopyButton,
-  CodeBlockFilename,
-  CodeBlockFiles,
-  CodeBlockHeader,
-  CodeBlockItem,
-  type CodeBlockProps,
-  CodeBlockSelect,
-  CodeBlockSelectContent,
-  CodeBlockSelectItem,
-  CodeBlockSelectTrigger,
-  CodeBlockSelectValue,
-} from '@/components/flow-components/ui/kibo-ui/code-block';
 import { memo } from 'react';
 import type { HTMLAttributes } from 'react';
 import ReactMarkdown, { type Options } from 'react-markdown';
@@ -98,72 +81,32 @@ const components: Options['components'] = {
       {children}
     </h6>
   ),
-  pre: ({ node, className, children }) => {
-    let language = 'javascript';
-
-    if (typeof node?.properties?.className === 'string') {
-      language = node.properties.className.replace('language-', '');
+  pre: ({ node, className, children }) => (
+    <pre
+      className={cn(
+        'my-4 overflow-x-auto rounded-lg bg-zinc-900 p-4 text-sm text-zinc-100',
+        className
+      )}
+    >
+      {children}
+    </pre>
+  ),
+  code: ({ node, className, children, ...props }) => {
+    const isInline = !className?.includes('language-');
+    if (isInline) {
+      return (
+        <code
+          className="rounded bg-zinc-800 px-1.5 py-0.5 text-sm text-zinc-200"
+          {...props}
+        >
+          {children}
+        </code>
+      );
     }
-
-    const childrenIsCode =
-      typeof children === 'object' &&
-      children !== null &&
-      'type' in children &&
-      children.type === 'code';
-
-    if (!childrenIsCode) {
-      return <pre>{children}</pre>;
-    }
-
-    const data: CodeBlockProps['data'] = [
-      {
-        language,
-        filename: 'index.js',
-        code: (children.props as { children: string }).children,
-      },
-    ];
-
     return (
-      <CodeBlock
-        className={cn('my-4 h-auto', className)}
-        data={data}
-        defaultValue={data[0].language}
-      >
-        <CodeBlockHeader>
-          <CodeBlockFiles>
-            {(item) => (
-              <CodeBlockFilename key={item.language} value={item.language}>
-                {item.filename}
-              </CodeBlockFilename>
-            )}
-          </CodeBlockFiles>
-          <CodeBlockSelect>
-            <CodeBlockSelectTrigger>
-              <CodeBlockSelectValue />
-            </CodeBlockSelectTrigger>
-            <CodeBlockSelectContent>
-              {(item) => (
-                <CodeBlockSelectItem key={item.language} value={item.language}>
-                  {item.language}
-                </CodeBlockSelectItem>
-              )}
-            </CodeBlockSelectContent>
-          </CodeBlockSelect>
-          <CodeBlockCopyButton
-            onCopy={() => console.log('Copied code to clipboard')}
-            onError={() => console.error('Failed to copy code to clipboard')}
-          />
-        </CodeBlockHeader>
-        <CodeBlockBody>
-          {(item) => (
-            <CodeBlockItem key={item.language} value={item.language}>
-              <CodeBlockContent language={item.language as BundledLanguage}>
-                {item.code}
-              </CodeBlockContent>
-            </CodeBlockItem>
-          )}
-        </CodeBlockBody>
-      </CodeBlock>
+      <code className={cn('block', className)} {...props}>
+        {children}
+      </code>
     );
   },
 };
