@@ -32,16 +32,19 @@ const settings = {
 
 const carouselImages = [
   {
-    src: 'https://framerusercontent.com/images/3FWbibttHBsnge8Td2JRVbNo.svg',
-    alt: 'AI Video Generation Screen',
+    src: 'https://cdn.jsdelivr.net/gh/ishaan-arora-1/videos/public/vid1.mp4',
+    alt: 'AI Creation Suite walkthrough 1',
+    type: 'video' as const,
   },
   {
-    src: 'https://framerusercontent.com/images/eaFbEnL3er77EwtTIiUEMgYTLnQ.svg',
-    alt: 'AI Influencer Mockup Preview',
+    src: 'https://cdn.jsdelivr.net/gh/ishaan-arora-1/videos/public/vid2.mp4',
+    alt: 'AI Creation Suite walkthrough 2',
+    type: 'video' as const,
   },
   {
-    src: 'https://framerusercontent.com/images/82g4S0XdXlaUWPtoLMLmaJhP1yc.svg',
-    alt: 'Multi-Modal Creation Workflow',
+    src: 'https://cdn.jsdelivr.net/gh/ishaan-arora-1/videos/public/vid3.mp4',
+    alt: 'AI Creation Suite walkthrough 3',
+    type: 'video' as const,
   },
 ]
 

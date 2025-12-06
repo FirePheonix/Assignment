@@ -57,7 +57,7 @@ export default function SignupChoicePage() {
               {/* Image */}
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image
-                  src="/images/signup-brand.png"
+                  src="/images/signup-brand.svg"
                   alt="Brand Account"
                   fill
                   className="object-cover"
@@ -112,7 +112,7 @@ export default function SignupChoicePage() {
               {/* Image */}
               <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                 <Image
-                  src="/images/signup-artist.png"
+                  src="/images/signup-artist.svg"
                   alt="Creator Account"
                   fill
                   className="object-cover"

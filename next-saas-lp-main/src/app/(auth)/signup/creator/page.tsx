@@ -264,7 +264,7 @@ export default function CreatorSignupPage() {
       <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-gradient-to-br from-pink-900/20 to-orange-900/20">
         <div className="relative w-full max-w-2xl aspect-square">
           <Image
-            src="/images/signup-artist.png"
+            src="/images/signup-artist.svg"
             alt="Creator Platform"
             fill
             className="object-contain"

@@ -240,7 +240,7 @@ export default function BrandSignupPage() {
       <div className="hidden lg:flex flex-1 items-center justify-center p-8 bg-gradient-to-br from-purple-900/20 to-pink-900/20">
         <div className="relative w-full max-w-2xl aspect-square">
           <Image
-            src="/images/signup-brand.png"
+            src="/images/signup-brand.svg"
             alt="Brand Platform"
             fill
             className="object-contain"

@@ -13,6 +13,18 @@ npm run dev
 # Visit http://localhost:3000/flow-generator
 ```
 
+## 🛠️ Local Setup & Run (verified)
+
+- Prerequisites: Node.js 18+ (tested with 23.x) and npm
+- Install deps: `npm install`
+- Env (optional for backend APIs): create `.env.local`
+  ```bash
+  NEXT_PUBLIC_DJANGO_URL=http://localhost:8000
+  ```
+- Development: `npm run dev -- --hostname 0.0.0.0 --port 3000` (Turbopack). If port 3000 is busy, override `--port 4000`.
+- Production: `npm run build` then `npm start -- --hostname 0.0.0.0 --port 3000` (also supports `--port 4000` if needed).
+- Frontend runs without the Django backend; API calls will fail until a backend is available at `NEXT_PUBLIC_DJANGO_URL`.
+
 ### Documentation
 See [`FLOW_GENERATOR_INDEX.md`](./FLOW_GENERATOR_INDEX.md) for complete documentation.
 
