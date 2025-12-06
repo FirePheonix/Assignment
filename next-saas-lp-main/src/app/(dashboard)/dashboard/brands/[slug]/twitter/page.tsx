@@ -75,7 +75,7 @@ export default function TwitterQueuePage({ params }: Props) {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Token ${localStorage.getItem('auth_token')}`,
+          'Authorization': `Token ${localStorage.getItem('authToken')}`,
         }
       });
       
