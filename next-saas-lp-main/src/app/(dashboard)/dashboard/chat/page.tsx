@@ -19,9 +19,15 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   // -----------------------------
   // URL PARAM CHECK
@@ -40,9 +46,11 @@ export default function ChatPage() {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const user = await getCurrentUser();
       if (user) setCurrentUserId(user.id);
 
@@ -52,10 +60,13 @@ export default function ChatPage() {
       if (data.chats.length > 0 && !selectedConversation) {
         setSelectedConversation(data.chats[0].id);
       }
+      setLoadedOnce(true);
     } catch (e) {
       toast.error("Failed to load conversations");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -105,8 +116,14 @@ export default function ChatPage() {
           image: data.image_url,
         };
 
-        setMessages((prev) => [...prev, newMessage]);
-        loadData();
+        // Add message only if it's not already in the list (avoid duplicates)
+        setMessages((prev) => {
+          const exists = prev.some((m) => m.id === newMessage.id);
+          if (exists) return prev;
+          return [...prev, newMessage];
+        });
+        // Refresh conversations list without showing full-screen loader
+        loadData(false);
       }
     };
 
@@ -123,10 +140,28 @@ export default function ChatPage() {
     setMessage("");
     setSending(true);
 
+    // Optimistically add the message to UI immediately
+    const optimisticMessage: Message = {
+      id: Date.now(), // Temporary ID
+      sender: { id: currentUserId!, username: "You" },
+      content: msg,
+      timestamp: new Date().toISOString(),
+      is_read: true,
+    };
+    setMessages((prev) => [...prev, optimisticMessage]);
+
     try {
-      await chatApi.sendMessage(selectedConversation, msg);
+      const sentMessage = await chatApi.sendMessage(selectedConversation, msg);
+      // Replace optimistic message with real one from server
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimisticMessage.id ? sentMessage : m))
+      );
+      // Refresh conversation list to update last_message
+      loadData(false);
     } catch (e) {
       toast.error("Failed to send");
+      // Remove optimistic message on failure
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMessage.id));
       setMessage(msg);
     } finally {
       setSending(false);
@@ -326,15 +361,11 @@ export default function ChatPage() {
                   onClick={handleSendMessage}
                   className="ml-2 disabled:opacity-50"
                 >
-                  {sending ? (
-                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-                  ) : (
-                    <Send
-                      className={`w-5 h-5 ${
-                        message.trim() ? "text-blue-500" : "text-gray-500"
-                      }`}
-                    />
-                  )}
+                  <Send
+                    className={`w-5 h-5 ${
+                      message.trim() ? "text-blue-500" : "text-gray-500"
+                    }`}
+                  />
                 </button>
               </div>
             </div>
