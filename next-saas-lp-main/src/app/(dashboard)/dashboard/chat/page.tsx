@@ -23,6 +23,7 @@ export default function ChatPage() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -84,6 +85,10 @@ export default function ChatPage() {
         wsRef.current.close();
         wsRef.current = null;
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
     };
   }, [selectedConversation]);
 
@@ -99,9 +104,17 @@ export default function ChatPage() {
   // -----------------------------
   // WEBSOCKET SETUP
   // -----------------------------
-  const setupWebSocket = (conversationId: number) => {
+  const setupWebSocket = (conversationId: number, isReconnect = false) => {
     const ws = chatApi.createWebSocket(conversationId);
     if (!ws) return;
+
+    // Clear any pending reconnect timer once connected
+    ws.onopen = () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -125,6 +138,24 @@ export default function ChatPage() {
         // Refresh conversations list without showing full-screen loader
         loadData(false);
       }
+    };
+
+    // On error or close, attempt a delayed reconnect
+    const scheduleReconnect = () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      reconnectTimeoutRef.current = setTimeout(() => {
+        setupWebSocket(conversationId, true);
+      }, 2000);
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+
+    ws.onclose = () => {
+      scheduleReconnect();
     };
 
     wsRef.current = ws;
@@ -270,7 +301,7 @@ export default function ChatPage() {
                     {other.profile_picture ? (
                       <img src={other.profile_picture} className="w-12 h-12 rounded-full" />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex justify-center items-center text-white">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex justify-center items-center text-white">
                         {name.substring(0, 2).toUpperCase()}
                       </div>
                     )}
@@ -300,7 +331,7 @@ export default function ChatPage() {
                   className="w-10 h-10 rounded-full"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex justify-center items-center text-white">
+                <div className="w-10 h-10 rounded-full bg-linear-to-br from-blue-500 to-purple-500 flex justify-center items-center text-white">
                   {getConversationName(selectedConvObj).substring(0, 2).toUpperCase()}
                 </div>
               )}
