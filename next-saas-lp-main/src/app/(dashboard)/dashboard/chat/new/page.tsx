@@ -30,7 +30,7 @@ export default function NewConversationPage() {
       const token = localStorage.getItem('auth_token');
       const DJANGO_BACKEND = process.env.NEXT_PUBLIC_DJANGO_URL || 'http://localhost:8000';
 
-      const response = await fetch(`${DJANGO_BACKEND}/chat/conversation/start/email/`, {
+      const response = await fetch(`${DJANGO_BACKEND}/chat/api/start-conversation/email/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

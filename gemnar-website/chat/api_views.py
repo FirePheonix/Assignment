@@ -527,6 +527,84 @@ def start_chat_with_brand(request, brand_id):
     )
 
 
+@api_view(["POST"])
+@permission_classes([permissions.IsAuthenticated])
+def start_conversation_by_email(request):
+    """
+    API endpoint to start a new conversation with someone by their email address
+    """
+    email = request.data.get("email", "").strip().lower()
+
+    if not email:
+        return Response(
+            {"success": False, "error": "Email address is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Find user by email
+    try:
+        target_user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response(
+            {"success": False, "error": "No user found with this email address"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    current_user = request.user
+
+    # Don't allow users to start conversations with themselves
+    if current_user == target_user:
+        return Response(
+            {"success": False, "error": "You cannot start a conversation with yourself"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Check if current user is a brand owner
+    if current_user.brands.exists():
+        # Brand owner starting conversation with a user
+        brand = current_user.brands.first()
+
+        # Check if conversation already exists
+        conversation, created = ChatConversation.objects.get_or_create(
+            participant1=current_user,
+            participant2=target_user,
+            brand=brand,
+        )
+
+        conversation_type = "brand"
+    else:
+        # Regular user starting conversation with another user
+        # Ensure consistent participant ordering to avoid duplicate conversations
+        if current_user.id < target_user.id:
+            participant1, participant2 = current_user, target_user
+        else:
+            participant1, participant2 = target_user, current_user
+
+        # Check if conversation already exists (creator-to-creator)
+        conversation, created = ChatConversation.objects.get_or_create(
+            participant1=participant1,
+            participant2=participant2,
+            brand=None,  # This is a creator-to-creator conversation
+        )
+
+        conversation_type = "creator"
+
+    return Response(
+        {
+            "success": True,
+            "conversation_id": conversation.id,
+            "created": created,
+            "other_user": {
+                "id": target_user.id,
+                "username": target_user.username,
+                "email": target_user.email,
+            },
+            "conversation_type": conversation_type,
+        },
+        status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+    )
+
+
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def chat_stats(request):

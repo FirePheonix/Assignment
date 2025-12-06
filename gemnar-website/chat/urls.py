@@ -61,6 +61,11 @@ urlpatterns = [
         api_views.conversation_stats,
         name="api_conversation_stats",
     ),
+    path(
+        "api/start-conversation/email/",
+        api_views.start_conversation_by_email,
+        name="api_start_conversation_email",
+    ),
     # Legacy API endpoints (kept for backward compatibility)
     path("api/rooms/", api_views.ChatRoomListView.as_view(), name="api_chat_rooms"),
     path(
