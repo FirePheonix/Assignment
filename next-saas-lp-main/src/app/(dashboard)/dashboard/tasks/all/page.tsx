@@ -128,7 +128,7 @@ export default function AllTasksPage() {
       {/* Background Pattern - Blue waves at top */}
       <div className="absolute top-0 left-0 right-0 h-[300px] overflow-hidden pointer-events-none">
         <img 
-          src="/images/background-pattern-blue.png" 
+          src="/images/background-pattern-blue.svg" 
           alt="" 
           className="w-full h-full object-cover opacity-60 rounded-3xl"
         />

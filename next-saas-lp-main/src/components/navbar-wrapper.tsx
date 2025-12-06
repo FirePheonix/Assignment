@@ -35,7 +35,7 @@ export default function NavbarWrapper() {
       <nav className="w-full h-fit py-4 flex items-center justify-between">
         {/* Logo */}
         <Link href='/' title="Home" id="Logo">
-          <Image src="/logo_wide.png" alt="Logo" width={80} height={40} className="h-8" />
+          <Image src="/logo_wide.svg" alt="Logo" width={80} height={40} className="h-8" />
         </Link>
 
         {/* desktop menu */}

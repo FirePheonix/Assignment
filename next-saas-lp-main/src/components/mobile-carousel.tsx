@@ -12,6 +12,9 @@ interface Iphone15ProProps extends React.SVGProps<SVGSVGElement> {
   height?: string | number;
   src?: string;
   alt?: string;
+  videoSrc?: string;
+  poster?: string;
+  isPlaying?: boolean;
 }
 
 const Iphone15Pro: React.FC<Iphone15ProProps> = ({
@@ -19,9 +22,28 @@ const Iphone15Pro: React.FC<Iphone15ProProps> = ({
   height = "auto",
   src,
   alt = "iPhone screen content",
+  videoSrc,
+  poster,
+  isPlaying = true,
   className,
   ...props
 }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoSrc || !videoRef.current) return;
+
+    const video = videoRef.current;
+    if (isPlaying) {
+      video.play().catch(() => {
+        /* noop: autoplay might be blocked */
+      });
+    } else {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }, [isPlaying, videoSrc]);
+
   return (
     <div className={cn("relative", className)}>
       <svg
@@ -83,14 +105,29 @@ const Iphone15Pro: React.FC<Iphone15ProProps> = ({
             <div
               style={{ width: "100%", height: "100%", position: "relative" }}
             >
-              <Image
-                src={src || "/placeholder.svg"}
-                alt={alt}
-                fill
-                style={{ objectFit: "cover" }}
-                sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 33vw"
-                priority
-              />
+              {videoSrc ? (
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  autoPlay={isPlaying}
+                  muted
+                  loop
+                  playsInline
+                  controls={false}
+                  poster={poster}
+                >
+                  <source src={videoSrc} type="video/mp4" />
+                </video>
+              ) : (
+                <Image
+                  src={src || "/placeholder.svg"}
+                  alt={alt}
+                  fill
+                  style={{ objectFit: "cover" }}
+                  sizes="(max-width: 768px) 80vw, (max-width: 1200px) 50vw, 33vw"
+                  priority
+                />
+              )}
             </div>
           </foreignObject>
         )}
@@ -132,6 +169,8 @@ const Iphone15Pro: React.FC<Iphone15ProProps> = ({
 export interface ImageItem {
   src: string;
   alt: string;
+  type?: "image" | "video";
+  poster?: string;
 }
 
 interface PhoneCarouselProps {
@@ -215,6 +254,9 @@ export const PhoneCarousel: React.FC<PhoneCarouselProps> = ({
                 width={isMobile ? 280 : 350}
                 height="auto"
                 src={prevImage.src}
+                videoSrc={prevImage.type === "video" ? prevImage.src : undefined}
+                poster={prevImage.poster}
+                isPlaying={false}
                 alt={prevImage.alt}
               />
             </div>
@@ -231,6 +273,9 @@ export const PhoneCarousel: React.FC<PhoneCarouselProps> = ({
                 width={isMobile ? 280 : 350}
                 height="auto"
                 src={nextImage.src}
+                videoSrc={nextImage.type === "video" ? nextImage.src : undefined}
+                poster={nextImage.poster}
+                isPlaying={false}
                 alt={nextImage.alt}
               />
             </div>
@@ -247,6 +292,11 @@ export const PhoneCarousel: React.FC<PhoneCarouselProps> = ({
                 width={isMobile ? 280 : 350}
                 height="auto"
                 src={activeImage.src}
+                videoSrc={
+                  activeImage.type === "video" ? activeImage.src : undefined
+                }
+                poster={activeImage.poster}
+                isPlaying
                 alt={activeImage.alt}
               />
             </div>
@@ -294,6 +344,8 @@ export const PhoneCarousel: React.FC<PhoneCarouselProps> = ({
                 const isNext =
                   index === currentIndex + 1 ||
                   (currentIndex === images.length - 1 && index === 0);
+                const isVideo = image.type === "video";
+                const shouldPlay = isActive && !isPaused;
 
                 return (
                   <div
@@ -322,6 +374,9 @@ export const PhoneCarousel: React.FC<PhoneCarouselProps> = ({
                         width={isMobile ? 280 : 350}
                         height="auto"
                         src={image.src}
+                        videoSrc={isVideo ? image.src : undefined}
+                        poster={image.poster}
+                        isPlaying={shouldPlay}
                         alt={image.alt}
                         className="transition-all duration-100 hover:scale-105 hover:-rotate-6"
                       />
