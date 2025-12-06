@@ -2676,7 +2676,7 @@ def upload_to_cloudinary(request):
             # Update user's storage quota
             quota.add_cloudinary_usage(image_file.size)
         
-        return Response({
+        response_data = {
             "success": True,
             "url": public_url,
             "public_id": result['public_id'],
@@ -2685,9 +2685,14 @@ def upload_to_cloudinary(request):
             "height": result.get('height'),
             "file_size": result.get('bytes'),
             "upload_id": upload_record.id if upload_record else None,
-            "thumbnail_url": upload_record.get_thumbnail_url(width=300, height=300),
-            "quota_used_percentage": quota.get_usage_percentage(),
-        }, status=status.HTTP_200_OK)
+            "thumbnail_url": upload_record.get_thumbnail_url(width=300, height=300) if upload_record else None,
+        }
+        
+        # Only include quota for authenticated users
+        if request.user.is_authenticated and quota:
+            response_data["quota_used_percentage"] = quota.get_usage_percentage()
+        
+        return Response(response_data, status=status.HTTP_200_OK)
     
     except Exception as e:
         logger.error(f"Cloudinary upload failed: {str(e)}")
